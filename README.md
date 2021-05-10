@@ -79,14 +79,14 @@ dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, a
 dpx_tar_script.sh - Runs once a day at 5pm  
 dpx_clean_up.sh - Runs once a day at 4am  
 
-### DPX Encoding scripts 
+DPX Encoding script crontab entries:
 35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
 */15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh  
 15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh  
 0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh  
 0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh  
 
-### Flock lock stat check, if absent replace using touch command  
+#Flock lock stat check, if absent replace using touch command  
 */55    *    *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
 
 
