@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<policy type="or" name="BFI RAWcooked MKV error checks" license="MIT">
+  <description>Test that the video file is suitable for archiving.
+- Container format is Matroska with error detection (CRC)
+- Video format is FFV1 with error detection (CRC) and with Intra mode
+- Maintainer BFI</description>
+  <policy type="and" name="BFI RAWcooked MKV checks">
+    <rule name="Container is MKV" value="Format" tracktype="General" occurrence="*" operator="=">Matroska</rule>
+    <rule name="MKV version 4 or greater" value="Format_Version" tracktype="General" occurrence="*" operator=">=">4</rule>
+    <rule name="Unique ID is present" value="UniqueID" tracktype="General" occurrence="*"/>
+    <rule name="Duration field exists" value="Duration" tracktype="General" occurrence="*"/>
+    <rule name="Container uses error detection" value="extra/ErrorDetectionType" tracktype="General" occurrence="*" operator="=">Per level 1</rule>
+    <rule name="Overall bit rate more than" value="OverallBitRate" tracktype="General" occurrence="*" operator=">=">300</rule>
+    <rule name="Video is FFV1" value="Format" tracktype="Video" occurrence="*" operator="=">FFV1</rule>
+    <rule name="FFv1 version 3.4 or later" value="Format_Version" tracktype="Video" occurrence="*" operator=">=">3.4</rule>
+    <rule name="GOP size of 1" value="Format_Settings_GOP" tracktype="Video" occurrence="*" operator="=">N=1</rule>
+    <rule name="FFV1 is lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
+    <rule name="FFV1 is progressive" value="ScanType" tracktype="Video" occurrence="*" operator="=">Progressive</rule>
+    <rule name="Frame Rate is Constant?" value="FrameRate_Mode" tracktype="Video" occurrence="*" operator="=">CFR</rule>
+    <rule name="Video uses error detection" value="extra/ErrorDetectionType" tracktype="Video" occurrence="*" operator="=">Per slice</rule>
+    <rule name="Video minimum slice count" value="extra/MaxSlicesCount" tracktype="Video" occurrence="*" operator=">=">16</rule>
+    <rule name="Colour space is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+    <rule name="Duration field exists" value="Duration" tracktype="Video" occurrence="*"/>
+  </policy>
+</policy>

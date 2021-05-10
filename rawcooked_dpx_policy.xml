@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<policy type="or" name="BFI DPX metadata conformance checker" license="MIT">
+  <description>Tests if a DPX file in a sequence conforms to BFI RAWcooked license.  
+- Checks DPX file is correct format and correct extension.
+- Checks for and fails two image elements, not currently supported by RAWcooked.
+- Checks for RGB, 10/16-bit, minimum 2K width, image is Raw and lossless.
+- Handles variance with DPX image metadata being piped to either Image or Video tracktype.
+- Maintainer BFI</description>
+  <policy type="and" name="DPX conformance check">
+    <rule name="General/ImageCount is 1" value="ImageCount" tracktype="General" occurrence="*" operator="=">1</rule>
+    <rule name="Format is DPX" value="Format" tracktype="General" occurrence="*" operator="=">DPX</rule>
+    <rule name="File extension is DPX" value="FileExtension" tracktype="General" occurrence="*" operator="=">dpx</rule>
+    <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+    <policy type="or" name="Format Version 1.0 or 2.0">
+      <rule name="Format_Version is 1.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">1.0</rule>
+      <rule name="Format_Version is 2.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">2.0</rule>
+    </policy>
+    <policy type="or" name="DPX colorspace is RGB">
+      <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+      <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+    </policy>
+    <policy type="or" name="Format Compression is Raw">
+      <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Image" occurrence="*" operator="=">Raw</rule>
+      <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Video" occurrence="*" operator="=">Raw</rule>
+    </policy>
+    <policy type="or" name="Compression Mode is Lossless">
+      <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
+      <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
+    </policy>
+    <policy type="or" name="Pixel Aspect Ratio is 1.000">
+      <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Image" occurrence="*" operator="=">1.000</rule>
+      <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
+    </policy>
+    <policy type="or" name="Colorspace is NOT Y">
+      <rule name="Colorspace is NOT Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">Y</rule>
+      <rule name="Colorspace is NOT Y" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">Y</rule>
+    </policy>
+    <policy type="or" name="Colorspace is NOT RGBA">    
+      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
+      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
+    </policy>
+    <policy type="or" name="Colorspace is NOT ABGR">    
+      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">AGBR</rule>
+      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">AGBR</rule>
+    </policy>
+    <policy type="or" name="Colorspace is NOT RGB / A">
+      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
+      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
+    </policy>
+    <policy type="or" name="Endianness is Big or Little in Video or Image tracktype">
+      <policy type="or" name="Endianness is Big or Little in Image tracktype">
+        <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
+      </policy>
+      <policy type="or" name="Endianness is Big or Little in Video tracktype">
+        <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
+      </policy>
+    </policy>
+    <policy type="or" name="BitDepth is 10 or 16 in Video or Image tracktype">
+      <policy type="or" name="BitDepth is 10 or 16 in Image tracktype">
+        <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
+        <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+      </policy>
+      <policy type="or" name="BitDepth is 10 or 16 in Video tracktype">
+        <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
+        <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+      </policy>
+    </policy>
+  </policy>
+</policy>
