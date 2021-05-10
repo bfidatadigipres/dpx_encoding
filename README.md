@@ -188,12 +188,10 @@ If loop checks if file_list variable is True (ie, has filenames in list):
 Else it just outputs to log 'no items for deletion at this time'.
 
 ## Environmental variable storage
-These scripts are being operated under a specific user, within which environmental variables store the paths for their operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
+These scripts are being operated on each server under a specific user, who has environmental variables storing path for these operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
 
 ## Operational environment
 These scripts must be operated within the automation_dpx/ folder structure.
-The scripts are kept and operated from BK-CI-DATA3: /home/datadigipres/code/rawcooked/
-An identical set of script (in all but path names, and a few small differences) run from BK-CI-DATA3 for the Ovation returns, but these scripts are located in the /mnt/isilon/ingest/media/lto_project/rawcooked/ folder (these do not yet have environmental variable support, but will have config file alongside the scripts).
 
 ## Supporting crontab actions
 These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.
@@ -218,4 +216,4 @@ dpx_clean_up.sh - Runs once a day at 4am
 
 
 ### global.log
-Global.log is created by autoingest scripts to map processing of files as they are ingested into Imagen. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied to /mnt/qnap-03/Public/automation_dpx/encoding/script_logs/global_copy.log every day at 3AM from BK-CI-WEB crontab, just before dpx_clean_up.sh accesses it.
+Global.log is created by autoingest scripts to map processing of files as they are ingested into Imagen. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
