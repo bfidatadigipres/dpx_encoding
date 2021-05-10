@@ -223,7 +223,7 @@ dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, a
 dpx_tar_script.sh - Runs once a day at 5pm  
 dpx_clean_up.sh - Runs once a day at 4am  
 
-### MIN     HR  DAY  MTH  DAY/WK   USR           FLOCK LOCK DETAILS                                             COMMAND  
+### DPX Encoding scripts 
 35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
 */15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh  
 15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh  
