@@ -13,7 +13,7 @@ The final script assesses the DPX sequences in dpx_completed/ folder by checking
 
 ### Dependencies
 
-These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes that include: md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
+These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes that include: flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
 
 Several open source softwares are used from Media Area. These include:  
 RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawcooked  
