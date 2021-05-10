@@ -1,6 +1,6 @@
 ## DPX Automation preservation encoding scripts
 
-This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows at the British Film Institute National Archive. These scripts have been recently redeveloped and as such there are a few untested features within the code - these will be updated as testing continues. Please bare this in mind if you test any sections of code. Please create a safe environment to use this code yourself, apart from preservation critical files. All comments and feedback welcome.
+This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows at the British Film Institute National Archive. We're sharing them under the MIT licence. These scripts have been recently redeveloped and as such there are a few untested features within the code - these will be updated as testing continues. Please bare this in mind if you test any sections of code. Please create a safe environment to use this code separated from preservation critical files. All comments and feedback welcome.
 
 ### Overview
 These bash shell scripts begin with assessment of DPX sequences placed into dpx_to_assess folder, and then separates them into a RAWcooked encoding or TAR script wrapping path depending on a MediaConch policy review success (RAWcooked) or failure (to TAR path).
@@ -30,6 +30,71 @@ To run the concurrent processes the scripts use GNU Parallel which will require 
 The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
 sudo apt install p7zip-full
 
+
+## Environmental variable storage
+These scripts are being operated on each server under a specific user, who has environmental variables storing path for these operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
+
+
+## Operational environment
+These scripts must be operated within the automation_dpx/ folder structure, listed above.
+
+automation_dpx  
+├── current_errors  
+├── encoding  
+│   ├── dpx_completed  
+│   │   ├── N_3623230_04of04  
+│   │   ├── N_3623278_01of02  
+│   ├── dpx_to_assess  
+│   │   ├── N_3623284_03of03  
+│   │   └── N_489875_2_08of08  
+│   ├── rawcooked  
+│   │   ├── dpx_to_cook  
+│   │   │   └── N_473236_01of02  
+│   │   ├── encoded  
+│   │   │   ├── killed  
+│   │   │   ├── logs  
+│   │   │   └── mkv_cooked  
+│   │   │       └── N_473236_01of02.mkv  
+│   │   │       └── N_473236_01of02.mkv.txt  
+│   │   └── failures  
+│   ├── script_logs  
+│   ├── tar_preservation  
+│   │   ├── dpx_to_wrap  
+│   │   │   └── N_489855_2_01of01  
+│   │   ├── failures  
+│   │   ├── logs  
+│   │   └── tarred_files  
+│   └── to_delete  
+└── QC_files
+
+
+## Supporting crontab actions
+These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
+They use Linux Flock locks which are reside in /var/run and are included in the crontab FLOCK LOCK DETAILS. These flock locks are checked for, and if absent, recreated every hour using the flock_rebuild.sh script.
+
+The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
+dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm  
+dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
+dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, and 12:15am  
+dpx_tar_script.sh - Runs once a day at 5pm  
+dpx_clean_up.sh - Runs once a day at 4am  
+
+### DPX Encoding scripts 
+35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
+*/15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh  
+15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh  
+0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh  
+0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh  
+
+### Flock lock stat check, if absent replace using touch command  
+*/55    *    *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
+
+
+### global.log
+Global.log is created by autoingest scripts to map processing of files as they are ingested into DPI. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
+
+
+----------------------------------  
 
 ## SCRIPTS
 
@@ -173,66 +238,3 @@ If loop checks if file_list variable is True (ie, has filenames in list):
 - Moves all DPX directory filenames in list from DPX_PATH to FOR_DELETION folder
 - From within the FOR_DELETION folder, all DPX sequences are deleted. 
 Else it just outputs to log 'no items for deletion at this time'.
-
-
-## Environmental variable storage
-These scripts are being operated on each server under a specific user, who has environmental variables storing path for these operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
-
-
-## Operational environment
-These scripts must be operated within the automation_dpx/ folder structure, listed above.
-
-automation_dpx  
-├── current_errors  
-├── encoding  
-│   ├── dpx_completed  
-│   │   ├── N_3623230_04of04  
-│   │   ├── N_3623278_01of02  
-│   ├── dpx_to_assess  
-│   │   ├── N_3623284_03of03  
-│   │   └── N_489875_2_08of08  
-│   ├── rawcooked  
-│   │   ├── dpx_to_cook  
-│   │   │   └── N_473236_01of02  
-│   │   ├── encoded  
-│   │   │   ├── killed  
-│   │   │   ├── logs  
-│   │   │   └── mkv_cooked  
-│   │   │       └── N_473236_01of02.mkv  
-│   │   │       └── N_473236_01of02.mkv.txt  
-│   │   └── failures  
-│   ├── script_logs  
-│   ├── tar_preservation  
-│   │   ├── dpx_to_wrap  
-│   │   │   └── N_489855_2_01of01  
-│   │   ├── failures  
-│   │   ├── logs  
-│   │   └── tarred_files  
-│   └── to_delete  
-└── QC_files
-
-
-## Supporting crontab actions
-These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
-They use Linux Flock locks which are reside in /var/run and are included in the crontab FLOCK LOCK DETAILS. These flock locks are checked for, and if absent, recreated every hour using the flock_rebuild.sh script.
-
-The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
-dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm  
-dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
-dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, and 12:15am  
-dpx_tar_script.sh - Runs once a day at 5pm  
-dpx_clean_up.sh - Runs once a day at 4am  
-
-### DPX Encoding scripts 
-35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
-*/15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh  
-15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh  
-0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh  
-0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh  
-
-### Flock lock stat check, if absent replace using touch command  
-*/55    *    *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
-
-
-### global.log
-Global.log is created by autoingest scripts to map processing of files as they are ingested into DPI. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
