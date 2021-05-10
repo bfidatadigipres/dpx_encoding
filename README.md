@@ -1,15 +1,19 @@
 ## DPX Automation preservation encoding scripts
 
-This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows at the British Film Institute National Archive. We're sharing them under the MIT licence. These scripts have been recently redeveloped and as such there are a few untested features within the code - these will be updated as testing continues. Please bare this in mind if you test any sections of code. Please create a safe environment to use this code separated from preservation critical files. All comments and feedback welcome.
+This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows at the British Film Institute National Archive. We're sharing them under the MIT licence. These scripts have been recently redeveloped and as such there are a few untested features within the code - these will be updated as testing continues. Please bare this in mind if you test any sections of code. Please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
+
 
 ### Overview
-These bash shell scripts begin with assessment of DPX sequences placed into dpx_to_assess folder, and then separates them into a RAWcooked encoding or TAR script wrapping path depending on a MediaConch policy review success (RAWcooked) or failure (to TAR path).
+These bash shell scripts are not designed to be run from the command line, but from crontab scheduling. As a result there is no built in help command, so please refer to this README and the script itself for information about the functionality.
 
-Each of the encoding scripts will run against these items after moved into their respective encoding paths. RAWcooked encoding functions with two scripts, the first encodes all items found in supply path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type (moving failed files to a killed/ folder), and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula (--check-padding).
+The first script assesses a DPX sequences placed into dpx_to_assess folder, and then separates it into a RAWcooked encoding or TAR script wrapping path depending on a MediaConch policy review success (RAWcooked) or failure (to TAR path).
+
+RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type (moving failed files to a killed/ folder), and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula (--check-padding).
 
 The TAR script wraps the files, verifies the wrap using 7zip and then generates and MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.
 
 The final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
+
 
 ### Dependencies
 
@@ -237,3 +241,4 @@ If loop checks if file_list variable is True (ie, has filenames in list):
 - Moves all DPX directory filenames in list from DPX_PATH to FOR_DELETION folder
 - From within the FOR_DELETION folder, all DPX sequences are deleted. 
 Else it just outputs to log 'no items for deletion at this time'.
+
