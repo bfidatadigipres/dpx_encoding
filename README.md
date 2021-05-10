@@ -1,25 +1,27 @@
 ## DPX Automation preservation encoding scripts
 
-This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows at the British Film Institute National Archive. We're sharing them under the MIT licence. These scripts have been recently redeveloped and as such there are a few untested features within the code - these will be updated as testing continues. Please bare this in mind if you test any sections of code. Please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
+The BFI National Archive recently undertook a preservation project that uses open source software RAWcooked to convert 3PB of DPX film scans into FFv1 Matroska video files. A major aspect of this project involves working alongside Media Area’s Jérôme Martinez, developer of RAWcooked. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these DPX automation workflows.  The aim of these scripts is to turn large DPX image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX sequences to FFV1 can reduce the overall file size by half, and allow the DPX image sequence to be played in VLC or similar software for instant review.
+
+These scripts are available under the MIT licence. They have been recently redeveloped and as such have a few untested features within the code, which will be updated as testing continues in coming weeks. If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
 
 
 ### Overview
-These bash shell scripts are not designed to be run from the command line, but from crontab scheduling. As a result there is no built in help command, so please refer to this README and the script itself for information about the functionality.
+These bash shell scripts are not designed to be run from the command line, but via cron scheduling. As a result there is no built in help command, so please refer to this README and the script comments for information about script functionality.
 
-The first script assesses a DPX sequences placed into dpx_to_assess folder, and then separates it into a RAWcooked encoding or TAR script wrapping path depending on a MediaConch policy review success (RAWcooked) or failure (to TAR path).
+These handle the complete encoding process from start to finsih, including assessment of the DPX sequences suitability for RAWcooked encoding, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path.
 
-RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type (moving failed files to a killed/ folder), and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula (--check-padding).
+RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type moving failed files to a seprate folder, and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula, using --check-padding. If it fails again an error is issued to an current errors log, flagging the folder in need of human intervention.
 
-The TAR script wraps the files, verifies the wrap using 7zip and then generates and MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.
-
-The final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
+The TAR script wraps the files, verifies the wrap using 7zip and then generates an MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.  Here the final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
 
 
 ### Dependencies
 
-These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes that include: flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
+These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes. These include:  
+flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq.  
+You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
 
-Several open source softwares are used from Media Area. These include:  
+Several open source softwares are used from Media Area. Please follow the links below to find out more:  
 RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawcooked  
 MediaConch - https://mediaarea.net/mediaconch  
 MediaInfo - https://mediaarea.net/mediainfo  
@@ -40,7 +42,7 @@ These scripts are being operated on each server under a specific user, who has e
 
 
 ## Operational environment
-These scripts must be operated within the automation_dpx/ folder structure, listed above.
+These scripts operate within a defined folder structure, listed here with example files.
 
 automation_dpx  
 ├── current_errors  
