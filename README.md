@@ -68,7 +68,8 @@ This script runs two passes of the DPX sequences in dpx_to_cook/, first pass run
 
 Script functions:
 - Refreshes the temporary_rawcooked_list.txt and temp_queued_list.txt  
-  PASS ONE:  
+  
+PASS ONE:  
 - Feeds list of DPX sequences from check_padding_list.txt into loop and compares against rawcooked_success.log and temp_queued_list.txt
   - If 'folders' not on either lists the folder name is written to temporary_retry_list.txt
 - Takes the temporary_retry_list.txt and performs filter of all names by last 5 digits (part whole) passing 01* first
@@ -76,7 +77,7 @@ Script functions:
 - Passes retry_list.txt DPX sequences to GNU parallel to start RAWcooked encoding multiple jobs at a time
   Script generates log file of encoding data, used in dpx_post_rawcook.sh  
   
-  PASS TWO:
+PASS TWO:
 - Feeds list of DPX sequences in dpx_to_cook/ 'folders' into loop and compares against rawcooked_success.log and temp_queued_list.txt
   - If 'folders' not on either lists the folder name is written to temporary_rawcook_list.txt
 - Takes the temporary_rawcook_list.txt and performs filter of all names by last 5 digits (part whole) passing 01* first
