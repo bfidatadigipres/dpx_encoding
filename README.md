@@ -12,38 +12,6 @@ The TAR script wraps the files, verifies the wrap using 7zip and then generates 
 The final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
 
 
-## The automation_dpx folder structure
-
-automation_dpx  
-├── current_errors  
-├── encoding  
-│   ├── dpx_completed  
-│   │   ├── N_3623230_04of04  
-│   │   ├── N_3623278_01of02  
-│   ├── dpx_to_assess  
-│   │   ├── N_3623284_03of03  
-│   │   └── N_489875_2_08of08  
-│   ├── rawcooked  
-│   │   ├── dpx_to_cook  
-│   │   │   └── N_473236_01of02  
-│   │   ├── encoded  
-│   │   │   ├── killed  
-│   │   │   ├── logs  
-│   │   │   └── mkv_cooked  
-│   │   │       └── N_473236_01of02.mkv  
-│   │   │       └── N_473236_01of02.mkv.txt  
-│   │   └── failures  
-│   ├── script_logs  
-│   ├── tar_preservation  
-│   │   ├── dpx_to_wrap  
-│   │   │   └── N_489855_2_01of01  
-│   │   ├── failures  
-│   │   ├── logs  
-│   │   └── tarred_files  
-│   └── to_delete  
-└── QC_files
-
-
 ## SCRIPTS
 
 ### dpx_assessment.sh
@@ -86,7 +54,7 @@ PASS TWO:
   Script generates log file of encoding data, used in dpx_post_rawcook.sh
 
 
-### dpx_post_rawcook.sh [Updated with find loop structure April 2021]
+### dpx_post_rawcook.sh
 A script assesses Matroska files, and logs, before deciding if a file can be moved to autoingest or dumped to failures folder. Moves successful DPX sequences to dpx_completed/ folder ready for clean up scripts.
 
 Script functions:  
@@ -187,11 +155,43 @@ If loop checks if file_list variable is True (ie, has filenames in list):
 - From within the FOR_DELETION folder, all DPX sequences are deleted. 
 Else it just outputs to log 'no items for deletion at this time'.
 
+
 ## Environmental variable storage
 These scripts are being operated on each server under a specific user, who has environmental variables storing path for these operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
 
+
 ## Operational environment
-These scripts must be operated within the automation_dpx/ folder structure.
+These scripts must be operated within the automation_dpx/ folder structure, listed above.
+
+automation_dpx  
+├── current_errors  
+├── encoding  
+│   ├── dpx_completed  
+│   │   ├── N_3623230_04of04  
+│   │   ├── N_3623278_01of02  
+│   ├── dpx_to_assess  
+│   │   ├── N_3623284_03of03  
+│   │   └── N_489875_2_08of08  
+│   ├── rawcooked  
+│   │   ├── dpx_to_cook  
+│   │   │   └── N_473236_01of02  
+│   │   ├── encoded  
+│   │   │   ├── killed  
+│   │   │   ├── logs  
+│   │   │   └── mkv_cooked  
+│   │   │       └── N_473236_01of02.mkv  
+│   │   │       └── N_473236_01of02.mkv.txt  
+│   │   └── failures  
+│   ├── script_logs  
+│   ├── tar_preservation  
+│   │   ├── dpx_to_wrap  
+│   │   │   └── N_489855_2_01of01  
+│   │   ├── failures  
+│   │   ├── logs  
+│   │   └── tarred_files  
+│   └── to_delete  
+└── QC_files
+
 
 ## Supporting crontab actions
 These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.
@@ -216,4 +216,4 @@ dpx_clean_up.sh - Runs once a day at 4am
 
 
 ### global.log
-Global.log is created by autoingest scripts to map processing of files as they are ingested into Imagen. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
+Global.log is created by autoingest scripts to map processing of files as they are ingested into DPI. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
