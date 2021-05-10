@@ -1,15 +1,34 @@
 ## DPX Automation preservation encoding scripts
 
-This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows, situated within automation_dpx folders across storage devices. These are run from any server against a specified storage device, and scheduled from the server's user /etc/crontab. The scripts use flock locks to prevent a script having more than one instance running. These flock locks are checked for, and if absent recreated every hour by flock_refresh.sh also run from /etc/crontab.
+This folder contains the RAWcooked encoding and TAR preservation scripts used for the DPX Automation workflows at the British Film Institute National Archive. These scripts have been recently redeveloped and as such there are a few untested features within the code - these will be updated as testing continues. Please bare this in mind if you test any sections of code. Please create a safe environment to use this code yourself, apart from preservation critical files. All comments and feedback welcome.
 
 ### Overview
-These bash shell scripts begin with assessment of DPX sequences placed into dpx_to_assess folder, and then separates them into a RAWcooked encoding or TAR script wrapping path depending on MediaConch policy review success (RAWcooked) or failure (to TAR path).
+These bash shell scripts begin with assessment of DPX sequences placed into dpx_to_assess folder, and then separates them into a RAWcooked encoding or TAR script wrapping path depending on a MediaConch policy review success (RAWcooked) or failure (to TAR path).
 
 Each of the encoding scripts will run against these items after moved into their respective encoding paths. RAWcooked encoding functions with two scripts, the first encodes all items found in supply path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type (moving failed files to a killed/ folder), and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula (--check-padding).
 
 The TAR script wraps the files, verifies the wrap using 7zip and then generates and MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.
 
 The final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
+
+### Dependencies
+
+These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes that include: md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).
+
+Several open source softwares are used from Media Area. These include:
+RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawcooked
+MediaConch - https://mediaarea.net/mediaconch
+MediaInfo - https://mediaarea.net/mediainfo
+
+To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own thay may include the following):
+- GNU parallel may also require: sysstat 12.2.0, libsensors 5-6.0, libsensors-config 3.6.0
+- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors-config_3.6.0-2ubuntu1_all.deb
+- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors5_3.6.0-2ubuntu1_amd64.deb
+- available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb
+- available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb
+
+The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
+sudo apt install p7zip-full
 
 
 ## SCRIPTS
