@@ -34,7 +34,7 @@ To run the concurrent processes the scripts use GNU Parallel which will require 
 - available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb  
 
 The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
-sudo apt install p7zip-full
+`sudo apt install p7zip-full`
 
 
 ## Environmental variable storage
