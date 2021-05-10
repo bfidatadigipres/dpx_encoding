@@ -44,7 +44,7 @@ These scripts are being operated on each server under a specific user, who has e
 ## Operational environment
 These scripts operate within a defined folder structure, listed here with example files.
 
-`automation_dpx  
+automation_dpx  
 ├── current_errors  
 ├── encoding  
 │   ├── dpx_completed  
@@ -71,7 +71,7 @@ These scripts operate within a defined folder structure, listed here with exampl
 │   │   ├── logs  
 │   │   └── tarred_files  
 │   └── to_delete  
-└── QC_files`
+└── QC_files
 
 
 ## Supporting crontab actions
@@ -86,13 +86,13 @@ dpx_tar_script.sh - Runs once a day at 5pm
 dpx_clean_up.sh - Runs once a day at 4am  
 
 DPX Encoding script crontab entries:  
-35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
+`35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
 */15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh  
 15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh  
 0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh  
 0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh  
  
-*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
+*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh`  
 
 
 ### global.log
