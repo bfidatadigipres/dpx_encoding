@@ -213,25 +213,25 @@ automation_dpx
 
 
 ## Supporting crontab actions
-These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.
+These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
 They use Linux Flock locks which are reside in /var/run and are included in the crontab FLOCK LOCK DETAILS. These flock locks are checked for, and if absent, recreated every hour using the flock_rebuild.sh script.
 
-The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:
-dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm
-dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity.
-dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, and 12:15am.
-dpx_tar_script.sh - Runs once a day at 5pm
-dpx_clean_up.sh - Runs once a day at 4am
+The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
+dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm  
+dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
+dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, and 12:15am  
+dpx_tar_script.sh - Runs once a day at 5pm  
+dpx_clean_up.sh - Runs once a day at 4am  
 
-# MIN  HR    DAY  MTH  DAY/WK  USR           FLOCK LOCK DETAILS                                             COMMAND
-35     */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh
-*/15   *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh
-15     */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh
-0      17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh
-0      4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh
+### MIN  HR    DAY  MTH  DAY/WK  USR           FLOCK LOCK DETAILS                                             COMMAND  
+35     */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh  
+*/15   *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh  
+15     */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh  
+0      17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh  
+0      4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh  
 
-# Flock lock stat check, if absent replace using touch command
-*/55    *    *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh
+### Flock lock stat check, if absent replace using touch command  
+*/55    *    *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
 
 
 ### global.log
