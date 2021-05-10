@@ -13,19 +13,19 @@ The final script assesses the DPX sequences in dpx_completed/ folder by checking
 
 ### Dependencies
 
-These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes that include: md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).
+These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes that include: md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
 
-Several open source softwares are used from Media Area. These include:
-RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawcooked
-MediaConch - https://mediaarea.net/mediaconch
-MediaInfo - https://mediaarea.net/mediainfo
+Several open source softwares are used from Media Area. These include:  
+RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawcooked  
+MediaConch - https://mediaarea.net/mediaconch  
+MediaInfo - https://mediaarea.net/mediainfo  
 
-To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own thay may include the following):
-- GNU parallel may also require: sysstat 12.2.0, libsensors 5-6.0, libsensors-config 3.6.0
-- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors-config_3.6.0-2ubuntu1_all.deb
-- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors5_3.6.0-2ubuntu1_amd64.deb
-- available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb
-- available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb
+To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own thay may include the following):  
+- GNU parallel may also require: sysstat 12.2.0, libsensors 5-6.0, libsensors-config 3.6.0  
+- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors-config_3.6.0-2ubuntu1_all.deb  
+- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors5_3.6.0-2ubuntu1_amd64.deb  
+- available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb  
+- available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb  
 
 The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
 sudo apt install p7zip-full
