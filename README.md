@@ -44,7 +44,7 @@ These scripts are being operated on each server under a specific user, who has e
 ## Operational environment
 These scripts operate within a defined folder structure, listed here with example files.
 
-automation_dpx  
+`automation_dpx  
 ├── current_errors  
 ├── encoding  
 │   ├── dpx_completed  
@@ -71,7 +71,7 @@ automation_dpx
 │   │   ├── logs  
 │   │   └── tarred_files  
 │   └── to_delete  
-└── QC_files
+└── QC_files`
 
 
 ## Supporting crontab actions
