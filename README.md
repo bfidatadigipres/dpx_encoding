@@ -76,7 +76,7 @@ automation_dpx
 
 ## Supporting crontab actions
 These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
-They use Linux Flock locks which are reside in /var/run and are included in the crontab FLOCK LOCK DETAILS. These flock locks are checked for, and if absent, recreated every hour using the flock_rebuild.sh script.
+They use Linux Flock locks which reside in /var/run and are included in the crontab FLOCK LOCK DETAILS. These flock locks are checked for, and if absent, recreated every hour using the flock_rebuild.sh script.
 
 The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
 dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm  
@@ -96,7 +96,7 @@ DPX Encoding script crontab entries:
 
 
 ### global.log
-Global.log is created by autoingest scripts to map processing of files as they are ingested into DPI. When completed the final message reads "successfully deleted file". This message is necessary to clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
+Global.log is created by autoingest scripts to map processing of files as they are ingested into DPI. When completed the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
 
 
 ----------------------------------  
@@ -104,7 +104,7 @@ Global.log is created by autoingest scripts to map processing of files as they a
 ## SCRIPTS
 
 ### dpx_assessment.sh
-This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails the folder is passed to the tar_preservation/ folder path.
+This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
 
 Script functions:
@@ -236,7 +236,7 @@ Check if a directory has same object number to those listed in part_whole_search
 Cat temp_dpx_list.txt while loop:
 - Grep in global_copy.log for instances of the filenames found in DPX_PATH with the string 'Successfully deleted file' from THIS_MONTH and LAST_MONTH only
 - If present: The files is added to the files_for_deletion_list.txt
-- If not found: There is a second grep which looks for filename and string 'Skip object' THIS_MONTH. If found returns a message of 'Still being ingested' to log, but item not added to deletion list / If not found returns a message of 'NOT PASSED INTO AUTOINGEST!' and no filenames are written to deletion list. In all these cases the files are left in place for a comparison at a later date.  The date range THIS_MONTH/LAST_MONTH has been applied to handle instances where a re-encoded file is replacing an older version in Imagen after a fault is found with the original file. To avoid the logs giving a false flag of 'deleted' for a given filename, a maximum two month date range is given, on the assumption the clean up scripts will complete the work within this time.
+- If not found: There is a second grep which looks for filename and string 'Skip object' THIS_MONTH. If found returns a message of 'Still being ingested' to log, but item not added to deletion list / If not found returns a message of 'NOT PASSED INTO AUTOINGEST!' and no filenames are written to deletion list. In all these cases the files are left in place for a comparison at a later date.  The date range THIS_MONTH/LAST_MONTH has been applied to handle instances where a re-encoded file is replacing an older version in DPI after a fault is found with the original file. To avoid the logs giving a false flag of 'deleted' for a given filename, a maximum two month date range is given, on the assumption the clean up scripts will complete the work within this time.
 
 Grep files_for_deletion_list.txt for all filenames and stores to file_list variable.
 If loop checks if file_list variable is True (ie, has filenames in list):
