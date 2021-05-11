@@ -128,7 +128,7 @@ find ${MKV_DESTINATION}mkv_cooked/ -name "*.mkv.txt" -mmin +10 | while IFS= read
           log "REPEAT ENCODING ERROR: ${mkv_fname} encountered repeated error"
           echo "${mkv_fname} REPEAT ENCODING ERROR RAISED FOR SEQUENCE:" >> "${CURRENT_ERRORS}dpx_encoding_errors.log"
           echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${CURRENT_ERRORS}dpx_encoding_errors.log"
-          echo "${mkv_fname}" >> "${MKV_DESTINATION}matroska_deletion.txt"
+          echo "${mkv_fname}" >> "${MKV_DESTINATION}matroska_deletion_list.txt"
           mv "${fail_logs}" "${MKV_DESTINATION}logs/fail_${mkv_fname}.txt"
       fi
   fi
