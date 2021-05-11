@@ -26,7 +26,7 @@ RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawco
 MediaConch - https://mediaarea.net/mediaconch  
 MediaInfo - https://mediaarea.net/mediainfo  
 
-To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own thay may include the following):  
+To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own that may include the following):  
 - GNU parallel may also require: sysstat 12.2.0, libsensors 5-6.0, libsensors-config 3.6.0  
 - available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors-config_3.6.0-2ubuntu1_all.deb  
 - available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors5_3.6.0-2ubuntu1_amd64.deb  
@@ -38,11 +38,11 @@ The TAR wrapping script uses p7zip-full programme available for download (Ubuntu
 
 
 ## Environmental variable storage
-These scripts are being operated on each server under a specific user, who has environmental variables storing path for these operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
+These scripts are being operated on each server under a specific user, who has environmental variables storing all path data for the script operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
 
 
 ## Operational environment
-These scripts operate within a defined folder structure, listed here with example files.
+The scripts operate within a defined folder structure, listed here with example files.
 
 automation_dpx  
 ├── current_errors  
@@ -75,8 +75,8 @@ automation_dpx
 
 
 ## Supporting crontab actions
-These RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
-They use Linux Flock locks which reside in /var/run and are included in the crontab FLOCK LOCK DETAILS. These flock locks are checked for, and if absent, recreated every hour using the flock_rebuild.sh script.
+The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
+To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them on the hour. It is common for the lock files to disappear when a server is rebooted, etc.
 
 The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
 dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm  
@@ -96,7 +96,7 @@ DPX Encoding script crontab entries:
 
 
 ### global.log
-Global.log is created by autoingest scripts to map processing of files as they are ingested into DPI. When completed the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
+Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
 
 
 ----------------------------------  
