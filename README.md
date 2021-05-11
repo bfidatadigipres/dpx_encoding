@@ -1,4 +1,4 @@
-## DPX Automation preservation encoding scripts
+## DPX preservation scripts
 
 The BFI National Archive recently developed workflows using open source software RAWcooked to convert DPX film scans into FFv1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these DPX automation workflows.  The aim of these scripts is to turn large DPX image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX sequences to FFV1 can reduce the overall file size by half, and allow the DPX image sequence to be played in VLC or similar software for instant review.
 
