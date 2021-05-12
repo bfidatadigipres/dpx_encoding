@@ -17,9 +17,7 @@ The TAR script wraps the files, verifies the wrap using 7zip and then generates 
 
 ### Dependencies
 
-These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes. These include:  
-flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq.  
-You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
+These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes. These include: flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
 
 Several open source softwares are used from Media Area. Please follow the links below to find out more:  
 RAWcooked (with dependency upon FFmpeg version 4+) - https://mediaarea.net/rawcooked  
