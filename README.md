@@ -125,27 +125,27 @@ Script functions:
 - Refreshes the temporary_rawcooked_list.txt and temp_queued_list.txt  
   
 PASS ONE:  
-- Feeds list of DPX sequences from check_padding_list.txt into loop and compares against rawcooked_success.log and temp_queued_list.txt
-  - If 'folders' not on either lists the folder name is written to temporary_retry_list.txt
+- Feeds list of DPX sequence folders from check_padding_list.txt into loop and compares against rawcooked_success.log and temp_queued_list.txt
+  - If DPX sequence not on either lists the folder name is written to temporary_retry_list.txt
 - Takes the temporary_retry_list.txt and performs filter of all names by last 5 digits (part whole) passing 01* first
 - Trims first twenty from this filtered list and passes to retry_list.txt and outputs this list to the log, with details about encoding using --check-padding
 - Passes retry_list.txt DPX sequences to GNU parallel to start RAWcooked encoding multiple jobs at a time
-  Script generates log file of encoding data, used in dpx_post_rawcook.sh  
+  Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
   
 PASS TWO:
-- Feeds list of DPX sequences in dpx_to_cook/ 'folders' into loop and compares against rawcooked_success.log and temp_queued_list.txt
-  - If 'folders' not on either lists the folder name is written to temporary_rawcook_list.txt
+- Feeds list of DPX sequences in dpx_to_cook/ into loop and compares against rawcooked_success.log and temp_queued_list.txt
+  - If a DPX sequence is not on either lists the folder name is written to temporary_rawcook_list.txt
 - Takes the temporary_rawcook_list.txt and performs filter of all names by last 5 digits (part whole) passing 01* first
 - Trims first twenty from this filtered list and passes to rawcook_list.txt and outputs this list to the log, allowing for analysis later
 - Passes these DPX sequence names to GNU parallel to start RAWcooked encoding multiple jobs at a time
-  Script generates log file of encoding data, used in dpx_post_rawcook.sh
+  Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
 
 
 ### dpx_post_rawcook.sh
-A script assesses Matroska files, and logs, before deciding if a file can be moved to autoingest or dumped to failures folder. Moves successful DPX sequences to dpx_completed/ folder ready for clean up scripts.
+A script assesses Matroska files, and logs, before deciding if a file can be moved to autoingest or to failures folder. Moves successful DPX sequences to dpx_completed/ folder ready for clean up scripts.
 
 Script functions:  
-- Refresh all temporary lists generated at each while loop section
+- Refresh all temporary lists .txt files generated in the scripts
 
 MKV file size check:
 - Obtains total size of encoded Matroska. If it's larger that 1TB (1048560MB) moves to killed/ folder and appends current_errors files with failure
@@ -153,20 +153,19 @@ MKV file size check:
 - If undersize, skips but reports filename is under 1TB to log.
 
 Mediaconch check:
-- Looks for Matroska files in mkv_cooked/ path not modified in the last ten minutes, checks each one against the RAWcooked mkv Mediaconch Policy
-  - If pass: script continues and pass information passed to post_rawcook.log
-  - If fail: script writes filename to temp_mediaconch_policy_fails.txt, and writes failure to post_rawcook.log
-- Matroska items listed on temp_mediaconch_policy_fails.txt are moved to Killed/ folder and logs are prepended fail_ and move to logs fodler
+- Looks for Matroska files in mkv_cooked/ path not modified in the last ten minutes, checks each one against the basic RAWcooked mkv Mediaconch Policy
+- If pass: script continues and information passed to post_rawcook.log
+- If fail: script writes filename to temp_mediaconch_policy_fails.txt, and writes failure to post_rawcook.log. Matroska items listed on temp_mediaconch_policy_fails.txt are moved to Killed/ folder and logs are prepended fail_ and move to logs fodler
 
-Grep logs for pass statements:
+Grep logs for pass statement of Mediaconch passed files:
 - Script looks through all logs for 'Reversablity was checked, no issue detected' where found:
   - Outputs successful cooked filenames to rawcooked_success.log
   - Prints list to post_rawcook.log
-  - Moves Matroska files using GNU parallel to autoingest path
+  - Moves Matroska files using GNU parallel to DPI ingest path
   - Moves successfully cooked DPX sequences to dpx_completed/ path
   - Moves log file to logs/ path
 
-Grep logs for error of warning statements:
+Grep remaining logs for error or warning statements:
 - Searches through remaining log files for instances that uses words like 'Error', 'Conversion failed!', 'Warning', 'WARNING' etc.
 - Checks if any of these erroring files have already been added to check_padding_list.
    If no, the file is added to list, DPX sequence left in place, logs appended 'retry_' and the file will be reencoded using --check-padding
@@ -175,7 +174,7 @@ Grep logs for error of warning statements:
    - Moves failed logs to logs folder prepended 'fail_'
 
 Search for log files that have not been modified in over 24 hours (1440 minutes):
-- For all mkv.txt files older than 1440 minutes since last modified:
+- For all mkv.txt files older than 1440 minutes since last modified (ie stale encodings):
   - Generates list and outputs to post_rawcook.log
   - Deletes logs files
   - While loop checks if Matroska exists too, if yes deletes.
@@ -224,7 +223,7 @@ Following clean up actions for all files and logs using grep passes to GNU paral
 This script's function is to check completed encodings against a recent copy of DPI ingest's global.log.
 
 Script functions:
-- Find all directories in DPX_PATH to a max/min depth of one (ie, the N_123456_01of01 folder) and sort them into ascending order using the part whole, 01of*, 02of*, 03of* etc. Output to new temp_dpx_list.txt overwriting earlier version.
+- Find all directories in dpx_completed/ to a max/min depth of one (ie, the N_123456_01of01 folder) and sort them into ascending order using the part whole, 01of*, 02of*, 03of* etc. Output to new temp_dpx_list.txt overwriting earlier version.
 - Refresh the files_for_deletion_list.txt
 
 Check if a directory has same object number to those listed in part_whole_search.log
@@ -234,7 +233,7 @@ Check if a directory has same object number to those listed in part_whole_search
 Cat temp_dpx_list.txt while loop:
 - Grep in global_copy.log for instances of the filenames found in DPX_PATH with the string 'Successfully deleted file' from THIS_MONTH and LAST_MONTH only
 - If present: The files is added to the files_for_deletion_list.txt
-- If not found: There is a second grep which looks for filename and string 'Skip object' THIS_MONTH. If found returns a message of 'Still being ingested' to log, but item not added to deletion list / If not found returns a message of 'NOT PASSED INTO AUTOINGEST!' and no filenames are written to deletion list. In all these cases the files are left in place for a comparison at a later date.  The date range THIS_MONTH/LAST_MONTH has been applied to handle instances where a re-encoded file is replacing an older version in DPI after a fault is found with the original file. To avoid the logs giving a false flag of 'deleted' for a given filename, a maximum two month date range is given, on the assumption the clean up scripts will complete the work within this time.
+- If not found: There is a second grep which looks for filename and string 'Skip object' THIS_MONTH. If found returns a message of 'Still being ingested' to log, but item not added to deletion list / If not found returns a message of 'NOT PASSED INTO AUTOINGEST!' and no filenames are written to deletion list. In all these cases the files are left in place for a comparison at a later date.  The date range THIS_MONTH/LAST_MONTH has been applied to handle instances where a re-encoded file is replacing an older version in DPI after a fault is found with the original file. To avoid the logs giving a false flag of 'deleted' for a given filename, a maximum two month date range is given, on the assumption the clean up scripts will complete the work within this time frame.
 
 Grep files_for_deletion_list.txt for all filenames and stores to file_list variable.
 If loop checks if file_list variable is True (ie, has filenames in list):
