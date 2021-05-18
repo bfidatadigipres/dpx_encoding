@@ -121,6 +121,8 @@ Script functions:
 - Moves dpx_success_list enties to rawcooked/dpx_to_cook/ folder
 - Appends the pass and failures from this pass to rawcooked_dpx_success.log and tar_dpx_failures.log
 
+Requires use of rawcooked_dpx_policy.xml.
+
 
 ### dpx_rawcook.sh
 
@@ -186,6 +188,8 @@ Search for log files that have not been modified in over 24 hours (1440 minutes)
   - While loop checks if Matroska exists too, if yes deletes.
 - Sorts temp_rawcooked_succes.log and updates rawcook_success.log with these new additions.
 - Deletes all temporary lists generated for each while loop.
+
+Requires use of rawcooked_mkv_policy.xml.
 
 
 ### dpx_tar_script.sh
@@ -253,7 +257,5 @@ Else it just outputs to log 'no items for deletion at this time'.
 ### flock_rebuild.sh
 
 This short script is called by crontab each day to check that the Flock locks are still available in /var/run.
-
-Loads with a list of flock lock paths.
-A for loop checks if each path in the list exists, if not it uses touch to recreate it.
+Loads with a list of flock lock paths. A for loop checks if each path in the list exists, if not it uses touch to recreate it.
 
