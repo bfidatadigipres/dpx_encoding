@@ -5,7 +5,8 @@ The BFI National Archive recently developed workflows using open source software
 These scripts are available under the MIT licence. They have been recently redeveloped and as such have a few untested features within the code, which will be updated as testing continues in coming weeks. If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
 
 
-### Overview
+## Overview
+
 These bash shell scripts are not designed to be run from the command line, but via cron scheduling. As a result there is no built in help command, so please refer to this README and the script comments for information about script functionality.
 
 These handle the complete encoding process from start to finish, including assessment of the DPX sequences suitability for RAWcooked encoding, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path.
@@ -15,7 +16,7 @@ RAWcooked encoding functions with two scripts, the first encodes all items found
 The TAR script wraps the files, verifies the wrap using 7zip and then generates an MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.  Here the final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
 
 
-### Dependencies
+## Dependencies
 
 These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes. These include: flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
 
@@ -36,10 +37,12 @@ The TAR wrapping script uses p7zip-full programme available for download (Ubuntu
 
 
 ## Environmental variable storage
+
 These scripts are being operated on each server under a specific user, who has environmental variables storing all path data for the script operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
 
 
 ## Operational environment
+
 The scripts operate within a defined folder structure, listed here with example files.
 
 automation_dpx  
@@ -73,6 +76,7 @@ automation_dpx
 
 
 ## Supporting crontab actions
+
 The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
 To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them on the hour. It is common for the lock files to disappear when a server is rebooted, etc.
 
@@ -93,7 +97,8 @@ DPX Encoding script crontab entries:
 `*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh`  
 
 
-### global.log
+## global.log
+
 Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
 
 
@@ -101,7 +106,8 @@ Global.log is created by DPI ingest scripts to map processing of files as they a
 
 ## SCRIPTS
 
-### dpx_assessment.sh
+## dpx_assessment.sh
+
 This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
 
@@ -118,7 +124,8 @@ Script functions:
 - Appends the pass and failures from this pass to rawcooked_dpx_success.log and tar_dpx_failures.log
 
 
-### dpx_rawcook.sh
+## dpx_rawcook.sh
+
 This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --check-padding command against check_padding_list, second with --check command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
 
 Script functions:
@@ -141,7 +148,8 @@ PASS TWO:
   Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
 
 
-### dpx_post_rawcook.sh
+## dpx_post_rawcook.sh
+
 A script assesses Matroska files, and logs, before deciding if a file can be moved to autoingest or to failures folder. Moves successful DPX sequences to dpx_completed/ folder ready for clean up scripts.
 
 Script functions:  
@@ -182,7 +190,8 @@ Search for log files that have not been modified in over 24 hours (1440 minutes)
 - Deletes all temporary lists generated for each while loop.
 
 
-### dpx_tar_script.sh
+## dpx_tar_script.sh
+
 This script handles TAR encoding of any DPX sequences that cannot be RAWcooked encoded due to licence limitations or unsupported features within the DPX. It uses 7zip to wrap the files in 'store' mode without compression, and runs a validation check against the file using 7zip's test feature. The script begins by refreshing four list files, allowing for new lists to be formed that will drive the movement or removal of files.
 
 Script operations:
@@ -219,7 +228,8 @@ Following clean up actions for all files and logs using grep passes to GNU paral
 - Failed associated DPX sequences are left in place for a repeat attempt
 
 
-### dpx_clean_up.sh
+## dpx_clean_up.sh
+
 This script's function is to check completed encodings against a recent copy of DPI ingest's global.log.
 
 Script functions:
