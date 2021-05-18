@@ -102,11 +102,9 @@ DPX Encoding script crontab entries:
 Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
 
 
-----------------------------------  
+## THE SCRIPTS
 
-## SCRIPTS
-
-## dpx_assessment.sh
+# dpx_assessment.sh
 
 This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
@@ -250,4 +248,12 @@ If loop checks if file_list variable is True (ie, has filenames in list):
 - Moves all DPX directory filenames in list from DPX_PATH to FOR_DELETION folder
 - From within the FOR_DELETION folder, all DPX sequences are deleted. 
 Else it just outputs to log 'no items for deletion at this time'.
+
+
+## flock_rebuild.sh
+
+This short script is called by crontab each day to check that the Flock locks are still available in /var/run.
+
+Loads with a list of flock lock paths.
+A for loop checks if each path in the list exists, if not it uses touch to recreate it.
 
