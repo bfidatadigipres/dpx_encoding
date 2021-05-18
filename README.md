@@ -104,7 +104,7 @@ Global.log is created by DPI ingest scripts to map processing of files as they a
 
 ## THE SCRIPTS
 
-# dpx_assessment.sh
+### dpx_assessment.sh
 
 This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
@@ -122,7 +122,7 @@ Script functions:
 - Appends the pass and failures from this pass to rawcooked_dpx_success.log and tar_dpx_failures.log
 
 
-## dpx_rawcook.sh
+### dpx_rawcook.sh
 
 This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --check-padding command against check_padding_list, second with --check command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
 
@@ -146,7 +146,7 @@ PASS TWO:
   Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
 
 
-## dpx_post_rawcook.sh
+### dpx_post_rawcook.sh
 
 A script assesses Matroska files, and logs, before deciding if a file can be moved to autoingest or to failures folder. Moves successful DPX sequences to dpx_completed/ folder ready for clean up scripts.
 
@@ -188,7 +188,7 @@ Search for log files that have not been modified in over 24 hours (1440 minutes)
 - Deletes all temporary lists generated for each while loop.
 
 
-## dpx_tar_script.sh
+### dpx_tar_script.sh
 
 This script handles TAR encoding of any DPX sequences that cannot be RAWcooked encoded due to licence limitations or unsupported features within the DPX. It uses 7zip to wrap the files in 'store' mode without compression, and runs a validation check against the file using 7zip's test feature. The script begins by refreshing four list files, allowing for new lists to be formed that will drive the movement or removal of files.
 
@@ -226,7 +226,7 @@ Following clean up actions for all files and logs using grep passes to GNU paral
 - Failed associated DPX sequences are left in place for a repeat attempt
 
 
-## dpx_clean_up.sh
+### dpx_clean_up.sh
 
 This script's function is to check completed encodings against a recent copy of DPI ingest's global.log.
 
@@ -250,7 +250,7 @@ If loop checks if file_list variable is True (ie, has filenames in list):
 Else it just outputs to log 'no items for deletion at this time'.
 
 
-## flock_rebuild.sh
+### flock_rebuild.sh
 
 This short script is called by crontab each day to check that the Flock locks are still available in /var/run.
 
