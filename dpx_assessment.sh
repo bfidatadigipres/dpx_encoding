@@ -5,11 +5,11 @@
 # =================================================================
 
 # Global variables call environmental variables
-LOG_PATH=$DPX_SCRIPT_LOG
-DPX_PATH=$DPX_ASSESS
-RAWCOOKED=$RAWCOOKED_PATH
-POLICY_PATH=$POLICY_RAWCOOK
-TAR_DEST=$TAR_PRES
+LOG_PATH="$DPX_SCRIPT_LOG"
+DPX_PATH="$DPX_ASSESS"
+RAWCOOKED="$RAWCOOKED_PATH"
+POLICY_PATH="$POLICY_RAWCOOK"
+TAR_DEST="$TAR_PRES"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
