@@ -19,10 +19,10 @@
     <rule name="Frame Rate is Constant?" value="FrameRate_Mode" tracktype="Video" occurrence="*" operator="=">CFR</rule>
     <rule name="Video uses error detection" value="extra/ErrorDetectionType" tracktype="Video" occurrence="*" operator="=">Per slice</rule>
     <rule name="Video minimum slice count" value="extra/MaxSlicesCount" tracktype="Video" occurrence="*" operator=">=">16</rule>
+    <rule name="Duration field exists" value="Duration" tracktype="Video" occurrence="*"/>
     <policy type="or" name="Colourspace check RGB or Y luma only">
       <rule name="Colour space is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
       <rule name="Colour space is Y Luma" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
     </policy>
-    <rule name="Duration field exists" value="Duration" tracktype="Video" occurrence="*"/>
   </policy>
 </policy>

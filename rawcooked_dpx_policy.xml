@@ -10,12 +10,15 @@
     <rule name="General/ImageCount is 1" value="ImageCount" tracktype="General" occurrence="*" operator="=">1</rule>
     <rule name="Format is DPX" value="Format" tracktype="General" occurrence="*" operator="=">DPX</rule>
     <rule name="File extension is DPX" value="FileExtension" tracktype="General" occurrence="*" operator="=">dpx</rule>
-    <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+    <policy type="or" name="Descriptor is 50 (R,G,B) or 6 (Y)">
+      <rule name="Descriptor 50 (R,G,B)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+      <rule name="Descriptor 6 (Y)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">6</rule>
+    </policy>
     <policy type="or" name="Format Version 1.0 or 2.0">
       <rule name="Format_Version is 1.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">1.0</rule>
       <rule name="Format_Version is 2.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">2.0</rule>
     </policy>
-    <policy type="or" name="DPX colorspace is RGB">
+    <policy type="or" name="DPX colorspace is RGB or Y in tracktype Image or Video">
       <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
       <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
       <rule name="Colorspace is Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">Y</rule>
@@ -46,24 +49,16 @@
       <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
     </policy>
     <policy type="or" name="Endianness is Big or Little in Video or Image tracktype">
-      <policy type="or" name="Endianness is Big or Little in Image tracktype">
-        <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
-        <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
-      </policy>
-      <policy type="or" name="Endianness is Big or Little in Video tracktype">
-        <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
-        <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
-      </policy>
+      <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+      <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
+      <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+      <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
     </policy>
     <policy type="or" name="BitDepth is 10 or 16 in Video or Image tracktype">
-      <policy type="or" name="BitDepth is 10 or 16 in Image tracktype">
-        <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
-        <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
-      </policy>
-      <policy type="or" name="BitDepth is 10 or 16 in Video tracktype">
-        <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
-        <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
-      </policy>
+      <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
+      <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+      <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
+      <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
     </policy>
   </policy>
 </policy>
