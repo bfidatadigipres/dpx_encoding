@@ -5,15 +5,15 @@
 # =========================================================================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG=$DPX_SCRIPT_LOG
-DPX_PATH=$DPX_COOK
-MKV_DEST=$MKV_ENCODED
+SCRIPT_LOG="$DPX_SCRIPT_LOG"
+DPX_PATH="$DPX_COOK"
+MKV_DEST="$MKV_ENCODED"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
     timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
     echo "$1 - $timestamp"
-} >> ${SCRIPT_LOG}dpx_rawcook.log
+} >> "${SCRIPT_LOG}dpx_rawcook.log"
 
 # Remove or generate temporary files per script run
 rm "${MKV_DEST}temporary_rawcook_list.txt"
@@ -58,7 +58,7 @@ ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
 
 # When --check-padding cooks complete target all N_ folders, and pass any not already being processed to temporary_rawcook_list.txt
-log "Outputting files from ${dpx_source} to list, if not already queued"
+log "Outputting files from DPX_PATH to list, if not already queued"
 find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -name "N_*" | while IFS= read -r folders; do
   folder_clean=$(basename "$folders")
   count_cooked=$(grep -c "$folder_clean" "${MKV_DEST}rawcooked_success.log")

@@ -5,15 +5,14 @@
 # ============================================
 
 # Global paths exctracted from environmental vars
-SCRIPT_LOG=$DPX_SCRIPT_LOG
-LOG_PATH=$TAR_LOG
-DPX_PATH=$DPX_WRAP
-DPX_COMPLETE=$DPX_COMPLETE
-DESTINATION=$DPX_TARRED
-TAR_FAILED=$TAR_FAIL
-AUTOINGEST=$AUTOINGEST_DOC
-MD5_PATH=$MD5_PATH
-CURRENT_ERRORS=$CURRENT_ERRORS
+SCRIPT_LOG="$DPX_SCRIPT_LOG"
+LOG_PATH="$TAR_LOG"
+DPX_PATH="$DPX_WRAP"
+DESTINATION="$DPX_TARRED"
+TAR_FAILED="$TAR_FAIL"
+AUTOINGEST="$AUTOINGEST_DOC"
+MD5PATH="$MD5_PATH"
+ERRORS="$CURRENT_ERRORS"
 
 # Refresh temporary succes/failure lists
 rm "${DPX_PATH}tar_list.txt"
@@ -36,11 +35,11 @@ log "===================== DPX TAR preservation workflow start =================
 
 find "$DPX_PATH" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r tar_files; do
     # Extract usable filenames from the path
-    scans=$(basename $(dirname $tar_files))
-    filename=$(basename $(dirname $(dirname $tar_files)))
+    scans=$(basename $(dirname "$tar_files"))
+    filename=$(basename $(dirname $(dirname "$tar_files")))
     file_scan_name="${filename}/${scans}/"
     # Check if the files are already being processed
-    count_tarred=$(cat ${DESTINATION}tar_checks.txt | grep -c "$filename")
+    count_tarred=$(cat "${DESTINATION}tar_checks.txt" | grep -c "$filename")
     if [ "$count_tarred" -eq 0 ];
         then
             log "Filename being processed: ${filename}"
@@ -57,20 +56,20 @@ done
 
 # Import tar_list/txt file to gnu parallel for TAR wrapping
 log "------- TAR wrap beginning ---------------------- No compression -mx=0 store only -------"
-grep ^N_ ${DPX_PATH}tar_list.txt | parallel --jobs 5 "7z a -mx=0 ${DESTINATION}{}.tar ${DPX_PATH}{} &>> ${DESTINATION}{}.tar.log"
+grep ^N_ "${DPX_PATH}tar_list.txt" | parallel --jobs 5 7z a -mx=0 "${DESTINATION}{}.tar" "${DPX_PATH}{}" &>> "${DESTINATION}{}.tar.log"
 
 # Check tar files size is under 1TB otherwise move out of verification checks and path to autoingest
 find "$DESTINATION" -name "*.tar" | while IFS= read -r tar_file; do
-    filename=$(basename $tar_file)
-    object=${$tar_file | rev | cut -c 11- | rev )   # IS THIS CORRECT
+    filename=$(basename "$tar_file")
+    object=$(echo "$tar_file" | rev | cut -c 11- | rev )
     echo "$filename"
     size=$(du -m "$tar_file" | cut -f1 )
-    if [ ${size} -gt 1048560 ]
+    if [ "${size}" -gt 1048560 ]
         then
             log "${filename} maybe larger than 1TB: ${size}mb. Moving to review folder for splitting"
             log "SPLITTING WARNING: All files within ${filename} part whole will need reviewing"
-            echo "TARRED ${filename} is over 1TB. All DPX part wholes will need reviewing" >> "${CURRENT_ERRORS}oversize_files_error.log"
-            echo "${object}" >> "${CURRENT_ERRORS}part_whole_search.log"
+            echo "TARRED ${filename} is over 1TB. All DPX part wholes will need reviewing" >> "${ERRORS}oversize_files_error.log"
+            echo "${object}" >> "${ERRORS}part_whole_search.log"
             mv "${tar_file}" "${TAR_FAILED}failed_oversize_${filename}"
             log "Moving failed ${filename}.log to ${LOG_PATH}"
             mv "${tar_file}.log" "${LOG_PATH}failed_oversize_${filename}.log"
@@ -83,15 +82,15 @@ done
 # When wrap finished start verification of successful batch, append to log
 log "------- TAR wrap concluded ------------------------------- Beginning verification -------"
 log "Starting verification checks of tar files, and ouputting verification test results to log"
-grep ^N_ "${DESTINATION}tar_list_complete.txt" | parallel --jobs 2 "7z t ${DESTINATION}{} &>> ${DESTINATION}{}.log"
+grep ^N_ "${DESTINATION}tar_list_complete.txt" | parallel --jobs 2 7z t "${DESTINATION}{}" &>> "${DESTINATION}{}.log"
 
 # Begin verification checks from the accompanying log files
-find ${DESTINATION} -name "*.tar.log" | while IFS= read -r checked_logs; do
+find "${DESTINATION}" -name "*.tar.log" | while IFS= read -r checked_logs; do
     # Running analysis of tar file using verify setting (sourceforge question...)
     log "Looking for error signs in ${checked_logs} from verification and tarring activities"
     tar_pass=$(cat "${checked_logs}" | grep -i 'error\|fatal\|critical\|warning\|warnings')
-    filename=$(basename $checked_logs)
-    if [ -z $tar_pass ]
+    filename=$(basename "$checked_logs")
+    if [ -z "$tar_pass" ]
         then
             # Create MD5 checksum for whole TAR file
             log "${filename} NO ERROR WORDS FOUND - Writing filename to passed_tar_list for MD5 sum generation"
@@ -99,36 +98,36 @@ find ${DESTINATION} -name "*.tar.log" | while IFS= read -r checked_logs; do
         else
             log "***** FAILED: TAR file ${filename} has FAILED a verification check *****"
             log "$tar_pass"
-            echo "${filename} TAR ERROR in log ${checked_logs}" >> "${CURRENT_ERRORS}dpx_encoding_errors.log"
+            echo "${filename} TAR ERROR in log ${checked_logs}" >> "${ERRORS}dpx_encoding_errors.log"
             echo "$filename" >> "${DESTINATION}failed_tar_list.txt"
     fi
 done
 
 # Write md5sum for each TAR file using Parallel
 log "Generating md5 checksum for passed_tar_list.txt"
-grep ^N_ "${DESTINATION}passed_tar_list.txt" | parallel --jobs 5 "md5sum ${DESTINATION}{} > ${MD5_PATH}{}.md5"
+grep ^N_ "${DESTINATION}passed_tar_list.txt" | parallel --jobs 5 md5sum "${DESTINATION}{}" > "${MD5PATH}{}.md5"
 
 # TESTING NEEDED: Add date to end of TAR MD5 record for persistence.py usage
 log "Reformatting log for Python script access, adding date and replacing '  ' spaces with ' - '"
 grep ^N_ "${DESTINATION}passed_tar_list.txt" | while IFS= read -r md5_logs; do
     # Add date to end of log
-    sed -i '1s/.*/&'"  $(date +%Y-%m-%d)"'/' "${MD5_PATH}${md5_logs}.md5"
+    sed -i '1s/.*/&'"  $(date +%Y-%m-%d)"'/' "${MD5PATH}${md5_logs}.md5"
     # Reformat log with hyphen between data, for processing by persistence.py
-    md5_content=$(cat "${MD5_PATH}${md5_logs}.md5")
-    echo ${md5_content} | sed 's/[ ][ ]*/ - /g' > "${MD5_PATH}${md5_logs}.md5"
+    md5_content=$(cat "${MD5PATH}${md5_logs}.md5")
+    echo "${md5_content}" | sed 's/[ ][ ]*/ - /g' > "${MD5PATH}${md5_logs}.md5"
 done
 
 # Move successfully TAR and verified files from passed_tar_list.txt
 log "Moving successful .tar wrapped files to QNAP-03 autoingest/ingest/store/document and log files"
-grep ^N_ "${DESTINATION}passed_tar_list.txt" | parallel --jobs 5 "mv ${DESTINATION}{} ${AUTOINGEST}{}"
-grep ^N_ "${DESTINATION}passed_tar_list.txt" | parallel --jobs 5 "mv ${DESTINATION}{}.log ${LOG_PATH}{}.log"
+grep ^N_ "${DESTINATION}passed_tar_list.txt" | parallel --jobs 5 mv "${DESTINATION}{}" "${AUTOINGEST}{}"
+grep ^N_ "${DESTINATION}passed_tar_list.txt" | parallel --jobs 5 mv "${DESTINATION}{}.log" "${LOG_PATH}{}.log"
 log "Moving succesfully tar wrapped folders to QNAP-03 dpx_wrapped folder"
-grep ^N_ "${DESTINATION}passed_tar_list.txt" | rev | cut -c 5- | rev | parallel --jobs 5 "mv ${DPX_PATH}{} ${DPX_WRAP}{}"
+grep ^N_ "${DESTINATION}passed_tar_list.txt" | rev | cut -c 5- | rev | parallel --jobs 5 mv "${DPX_PATH}{}" "${DPX_WRAP}{}"
 
 # Move unsuccessful TAR or verified files from failed_tar_list.txt
 log "Moving unsuccessful .tar wrapped files to QNAP-03 failed_verification and log files"
-grep ^N_ "${DESTINATION}failed_tar_list.txt" | parallel --jobs 5 "mv ${DESTINATION}{} ${TAR_FAILED}{}"
-grep ^N_ "${DESTINATION}failed_tar_list.txt" | parallel --jobs 5 "mv ${DESTINATION}{}.log ${LOG_PATH}failed_{}.log"
+grep ^N_ "${DESTINATION}failed_tar_list.txt" | parallel --jobs 5 mv "${DESTINATION}{}" "${TAR_FAILED}{}"
+grep ^N_ "${DESTINATION}failed_tar_list.txt" | parallel --jobs 5 mv "${DESTINATION}{}.log" "${LOG_PATH}failed_{}.log"
 log "Leaving unsuccessfully TAR wrapped folders where they are for retry"
 
 # Copy passed_tar_list.txt contents to tar_checks.txt to prevent re-wrapping if script overlaps or fails prematurely

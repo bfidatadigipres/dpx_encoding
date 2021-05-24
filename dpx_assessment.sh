@@ -7,7 +7,7 @@
 # Global variables call environmental variables
 LOG_PATH=$DPX_SCRIPT_LOG
 DPX_PATH=$DPX_ASSESS
-RAWCOOKED_PATH=$RAWCOOKED_PATH
+RAWCOOKED=$RAWCOOKED_PATH
 POLICY_PATH=$POLICY_RAWCOOK
 TAR_DEST=$TAR_PRES
 
@@ -30,11 +30,11 @@ log "===================== DPX assessment workflows start ====================="
 find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
     # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
     dpx_selection=$(ls "$files" | head -10)
-    array=(`echo "$dpx_selection" | sed 's/ /\n/g'`)
+    array=$(echo "$dpx_selection" | sed 's/ /\n/g')
     dpx="${array[4]}"
-    dimension=$(basename $files)
-    scans=$(basename $(dirname $files))
-    filename=$(basename $(dirname $(dirname $files)))
+    dimension=$(basename "$files")
+    scans=$(basename "$(dirname "$files")")
+    filename=$(basename "$(dirname "$(dirname "$files")")")
     file_scan_name="$filename/$scans"
     count_queued_pass=$(grep -c "$file_scan_name" "${DPX_PATH}rawcook_dpx_success.log")
     count_queued_fail=$(grep -c "$file_scan_name" "${DPX_PATH}tar_dpx_failures.log")
@@ -74,7 +74,7 @@ cat "${DPX_PATH}dpx_failures_list.txt" | parallel --jobs 10 "mv {} ${TAR_DEST}dp
 log "Moving items that passed MediaConch policy to rawcooked/ path:"
 list2=$(cat "${DPX_PATH}dpx_success_list.txt")
 log "$list2"
-cat "${DPX_PATH}dpx_success_list.txt" | parallel --jobs 10 "mv {} ${RAWCOOKED_PATH}dpx_to_cook/"
+cat "${DPX_PATH}dpx_success_list.txt" | parallel --jobs 10 "mv {} ${RAWCOOKED}dpx_to_cook/"
 
 # Append latest pass/failures to movement logs
 cat "${DPX_PATH}dpx_success_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
