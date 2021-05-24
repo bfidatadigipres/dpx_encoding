@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # ===================================================================
 # === DPX clean up, compare to global.log and delete if completed ===
@@ -9,6 +9,8 @@ DPX_PATH="$DPX_COMPLETE"
 DPX_LOG="$DPX_SCRIPT_LOG"
 GLOB_LOG="$GLOBAL_LOG"
 FOR_DELETION="$TO_DELETE"
+ERRORS="$CURRENT_ERRORS"
+
 # Global date variables
 THIS_MONTH=$(date --date="$(date +%Y-%m-%d)" "+%Y-%m")
 LAST_MONTH=$(date --date="$(date +%Y-%m-%d) -1 month" "+%Y-%m")
@@ -34,9 +36,9 @@ log "Comparing dpx_completed/ folder to global.log"
 # Run grep search for named items and pass for line reading to while loop which sorts
 cat "${DPX_PATH}temp_dpx_list.txt" | while IFS= read -r files; do
     trim_file=$(basename "$files")
-    object=$(echo "$trim_file" | rev | cut -c 7- | rev)
+    object=$(echo "$trim_file" | rev | cut -c 8- | rev)
     # Check if file present in part_whole_search, skip if so
-    count=$(grep -c "$object" "${CURRENT_ERRORS}part_whole_search.log")
+    count=$(grep -c "$object" "${ERRORS}part_whole_search.log")
     if [ "$count" -eq 0 ];
       then
         on_global=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$THIS_MONTH")
