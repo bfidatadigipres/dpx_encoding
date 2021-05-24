@@ -3,7 +3,7 @@
   <description>Tests if a DPX file in a sequence conforms to BFI RAWcooked license.  
 - Checks DPX file is correct format and correct extension.
 - Checks for and fails two image elements, not currently supported by RAWcooked.
-- Checks for RGB, 10/16-bit, minimum 2K width, image is Raw and lossless.
+- Checks for RGB or Y, 10/16-bit, minimum 2K width, image is Raw and lossless.
 - Handles variance with DPX image metadata being piped to either Image or Video tracktype.
 - Maintainer BFI</description>
   <policy type="and" name="DPX conformance check">
@@ -18,6 +18,8 @@
     <policy type="or" name="DPX colorspace is RGB">
       <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
       <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+      <rule name="Colorspace is Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">Y</rule>
+      <rule name="Colorspace is Y" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
     </policy>
     <policy type="or" name="Format Compression is Raw">
       <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Image" occurrence="*" operator="=">Raw</rule>
@@ -30,10 +32,6 @@
     <policy type="or" name="Pixel Aspect Ratio is 1.000">
       <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Image" occurrence="*" operator="=">1.000</rule>
       <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
-    </policy>
-    <policy type="or" name="Colorspace is NOT Y">
-      <rule name="Colorspace is NOT Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">Y</rule>
-      <rule name="Colorspace is NOT Y" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">Y</rule>
     </policy>
     <policy type="or" name="Colorspace is NOT RGBA">    
       <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
