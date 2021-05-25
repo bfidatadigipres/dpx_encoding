@@ -26,11 +26,12 @@ MediaConch - https://mediaarea.net/mediaconch
 MediaInfo - https://mediaarea.net/mediainfo  
 
 To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own that may include the following):  
-- GNU parallel may also require: sysstat 12.2.0, libsensors 5-6.0, libsensors-config 3.6.0  
-- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors-config_3.6.0-2ubuntu1_all.deb  
-- available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors5_3.6.0-2ubuntu1_amd64.deb  
-- available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb  
-- available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb  
+
+    GNU parallel may also require: sysstat 12.2.0, libsensors 5-6.0, libsensors-config 3.6.0
+    available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors-config_3.6.0-2ubuntu1_all.deb
+    available here http://archive.ubuntu.com/ubuntu/pool/main/l/lm-sensors/libsensors5_3.6.0-2ubuntu1_amd64.deb
+    available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb
+    available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb
 
 The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
 `sudo apt install p7zip-full`
@@ -88,15 +89,14 @@ dpx_tar_script.sh - Runs once a day at 5pm
 dpx_clean_up.sh - Runs once a day at 4am  
 
 DPX Encoding script crontab entries:  
-`35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh`  
-`*/15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh`  
-`15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh`  
-`0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh`  
-`0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh`  
- 
-`*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh`  
 
-
+    `35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/dpx_assessment.sh`
+    `*/15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/dpx_rawcook.sh`
+    `15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/dpx_post_rawcook.sh`
+    `0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/dpx_tar_script.sh`
+    `0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/dpx_clean_up.sh`  
+    `*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh`  
+    
 ## global.log
 
 Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
