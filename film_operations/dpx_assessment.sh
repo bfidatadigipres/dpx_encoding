@@ -8,7 +8,7 @@
 LOG_PATH="${FILM_OPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${FILM_OPS}${DPX_ASSESS}"
 RAWCOOKED="${FILM_OPS}${RAWCOOKED_PATH}"
-POLICY_PATH="$POLICY_RAWCOOK"
+POLICY_PATH="$POLICY_DPX"
 TAR_DEST="${FILM_OPS}${TAR_PRES}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.

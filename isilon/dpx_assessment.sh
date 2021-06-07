@@ -9,7 +9,7 @@ ISILON="/mnt/isilon_lt8/"
 LOG_PATH="${ISILON}${DPX_SCRIPT_LOG}"
 DPX_PATH="${ISILON}${DPX_ASSESS}"
 RAWCOOKED="${ISILON}${RAWCOOKED_PATH}"
-POLICY_PATH="$POLICY_RAWCOOK"
+POLICY_PATH="$POLICY_DPX"
 TAR_DEST="${ISILON}${TAR_PRES}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
