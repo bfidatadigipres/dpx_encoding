@@ -7,13 +7,8 @@
 - Handles variance with DPX image metadata being piped to either Image or Video tracktype.
 - Maintainer BFI</description>
   <policy type="and" name="DPX conformance check">
-    <rule name="General/ImageCount is 1" value="ImageCount" tracktype="General" occurrence="*" operator="=">1</rule>
     <rule name="Format is DPX" value="Format" tracktype="General" occurrence="*" operator="=">DPX</rule>
     <rule name="File extension is DPX" value="FileExtension" tracktype="General" occurrence="*" operator="=">dpx</rule>
-    <policy type="or" name="Descriptor is 50 (R,G,B) or 6 (Y)">
-      <rule name="Descriptor 50 (R,G,B)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
-      <rule name="Descriptor 6 (Y)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">6</rule>
-    </policy>
     <policy type="or" name="Format Version 1.0 or 2.0">
       <rule name="Format_Version is 1.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">1.0</rule>
       <rule name="Format_Version is 2.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">2.0</rule>
