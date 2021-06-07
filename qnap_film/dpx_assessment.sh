@@ -8,7 +8,7 @@
 LOG_PATH="${QNAP_FILM}${DPX_SCRIPT_LOG}"
 DPX_PATH="${QNAP_FILM}${DPX_ASSESS}"
 RAWCOOKED="${QNAP_FILM}${RAWCOOKED_PATH}"
-POLICY_PATH="$POLICY_RAWCOOK"
+POLICY_PATH="$POLICY_DPX"
 TAR_DEST="${QNAP_FILM}${TAR_PRES}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
@@ -29,9 +29,7 @@ log "===================== DPX assessment workflows start ====================="
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
     # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
-    dpx_selection=$(ls "$files" | head -10)
-    array=$(echo "$dpx_selection" | sed 's/ /\n/g')
-    dpx="${array[4]}"
+    dpx=$(ls "$files" | head -5 | tail -1)
     dimension=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
     filename=$(basename "$(dirname "$(dirname "$files")")")
@@ -44,11 +42,11 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/${dimension}/${dpx}"
-            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
-            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+#            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+#            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
 
             # Start comparison of first dpx file against mediaconch policy
-            check=$(mediaconch --force -p "${POLICY_PATH}rawcooked_dpx_policy.xml" "${files}/$dpx" | grep "pass!")
+            check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
             if [ -z "$check" ]
                 then
                     log "FAIL: $file_scan_name DOES NOT CONFORM TO MEDIACONCH POLICY. Adding to tar_dpx_failures_list.txt"
