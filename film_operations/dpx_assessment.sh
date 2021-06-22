@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # =================================================================
 # === DPX sequence conformance pass to RAWcook/TAR preservation ===
@@ -27,13 +27,14 @@ touch "${DPX_PATH}dpx_failures_list.txt"
 log "===================== DPX assessment workflows start ====================="
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
-find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
+find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d | while IFS= read -r files; do
     # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
     dpx=$(ls "$files" | head -5 | tail -1)
-    dimension=$(basename "$files")
+    reel=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
-    filename=$(basename "$(dirname "$(dirname "$files")")")
-    file_scan_name="$filename/$scans"
+    dimensions=$(basename "$(dirname "$(dirname "$files")")")
+    filename=$(basename "$(dirname "$(dirname "$(dirname "$files")")")")
+    file_scan_name="$filename/$dimensions/$scans"
     count_queued_pass=$(grep -c "$file_scan_name" "${DPX_PATH}rawcook_dpx_success.log")
     count_queued_fail=$(grep -c "$file_scan_name" "${DPX_PATH}tar_dpx_failures.log")
 
@@ -41,12 +42,12 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
         then
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
-            log "- ${file_scan_name}/${dimension}/${dpx}"
+            log "- ${file_scan_name}/$reel/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
 
             # Start comparison of first dpx file against mediaconch policy
-            check=$(mediaconch --force -p "${POLICY_PATH}rawcooked_dpx_policy.xml" "${files}/$dpx" | grep "pass!")
+            check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
             if [ -z "$check" ]
                 then
                     log "FAIL: $file_scan_name DOES NOT CONFORM TO MEDIACONCH POLICY. Adding to tar_dpx_failures_list.txt"
