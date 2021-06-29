@@ -7,7 +7,7 @@
 # Global variables extracted from environmental variables
 SCRIPT_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${FILM_OPS}${DPX_COOK}"
-MKV_DEST="${FILM_OPS}${MKV_ENCODED}"
+MKV_DEST="${QNAP_FILM}${MKV_ENCODED}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
@@ -46,7 +46,7 @@ cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
 log "DPX folder will be cooked using --check-padding:\n${cook_retry}"
 
 # Begin RAWcooked processing with GNU Parallel using --check-padding
-cat "${MKV_DEST}retry_list.txt" | parallel --jobs 5 "rawcooked -y --all -framerate 24 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list.txt" | parallel --jobs 5 "rawcooked -y --all ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 # ========================
 # === RAWcook pass two ===
@@ -75,6 +75,6 @@ cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
 log "DPX folder will be cooked: ${cook_list}"
 
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 5 "rawcooked -y --all -framerate 24 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 5 "rawcooked -y --all ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="

@@ -44,7 +44,9 @@ cat "${DPX_PATH}temp_dpx_list.txt" | while IFS= read -r files; do
         on_global=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$THIS_MONTH")
         if [ -z "$on_global" ]
           then
-            retry=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$LAST_MONTH")
+            retry=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' )
+#            Temp removed month limitation for old ingested TAR items being used to test clean up script
+#            retry=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$LAST_MONTH")
             if [ -z "$retry" ]
               then
                 skipped=$(grep "$trim_file" "$GLOB_LOG" | grep 'Skip object' | grep "$THIS_MONTH")
@@ -80,7 +82,7 @@ if [ -z "$file_list" ]
         grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
         log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+#        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 log "============= DPX clean up script END ============="
