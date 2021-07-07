@@ -139,11 +139,11 @@ def workout_division(arg, kb_size):
     if 'rawcooked' in arg:
         if kb_size < 1503237:
             division = None
-        elif kb_size >= 1503238 and kb_size <= 3006476:
+        elif 1503238 <= kb_size <= 3006476:
             division = '2'
-        elif kb_size >= 3006477 and kb_size <= 4509714:
+        elif 3006477 <= kb_size <= 4509714:
             division = '3'
-        elif kb_size >= 4509715 and kb_size <= 6012954:
+        elif 4509715 <= kb_size <= 6012954:
             division = '4'
         elif kb_size >= 6012954:
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting:\n%s", kb_size)
@@ -153,13 +153,13 @@ def workout_division(arg, kb_size):
     elif 'tar' in arg:
         if kb_size < 1073741:
             division = None
-        elif kb_size >= 1073742 and kb_size <= 2147482:
+        elif 1073742 <= kb_size <= 2147482:
             division = '2'
-        elif kb_size >= 2147483 and kb_size <= 3221224:
+        elif 2147483 <= kb_size <= 3221224:
             division = '3'
-        elif kb_size >= 3221225 and kb_size <= 4294966:
+        elif 3221225 <= kb_size <= 4294966:
             division = '4'
-        elif kb_size >= 4294967 and kb_size <= 5368709:
+        elif 4294967 <= kb_size <= 5368709:
             division = '5'
         elif kb_size >= 5368710:
             LOGGER.warning("workout_division(): TAR file is too large for DPX splitting:\n%s", kb_size)
@@ -168,13 +168,13 @@ def workout_division(arg, kb_size):
     if 'rawcooked' in arg:
         if kb_size < 1503238552:
             division = None
-        elif kb_size => 1503238553 and kb_size =< 3006477107:
+        elif 1503238553 <= kb_size <= 3006477107:
             division = '2'
-        elif kb_size => 3006477108 and kb_size =< 4509715660:
+        elif 3006477108 <= kb_size <= 4509715660:
             division = '3'
-        elif kb_size => 4509715661 and kb_size =< 6012954214:
+        elif 4509715661 <= kb_size <= 6012954214:
             division = '4'
-        else kb_size => 6012954215:
+        else kb_size >= 6012954215:
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting:\n%s", kb_size)
             division = 'oversize'
 
@@ -182,15 +182,15 @@ def workout_division(arg, kb_size):
     elif 'tar' in arg:
         if kb_size < 1073741823:
             division = None
-        elif kb_size => 1073741824 and kb_size =< 2147483648:
+        elif 1073741824 <= kb_size <= 2147483648:
             division = '2'
-        elif kb_size => 2147483649 and kb_size =< 3221225472:
+        elif 2147483649 <= kb_size <= 3221225472:
             division = '3'
-        elif kb_size => 3221225473 and kb_size =< 4294967296:
+        elif 3221225473 <= kb_size <= 4294967296:
             division = '4'
-        elif kb_size => 4294967297 and kb_size =< 5368709120:
+        elif 4294967297 <= kb_size <= 5368709120:
             division = '5'
-        else kb_size => 5368709121:
+        else kb_size >= 5368709121:
             LOGGER.warning("workout_division(): TAR file is too large for DPX splitting:\n%s", kb_size)
             division = 'oversize'
     '''
