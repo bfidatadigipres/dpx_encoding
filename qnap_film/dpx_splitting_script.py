@@ -17,19 +17,20 @@ import logging
 import csv
 import datetime
 
-# Global vars
-ERRORS = os.environ('CURRENT_ERRORS')
-SCRIPT_LOG = os.environ('DPX_SCRIPT_LOG')
+# Global variables
+QNAP_PATH = os.environ['QNAP_FILM']
+ERRORS = os.path.join(QNAP_PATH, os.environ['CURRENT_ERRORS'])
+SCRIPT_LOG = os.path.join(QNAP_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 PART_WHOLE_LOG = os.path.join(ERRORS, 'part_whole_search.log')
 SPLITTING_LOG = os.path.join(SCRIPT_LOG, 'DPX_splitting.log')
-TAR_PATH = os.path.join(os.environ('FILM_OPS'), os.environ('DPX_WRAP'))
-RAWCOOKED_PATH = os.path.join(os.environ('FILM_OPS'), os.environ('DPX_COOK'))
+TAR_PATH = os.path.join(QNAP_PATH, os.environ['DPX_WRAP'])
+RAWCOOKED_PATH = os.path.join(QNAP_PATH, os.environ['DPX_COOK'])
 TODAY = str(datetime.datetime.now())[:10]
 
 # Setup logging
-LOGGER = logging.getLogger('batch_transcode_h22_ffv1_v210')
-HDLR = logging.FileHandler(os.path.join(os.environ('DPX_SCRIPT_LOG'), 'dpx_splitting_script.log'))
+LOGGER = logging.getLogger('dpx_splitting_script.log')
+HDLR = logging.FileHandler(os.path.join(SCRIPT_LOG, 'dpx_splitting_script.log'))
 FORMATTER = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 HDLR.setFormatter(FORMATTER)
 LOGGER.addHandler(HDLR)
@@ -122,9 +123,10 @@ def fname_split(fname):
     Return items split up
     '''
     name_split = fname.split('_')
-    part_whole = name_split[2].split('of')
+    part_whole = name_split[2]
+    part, whole = part_whole.split('of')
 
-    return (name_split[0] + '_' + name_split[1] + '_', part_whole[0], part_whole[1])
+    return (name_split[0] + '_' + name_split[1] + '_', part, whole)
 
 
 def workout_division(arg, kb_size):
@@ -137,16 +139,16 @@ def workout_division(arg, kb_size):
 
     # Size calculation for RAWcooked encoding sizes
     if 'rawcooked' in arg:
-        if kb_size < 1503237:
+        if kb_size < 150323007:
             division = None
-        elif 1503238 <= kb_size <= 3006476:
+        elif kb_size >= 150323008 and kb_size <= 300647006:
             division = '2'
-        elif 3006477 <= kb_size <= 4509714:
+        elif kb_size >= 300647007 and kb_size <= 450971004:
             division = '3'
-        elif 4509715 <= kb_size <= 6012954:
+        elif kb_size >= 450971005 and kb_size <= 601295004:
             division = '4'
-        elif kb_size >= 6012954:
-            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting:\n%s", kb_size)
+        elif kb_size >= 601295004:
+            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s", kb_size)
             division = 'oversize'
 
     # Size calculation for tar encoding sizes
@@ -162,7 +164,7 @@ def workout_division(arg, kb_size):
         elif 4294967 <= kb_size <= 5368709:
             division = '5'
         elif kb_size >= 5368710:
-            LOGGER.warning("workout_division(): TAR file is too large for DPX splitting:\n%s", kb_size)
+            LOGGER.warning("workout_division(): TAR file is too large for DPX splitting: %s", kb_size)
             division = 'oversize'
     '''
     if 'rawcooked' in arg:
@@ -175,7 +177,7 @@ def workout_division(arg, kb_size):
         elif 4509715661 <= kb_size <= 6012954214:
             division = '4'
         else kb_size >= 6012954215:
-            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting:\n%s", kb_size)
+            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
     # Size calculation for tar encoding sizes
@@ -191,7 +193,7 @@ def workout_division(arg, kb_size):
         elif 4294967297 <= kb_size <= 5368709120:
             division = '5'
         else kb_size >= 5368709121:
-            LOGGER.warning("workout_division(): TAR file is too large for DPX splitting:\n%s", kb_size)
+            LOGGER.warning("workout_division(): TAR file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
     '''
     return division
@@ -203,9 +205,10 @@ def return_range_prior(fname, division):
     create all fnames that precede in that same range for update to CSV
     '''
     splt = fname.split('_')
-    part_whole = splt[2].split('of')
-    part = int(part_whole[0])
-    whole = int(part_whole[1])
+    part_whole = splt[2]
+    part, whole = part_whole.split('of')
+    part = int(part)
+    whole = int(whole)
     division = int(division) - 1
     whole_count = whole + division
     change_list = []
@@ -214,7 +217,6 @@ def return_range_prior(fname, division):
     for count in range(1, whole_count + 1):
         new_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole_count).zfill(2)
         old_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole).zfill(2)
-
         # output old_name / new_name to CSV
         change_list.append({old_name: new_name})
 
@@ -235,8 +237,8 @@ def folder_update_creation(dpx_sequence, division):
         dpx_seq_renumber = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
         part += 1
         dpx_seq_new_folder = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
-        change_list.append({'dpx_sequence': dpx_sequence_renumber})
-        change_list.append({'None': dpx_seq_new_folder})
+        change_list.append({dpx_sequence: dpx_seq_renumber})
+        change_list.append({'New folder': dpx_seq_new_folder})
 
     if division == '3':
         whole += 2
@@ -245,9 +247,9 @@ def folder_update_creation(dpx_sequence, division):
         dpx_seq_new_folder1 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
         part += 1
         dpx_seq_new_folder2 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
-        change_list.append({'dpx_sequence': dpx_sequence_renumber})
-        change_list.append({'None': dpx_seq_new_folder1})
-        change_list.append({'None': dpx_seq_new_folder2})
+        change_list.append({dpx_sequence: dpx_seq_renumber})
+        change_list.append({'New folder': dpx_seq_new_folder1})
+        change_list.append({'New folder': dpx_seq_new_folder2})
 
     if division == '4':
         whole += 3
@@ -258,10 +260,10 @@ def folder_update_creation(dpx_sequence, division):
         dpx_seq_new_folder2 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
         part += 1
         dpx_seq_new_folder3 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
-        change_list.append({'dpx_sequence': dpx_sequence_renumber})
-        change_list.append({'None': dpx_seq_new_folder1})
-        change_list.append({'None': dpx_seq_new_folder2})
-        change_list.append({'None': dpx_seq_new_folder3})
+        change_list.append({dpx_sequence: dpx_seq_renumber})
+        change_list.append({'New folder': dpx_seq_new_folder1})
+        change_list.append({'New folder': dpx_seq_new_folder2})
+        change_list.append({'New folder': dpx_seq_new_folder3})
 
     if division == '5':
         whole += 4
@@ -274,11 +276,11 @@ def folder_update_creation(dpx_sequence, division):
         dpx_seq_new_folder3 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
         part += 1
         dpx_seq_new_folder4 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
-        change_list.append({'dpx_sequence': dpx_sequence_renumber})
-        change_list.append({'None': dpx_seq_new_folder1})
-        change_list.append({'None': dpx_seq_new_folder2})
-        change_list.append({'None': dpx_seq_new_folder3})
-        change_list.append({'None': dpx_seq_new_folder4})
+        change_list.append({dpx_sequence: dpx_seq_renumber})
+        change_list.append({'New folder': dpx_seq_new_folder1})
+        change_list.append({'New folder': dpx_seq_new_folder2})
+        change_list.append({'New folder': dpx_seq_new_folder3})
+        change_list.append({'New folder': dpx_seq_new_folder4})
 
     return change_list
 
@@ -289,23 +291,24 @@ def return_range_following(fname, division):
     create all fnames that follow in that same range for update to CSV
     '''
     splt = fname.split('_')
-    part_whole = splt[2].split('of')
-    part = int(part_whole[0])
-    whole = int(part_whole[1])
+    part_whole = splt[2]
+    part, whole = part_whole.split('of')
+    part = int(part)
+    whole = int(whole)
     division = int(division) - 1
     part_count = part + division
     whole_count = whole + division
     change_list = []
 
     # Create new numbered files
-    for count in range(whole_count, part_count, -1):
+    for count in range(part_count + 1, whole_count + 1):
         new_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole_count).zfill(2)
         count -= division
-        old_name = split[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole).zfill(2)
+        old_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole).zfill(2)
         # output old_name / new_name to list dict
         change_list.append({old_name: new_name})
 
-    return change_list.reverse()  # returns order counting upward using reverse()
+    return change_list
 
 
 def main():
@@ -323,11 +326,7 @@ def main():
         kb_size = sys.argv[1]
         dpx_path = sys.argv[2]
         encoding = sys.argv[3]  # 'rawcooked' or 'tar' passed from shell script
-        if os.path.isdir(dpx_path):
-            dpx_sequence = os.path.basename(dpx_path)
-        else:
-            LOGGER.info("The supplied sys.argv isn't a directory path %s. Script exiting", dpx_path)
-            sys.exit()
+        dpx_sequence = os.path.basename(dpx_path)
 
         LOGGER.info("================== START Python3 DPX splitting script < %s > START ==================", dpx_sequence)
 
@@ -335,7 +334,7 @@ def main():
         new_num = read_csv(dpx_sequence)
 
         # Renumber folder and update dpx_path / dpx_sequence
-        if len(new_num) > 5:
+        if new_num:
             try:
                 new_path = renumber(dpx_path, new_num)
                 LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
@@ -351,6 +350,7 @@ def main():
 
         ## Does this sequence need splitting?
         division = workout_division(encoding, kb_size)
+
         # Name preparations for folder splitting
         fname, part, whole = fname_split(dpx_sequence)
         path_split = os.path.split(dpx_path)
@@ -387,22 +387,26 @@ def main():
             sys.exit()
 
         ## Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
-        elif '2' in division:
+        else:
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
+
+            # Generate new folder names from dpx_sequence/division
+            pre_foldername_list = return_range_prior(dpx_sequence, division)
+            folder_name_list_new = folder_update_creation(dpx_sequence, division)
+            post_folder_name_list = return_range_following(dpx_sequence, division)
+            print("Pre-folder number changes:")
+            print(pre_foldername_list)
+            print("New folder numbers, change to current folder:")
+            print(folder_name_list_new)
+            print("Post-folder number changes:")
+            print(post_folder_name_list)
 
             # Find dpx_dirpath for all scan folders containing DPX files
             for root, dirs, files in os.walk(dpx_path):
                 for file in files:
                     if file.endswith((".dpx", ".DPX")):
                         LOGGER.info("*** Folder path for splitting %s", root)
-
-                        # Use root path to begin splitting processess
-                        pre_foldername_list = return_range_prior(dpx_sequence, division)
-                        folder_name_list_new = folder_update_creation(dpx_sequence, division)
-                        post_folder_name_list = return_range_following(dpx_sequence, division)
-                        print(pre_foldername_list)
-                        print(folder_name_list_new)
-                        print(post_folder_name_list)
+                        break
 
                         '''
                         structure = os.path.join(new_folder_path, os.path.relpath(root, dpx_path))
