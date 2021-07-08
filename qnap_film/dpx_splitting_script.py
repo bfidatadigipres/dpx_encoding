@@ -222,7 +222,7 @@ def return_range_prior(dpx_sequence, division):
     return change_list[:part - 1]
 
 
-def folder_update_creation(dpx_sequence, division):
+def folder_update_creation(dpx_sequence, division, root_path):
     '''
     Take DPX path and rename/create new folders based on division
     '''
@@ -230,6 +230,7 @@ def folder_update_creation(dpx_sequence, division):
     part = int(part)
     whole = int(whole)
     change_list = []
+    folder1, folder2, folder3, folder4 = '', '', '', ''
 
     if division == '2':
         whole += 1
@@ -238,6 +239,7 @@ def folder_update_creation(dpx_sequence, division):
         dpx_seq_new_folder = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
         change_list.append({dpx_sequence: dpx_seq_renumber})
         change_list.append({'New folder': dpx_seq_new_folder})
+        folder1 = os.path.join(root_path, dpx_seq_new_folder)
 
     if division == '3':
         whole += 2
@@ -249,6 +251,8 @@ def folder_update_creation(dpx_sequence, division):
         change_list.append({dpx_sequence: dpx_seq_renumber})
         change_list.append({'New folder': dpx_seq_new_folder1})
         change_list.append({'New folder': dpx_seq_new_folder2})
+        folder1 = os.path.join(root_path, dpx_seq_new_folder1)
+        folder2 = os.path.join(root_path, dpx_seq_new_folder2)
 
     if division == '4':
         whole += 3
@@ -263,6 +267,10 @@ def folder_update_creation(dpx_sequence, division):
         change_list.append({'New folder': dpx_seq_new_folder1})
         change_list.append({'New folder': dpx_seq_new_folder2})
         change_list.append({'New folder': dpx_seq_new_folder3})
+        folder1 = os.path.join(root_path, dpx_seq_new_folder1)
+        folder2 = os.path.join(root_path, dpx_seq_new_folder2)
+        folder3 = os.path.join(root_path, dpx_seq_new_folder3)
+
 
     if division == '5':
         whole += 4
@@ -280,8 +288,12 @@ def folder_update_creation(dpx_sequence, division):
         change_list.append({'New folder': dpx_seq_new_folder2})
         change_list.append({'New folder': dpx_seq_new_folder3})
         change_list.append({'New folder': dpx_seq_new_folder4})
+        folder1 = os.path.join(root_path, dpx_seq_new_folder1)
+        folder2 = os.path.join(root_path, dpx_seq_new_folder2)
+        folder3 = os.path.join(root_path, dpx_seq_new_folder3)
+        folder4 = os.path.join(root_path, dpx_seq_new_folder4)
 
-    return change_list
+    return (change_list, folder1, folder2, folder3, folder4)
 
 
 def return_range_following(dpx_sequence, division):
@@ -389,46 +401,97 @@ def main():
 
             # Generate new folder names from dpx_sequence/division
             pre_foldername_list = return_range_prior(dpx_sequence, division)
-            folder_name_list_new = folder_update_creation(dpx_sequence, division)
-            post_folder_name_list = return_range_following(dpx_sequence, division)
+            data = folder_update_creation(dpx_sequence, division, root_path)
+            foldername_list_new = data[0]
+            folder1 = data[1]
+            if data[2]:
+                folder2 = data[2]
+            if data[3]:
+                folder3 = data[3]
+            if data[4]:
+                folder4 = data[4]
+            post_foldername_list = return_range_following(dpx_sequence, division)
             print("Pre-folder number changes:")
             print(pre_foldername_list)
             print("New folder numbers, change to current folder:")
-            print(folder_name_list_new)
+            print(foldername_list_new)
             print("Post-folder number changes:")
-            print(post_folder_name_list)
+            print(post_foldername_list)
 
+            # Append all new numbers to CSV
+            if pre_foldername_list.count('N_') > 0:
+                for keys, vals in pre_foldername_list[0].items():
+                    for key in keys:
+                        # iterate through list and write key/value pair to CSV
+                        pass
+            for key, val in foldername_list_new[0].items():
+                if dpx_sequence in key:
+                    new_dpx_sequence = val
+                    print(new_dpx_sequence)
+                    LOGGER.info("New sequence number retrieved for this DPX sequence: %s", new_dpx_sequence)
+                else:
+                    print("Error accessing key/val")
+                    LOGGER.warning("Unable to retrieve new DPX sequence number for: %s", dpx_sequence)
+                for key_pair in key:
+                    # iterate through list and write key/value pair to CSV
+                    pass
+            if post_foldername_list.count('N_') > 0:
+                for keys, vals in post_foldername_list[0].items():
+                    for key in keys:
+                        # iterate through list and write key/value pair to CSV
+                        pass
+
+            folder1, folder2, folder3, folder4 = '', '', '', ''
             # Find dpx_dirpath for all scan folders containing DPX files
             for root, dirs, files in os.walk(dpx_path):
                 for file in files:
                     if file.endswith((".dpx", ".DPX")):
+                        dpx_dirpath = root
                         LOGGER.info("*** Folder path for splitting %s", root)
-                        break
 
-                        '''
-                        structure = os.path.join(new_folder_path, os.path.relpath(root, dpx_path))
-                        try:
-                            os.makedirs(structure, exists_ok=True)
-                        except OsError:
-                            LOGGER.warning("Exiting script: Unable to create new folder structure: %s", structure)
-                            sys.exit()
+                        new_folder1 = os.path.join(folder1, os.path.relpath(root, dpx_path))
+                        make_dirs(new_folder1)
+                        if folder2:
+                            new_folder2 = os.path.join(folder2, os.path.relpath(root, dpx_path))
+                            make_dirs(new_folder2)
+                        if folder3:
+                            new_folder3 = os.path.join(folder3, os.path.relpath(root, dpx_path))
+                            make_dirs(new_folder3)
+                        if folder4:
+                            new_folder4 = os.path.join(folder4, os.path.relpath(root, dpx_path))
+                            make_dirs(new_folder4)
 
                         # One new folder to be created
-                        LOGGER.info("Folder %s will be divided into two", dpx_sequence)
+                        LOGGER.info("Folder %s will be divided into %s divisions", dpx_sequence, division)
 
-                        success = make_dirs(dpx_path, new_split_sequence)
-                        if success:
-                            # Obtain: file_count, cuts, dpx_block1, dpx_block2
-                            block_data = count_files(dpx_dirpath, division)
-                            block_list = block_data[0]
-                            dpx_list = block_data[1]
-                            for key, value in dpx_list[0].items():
-                                if 'block' in key:
-                                    for dpx in v:
-                                        dpx_to_move = os.path.join(root, dpx)
-                                        dpx_destination = os.path.join(root_path, dpx_sequence_new_folder)
-                                        shutil.move(dpx_path, new_dpx_path)
-                        '''
+                        # Obtain: file_count, cuts, dpx_block1, dpx_block2
+                        block_data = count_files(dpx_dirpath, division)
+                        block_list = block_data[0]
+                        print(block_list)
+                        dpx_list = block_data[1]
+                        for key, val in dpx_list[0].items():
+                            if 'block1' in key:
+                                for dpx in val:
+                                    dpx_to_move = os.path.join(root, dpx)
+                                    print("Move {} to folder path 1 {}".format(dpx_to_move, new_folder1))
+                                    # shutil.move(dpx_to_move, new_folder1)
+                            if 'block2' in key:
+                                for dpx in val:
+                                    dpx_to_move = os.path.join(root, dpx)
+                                    print("Move {} to folder path 2 {}".format(dpx_to_move, new_folder2))
+                                    # shutil.move(dpx_to_move, new_folder2)
+                            if 'block3' in key:
+                                for dpx in val:
+                                    dpx_to_move = os.path.join(root, dpx)
+                                    print("Move {} to folder path 3 {}".format(dpx_to_move, new_folder3))
+                                    # shutil.move(dpx_to_move, new_folder3)
+                            if 'block4' in key:
+                                for dpx in val:
+                                    dpx_to_move = os.path.join(root, dpx)
+                                    print("Move {} to folder path 4 {}".format(dpx_to_move, new_folder4))
+                                    # shutil.move(dpx_to_move, new_folder4)
+                        break
+
 
 def mass_move(dpx_path, new_path):
     '''
@@ -461,25 +524,25 @@ def renumber(dpx_path, new_num):
         return False
 
 
-def make_dirs(root_path, dpx_path, new_dpx_sequence):
+def make_dirs(new_path):
     '''
     Makes new folder path directory for each split path
     One at a time, if multiple splits then this function to be
     called multiple times to create directory
     '''
-    dpx_path = dpx_path.rstrip('/')
-    path, old_sequence = os.path.split(dpx_path)
-    new_dirpath = os.path.join(path, new_dpx_sequence)
+#    dpx_path = dpx_path.rstrip('/')
+#    path, old_sequence = os.path.split(dpx_path)
+#    new_dirpath = os.path.join(path, new_dpx_sequence)
     # os.path.relpath takes remaining folders from first path not in second path
-    whole_dirpath = os.path.join(new_dirpath, os.path.relpath(root_path, dpx_path))
+#    whole_dirpath = os.path.join(new_dirpath, os.path.relpath(root_path, dpx_path))
 
     try:
-        os.makedirs(whole_dirpath, exist_ok=True)
-        LOGGER.info("make_dirs(): New path mkdir: %s", whole_dirpath)
-        return whole_dirpath
+        os.makedirs(new_path, exist_ok=True)
+        LOGGER.info("make_dirs(): New path mkdir: %s", new_path)
+        return True
     except Exception as error:
-        print("Unable to make new directory {}".format(whole_dirpath))
-        LOGGER.warning("make_dirs(): Unable to make new directory: %s", whole_dirpath, error)
+        print("Unable to make new directory {}".format(new_path))
+        LOGGER.warning("make_dirs(): Unable to make new directory: %s", new_path, error)
         return None
 
 
