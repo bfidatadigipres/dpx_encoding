@@ -122,6 +122,7 @@ def fname_split(fname):
     Receive a filename extract part whole from end
     Return items split up
     '''
+    fname = fname.rstrip('/')
     name_split = fname.split('_')
     part_whole = name_split[2]
     part, whole = part_whole.split('of')
@@ -141,11 +142,11 @@ def workout_division(arg, kb_size):
     if 'rawcooked' in arg:
         if kb_size < 150323007:
             division = None
-        elif kb_size >= 150323008 and kb_size <= 300647006:
+        elif 150323008 <= kb_size <= 300647006:
             division = '2'
-        elif kb_size >= 300647007 and kb_size <= 450971004:
+        elif 300647007 <= kb_size <= 450971004:
             division = '3'
-        elif kb_size >= 450971005 and kb_size <= 601295004:
+        elif 450971005 <= kb_size <= 601295004:
             division = '4'
         elif kb_size >= 601295004:
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s", kb_size)
@@ -199,14 +200,12 @@ def workout_division(arg, kb_size):
     return division
 
 
-def return_range_prior(fname, division):
+def return_range_prior(dpx_sequence, division):
     '''
     Receive file being processed, extract part whole data
     create all fnames that precede in that same range for update to CSV
     '''
-    splt = fname.split('_')
-    part_whole = splt[2]
-    part, whole = part_whole.split('of')
+    fname, part, whole = fname_split(dpx_sequence)
     part = int(part)
     whole = int(whole)
     division = int(division) - 1
@@ -215,8 +214,8 @@ def return_range_prior(fname, division):
 
     # Create new numbered files
     for count in range(1, whole_count + 1):
-        new_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole_count).zfill(2)
-        old_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole).zfill(2)
+        new_name = fname + str(count).zfill(2) + 'of' + str(whole_count).zfill(2)
+        old_name = fname + str(count).zfill(2) + 'of' + str(whole).zfill(2)
         # output old_name / new_name to CSV
         change_list.append({old_name: new_name})
 
@@ -285,14 +284,12 @@ def folder_update_creation(dpx_sequence, division):
     return change_list
 
 
-def return_range_following(fname, division):
+def return_range_following(dpx_sequence, division):
     '''
     Receive file being processed, extract part whole data
     create all fnames that follow in that same range for update to CSV
     '''
-    splt = fname.split('_')
-    part_whole = splt[2]
-    part, whole = part_whole.split('of')
+    fname, part, whole = fname_split(dpx_sequence)
     part = int(part)
     whole = int(whole)
     division = int(division) - 1
@@ -302,9 +299,9 @@ def return_range_following(fname, division):
 
     # Create new numbered files
     for count in range(part_count + 1, whole_count + 1):
-        new_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole_count).zfill(2)
+        new_name = fname + str(count).zfill(2) + 'of' + str(whole_count).zfill(2)
         count -= division
-        old_name = splt[0] + '_' + splt[1] + '_' + str(count).zfill(2) + 'of' + str(whole).zfill(2)
+        old_name = fname + str(count).zfill(2) + 'of' + str(whole).zfill(2)
         # output old_name / new_name to list dict
         change_list.append({old_name: new_name})
 
@@ -323,13 +320,13 @@ def main():
         LOGGER.warning("SCRIPT EXITING: Error with shell script input:\n %s", sys.argv)
         sys.exit()
     else:
+        LOGGER.info("================== START Python3 DPX splitting script START ==================")
         kb_size = sys.argv[1]
         dpx_path = sys.argv[2]
         encoding = sys.argv[3]  # 'rawcooked' or 'tar' passed from shell script
+        dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
-
-        LOGGER.info("================== START Python3 DPX splitting script < %s > START ==================", dpx_sequence)
-
+        LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
         ## Check if sequence has new numbering that should be updated
         new_num = read_csv(dpx_sequence)
 
