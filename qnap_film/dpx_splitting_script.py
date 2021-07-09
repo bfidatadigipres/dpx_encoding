@@ -172,7 +172,7 @@ def workout_division(arg, kb_size):
             division = '3'
         elif 4509715661 <= kb_size <= 6012954214:
             division = '4'
-        else kb_size >= 6012954215:
+        elif kb_size >= 6012954215:
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
@@ -188,7 +188,7 @@ def workout_division(arg, kb_size):
             division = '4'
         elif 4294967297 <= kb_size <= 5368709120:
             division = '5'
-        else kb_size >= 5368709121:
+        elif kb_size >= 5368709121:
             LOGGER.warning("workout_division(): TAR file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
@@ -344,7 +344,7 @@ def main():
                 LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
                 LOGGER.info("DPX sequence path %s will be reconfigured to %s", dpx_path, new_path)
                 splitting_log("\n*** DPX sequence found in CSV and needs renumbering")
-                splitting_log("DPX sequence path {} being renumbered to {}".format(dpx_path, newpath))
+                splitting_log("DPX sequence path {} being renumbered to {}".format(dpx_path, new_path))
                 dpx_path = new_path
                 dpx_sequence = new_num
             except Exception as err:
