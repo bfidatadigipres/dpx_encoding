@@ -480,6 +480,7 @@ def main():
                         if folder4:
                             splitting_log("First DPX number is {} for new folder: {}".format(block_list[6], new_folder4))
 
+                        LOGGER.info("Block data being calculated and DPX moved to final destinations")
                         print("Block data for slices: {}".format(block_list))
                         dpx_list = block_data[1]
                         for dictionary in dpx_list:
@@ -501,6 +502,7 @@ def main():
                                         dpx_to_move = os.path.join(root, dpx)
                                         shutil.move(dpx_to_move, new_folder4)
 
+                        LOGGER.info("Splitting completed for path: %s", root)
                         break
 
 
