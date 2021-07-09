@@ -349,6 +349,8 @@ def main():
                 new_path = renumber(dpx_path, new_num)
                 LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
                 LOGGER.info("DPX sequence path %s will be reconfigured to %s", dpx_path, new_path)
+                splitting_log("\n*** DPX sequence found in CSV and needs renumbering")
+                splitting_log("DPX sequence path {} being renumbered to {}".format(dpx_path, newpath))
                 dpx_path = new_path
                 dpx_sequence = new_num
             except Exception as err:
@@ -403,7 +405,7 @@ def main():
         ## Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
         else:
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
-            splitting_log("-------------------------------------------------------------------")
+            splitting_log("-------------------------------- SPLIT START -----------------------------------")
             splitting_log("NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{}".format(dpx_path))
             splitting_log("DPX sequence encoding <{}> is {} KB in size, requiring {} divisions".format(encoding, kb_size, division))
 
@@ -420,19 +422,14 @@ def main():
             if data[4]:
                 folder4 = data[4]
             post_foldername_list = return_range_following(dpx_sequence, division)
-            print("Pre-folder number changes:")
-            print(pre_foldername_list)
-            print("New folder numbers, change to current folder:")
-            print(foldername_list_new)
-            print("Post-folder number changes:")
-            print(post_foldername_list)
 
             # Append all new numbers to CSV
+            splitting_log("\New folder numbers:")
             if len(pre_foldername_list) > 0:
                 for dic in pre_foldername_list:
                     for key, val in dic.items():
                         write_csv(key, val)
-                        splitting_log("New folder numbers:\n{} will become {}".format(key, val))
+                        splitting_log("{} will be renumbered {}".format(key, val))
             for dic in foldername_list_new:
                 for key, val in dic.items():
                     if dpx_sequence in key:
@@ -443,16 +440,15 @@ def main():
                         dpx_path = new_path
                         print("!!! NEW DPX SEQ NUMBER: {}, {}".format(dpx_sequence, dpx_path))
                         LOGGER.info("New sequence number retrieved for this DPX sequence: %s", dpx_sequence)
-                        splitting_log("DPX sequence renumbered: {}".format(dpx_sequence))
                         LOGGER.info("DPX path updated: %s", dpx_path)
                 for key, val in dic.items():
                     write_csv(key, val)
-                    splitting_log("{} will become {}".format(key, val))
+                    splitting_log("{} will be renumbered {}".format(key, val))
             if len(post_foldername_list) > 0:
                 for dic in post_foldername_list:
                     for key, val in dic.items():
                         write_csv(key, val)
-                        splitting_log("{} will become {}".format(key, val))
+                        splitting_log("{} will be renumbered {}".format(key, val))
 
             new_folder1, new_folder2, new_folder3, new_folder4 = '', '', '', ''
             # Find dpx_dirpath for all scan folders containing DPX files
@@ -461,7 +457,7 @@ def main():
                     if file.endswith((".dpx", ".DPX")):
                         dpx_dirpath = root
                         LOGGER.info("*** Folder path for splitting %s", root)
-                        splitting_log("*** Making new folders with new sequence names for path: {}".format(root))
+                        splitting_log("/n*** Making new folders with new sequence names for path: {}".format(root))
                         new_folder1 = os.path.join(folder1, os.path.relpath(root, dpx_path))
                         make_dirs(new_folder1)
                         if folder2:
@@ -473,7 +469,7 @@ def main():
                         if folder4:
                             new_folder4 = os.path.join(folder4, os.path.relpath(root, dpx_path))
                             make_dirs(new_folder4)
-                        splitting_log("New folders created:\n{}\n{}\n{}\n{}".format(new_folder1, new_folder2, new_folder3, new_folder4))
+                        print("New folders created:\n{}\n{}\n{}\n{}".format(new_folder1, new_folder2, new_folder3, new_folder4))
 
                         # Obtain: file_count, cuts, dpx_block data
                         LOGGER.info("Folder %s will be divided into %s divisions now", dpx_sequence, division)
@@ -481,14 +477,14 @@ def main():
                         block_list = block_data[0]
 
                         # Output data to splitting log
-                        splitting_log("\nFolder {} contains {} DPX items. Division {}, {} items per new folder".format(dpx_sequence, block_list[0], division, block_list[1]))
-                        splitting_log("First DPX number is {} for new folder: {}".format(block_list[2], folder1))
+                        splitting_log("\nFolder {} contains {} DPX items. Requires {} divisions, {} items per new folder".format(dpx_sequence, block_list[0], division, block_list[1]))
+                        splitting_log("First DPX number is {} for new folder: {}".format(block_list[3], new_folder1))
                         if folder2:
-                            splitting_log("First DPX number is {} for new folder: {}".format(block_list[3], folder2))
+                            splitting_log("First DPX number is {} for new folder: {}".format(block_list[4], new_folder2))
                         if folder3:
-                            splitting_log("First DPX number is {} for new folder: {}".format(block_list[4], folder3))
+                            splitting_log("First DPX number is {} for new folder: {}".format(block_list[5], new_folder3))
                         if folder4:
-                            splitting_log("First DPX number is {} for new folder: {}".format(block_list[5], folder4))
+                            splitting_log("First DPX number is {} for new folder: {}".format(block_list[6], new_folder4))
 
                         print("Block data for slices: {}",format(block_list))
                         dpx_list = block_data[1]
@@ -584,7 +580,7 @@ def splitting_log(data):
     if len(data) > 0:
         with open(SPLITTING_LOG, 'a') as log:
             LOGGER.info("splitting_log(): Filename splitting data appended to splitting log:\n< %s >", data)
-            log.write(data)
+            log.write(data + "\n")
             log.close()
 
 
