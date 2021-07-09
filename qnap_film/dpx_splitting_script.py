@@ -362,7 +362,6 @@ def main():
         division = workout_division(encoding, kb_size)
 
         # Name preparations for folder splitting
-        fname, part, whole = fname_split(dpx_sequence)
         path_split = os.path.split(dpx_path)
         root_path = path_split[0]
 
@@ -404,7 +403,7 @@ def main():
         ## Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
         else:
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
-            splitting_log("-------------------------------------------------------------------"
+            splitting_log("-------------------------------------------------------------------")
             splitting_log("NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{}".format(dpx_path))
             splitting_log("DPX sequence encoding <{}> is {} KB in size, requiring {} divisions".format(encoding, kb_size, division))
 
