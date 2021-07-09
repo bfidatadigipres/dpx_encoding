@@ -27,6 +27,7 @@ Script functions:
    h. Each block is moved to it's corresponding new folder, one DPX at a time using shutil.move
 
 State of script:
+Configured and ready to use.
 Testing only been on sub 1TB folder examples.
 Needs large folder copies to be tested against.
 
@@ -162,36 +163,6 @@ def workout_division(arg, kb_size):
     division = ''
     kb_size = int(kb_size)
 
-    # Size calculation for RAWcooked encoding sizes
-    if 'rawcooked' in arg:
-        if kb_size < 150323007:
-            division = None
-        elif 150323008 <= kb_size <= 300647006:
-            division = '2'
-        elif 300647007 <= kb_size <= 450971004:
-            division = '3'
-        elif 450971005 <= kb_size <= 601295004:
-            division = '4'
-        elif kb_size >= 601295004:
-            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s", kb_size)
-            division = 'oversize'
-
-    # Size calculation for tar encoding sizes
-    elif 'tar' in arg:
-        if kb_size < 1073741:
-            division = None
-        elif 1073742 <= kb_size <= 2147482:
-            division = '2'
-        elif 2147483 <= kb_size <= 3221224:
-            division = '3'
-        elif 3221225 <= kb_size <= 4294966:
-            division = '4'
-        elif 4294967 <= kb_size <= 5368709:
-            division = '5'
-        elif kb_size >= 5368710:
-            LOGGER.warning("workout_division(): TAR file is too large for DPX splitting: %s", kb_size)
-            division = 'oversize'
-    '''
     if 'rawcooked' in arg:
         if kb_size < 1503238552:
             division = None
@@ -220,7 +191,7 @@ def workout_division(arg, kb_size):
         else kb_size >= 5368709121:
             LOGGER.warning("workout_division(): TAR file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
-    '''
+
     return division
 
 
