@@ -447,7 +447,7 @@ def main():
             post_foldername_list = return_range_following(dpx_sequence, division)
 
             # Append all new numbers to CSV
-            splitting_log("\New folder numbers:")
+            splitting_log("\nNew folder numbers:")
             if len(pre_foldername_list) > 0:
                 for dic in pre_foldername_list:
                     for key, val in dic.items():
@@ -509,7 +509,7 @@ def main():
                         if folder4:
                             splitting_log("First DPX number is {} for new folder: {}".format(block_list[6], new_folder4))
 
-                        print("Block data for slices: {}",format(block_list))
+                        print("Block data for slices: {}".format(block_list))
                         dpx_list = block_data[1]
                         for dictionary in dpx_list:
                             for key, val in dictionary.items():
