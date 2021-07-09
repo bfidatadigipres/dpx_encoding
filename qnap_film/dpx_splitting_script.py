@@ -72,9 +72,8 @@ def read_csv(dpx_sequence):
         for row in readme:
             orig_num = row['original']
             if str(orig_num) == str(dpx_sequence):
-                new_num = row['new_number']
-            return new_num
-        fname.close()
+                return row['new_number']
+    fname.close()
 
 
 def count_files(dirpath, division):
@@ -335,10 +334,11 @@ def main():
         dpx_sequence = os.path.basename(dpx_path)
         LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
         ## Check if sequence has new numbering that should be updated
+        print(dpx_sequence)
         new_num = read_csv(dpx_sequence)
-
+        print(new_num)
         # Renumber folder and update dpx_path / dpx_sequence
-        if new_num:
+        if len(new_num) > 0:
             try:
                 new_path = renumber(dpx_path, new_num)
                 LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
@@ -349,6 +349,7 @@ def main():
                 dpx_sequence = new_num
             except Exception as err:
                 LOGGER.warning("Renumbering failed, exiting script to avoid processing incorrect files", err)
+                LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                 sys.exit()
         # No renumbering needed
         else:
@@ -367,12 +368,14 @@ def main():
             if 'rawcooked' in encoding:
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
-                    shutil.move(dpx_path, RAWCOOKED_PATH)
-                    LOGGER.info("Move completed to RAWcooked encoding path: %s", dpx_path)
+#                    shutil.move(dpx_path, RAWCOOKED_PATH)
+                    LOGGER.info("Move %s to RAWcooked encoding path: %s", dpx_sequence, RAWCOOKED_PATH)
                     LOGGER.info("Script exiting")
+                    LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
                 except Exception as err:
                     LOGGER.warning("Unable to move folder to RAWcooked path: %s", dpx_path)
+                    LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
             elif 'tar' in encoding:
                 LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to TAR path", dpx_path)
@@ -380,9 +383,11 @@ def main():
                     shutil.move(dpx_path, TAR_PATH)
                     LOGGER.info("Move completed to TAR encoding path: %s", dpx_path)
                     LOGGER.info("Script exiting")
+                    LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
                 except Exception as err:
                     LOGGER.warning("Unable to move folder to TAR path: %s", dpx_path)
+                    LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
         ## Folder is larger than 5TB (TAR) / 5.6TB (RAWcooked) script exit
         elif 'oversize' in division:
@@ -399,7 +404,7 @@ def main():
         ## Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
         else:
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
-            splitting_log("-------------------------------- SPLIT START -----------------------------------")
+            splitting_log("\n-------------------------------- SPLIT START -----------------------------------")
             splitting_log("NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{}".format(dpx_path))
             splitting_log("DPX sequence encoding <{}> is {} KB in size, requiring {} divisions".format(encoding, kb_size, division))
 
@@ -451,7 +456,7 @@ def main():
                     if file.endswith((".dpx", ".DPX")):
                         dpx_dirpath = root
                         LOGGER.info("*** Folder path for splitting %s", root)
-                        splitting_log("/n*** Making new folders with new sequence names for path: {}".format(root))
+                        splitting_log("\n*** Making new folders with new sequence names for path: {}".format(root))
                         new_folder1 = os.path.join(folder1, os.path.relpath(root, dpx_path))
                         make_dirs(new_folder1)
                         if folder2:
@@ -504,6 +509,7 @@ def main():
 
                         LOGGER.info("Splitting completed for path: %s", root)
                         break
+            LOGGER.info("==================== END Python3 DPX splitting script END ====================")
 
 
 def mass_move(dpx_path, new_path):
