@@ -4,7 +4,7 @@
 *** THIS SCRIPT MUST RUN FROM SHELL LAUNCH SCRIPT RUNNING PARALLEL 1 JOB AT A TIME ***
 
 Receives three sys.argv items from shell script:
-KB size, path to folder, and encoding type (tar/rawcooked)
+KB size, path to folder, and encoding type (tar or luma/rawcooked)
 Script functions:
 1. Checks if dpx sequence name in CSV_PATH file
    If yes, renumbers folder and updates dpx_path/dpx_sequence variables
@@ -162,6 +162,7 @@ def workout_division(arg, kb_size):
     division = ''
     kb_size = int(kb_size)
 
+    # Size calculation for rawcooked RGB encodings
     if 'rawcooked' in arg:
         if kb_size < 1503238552:
             division = None
@@ -175,8 +176,8 @@ def workout_division(arg, kb_size):
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
-    # Size calculation for tar encoding sizes
-    elif 'tar' in arg:
+    # Size calculation for luma or tar encoding sizes
+    elif 'tar' in arg or 'luma' in arg:
         if kb_size < 1073741823:
             division = None
         elif 1073741824 <= kb_size <= 2147483648:
@@ -188,7 +189,7 @@ def workout_division(arg, kb_size):
         elif 4294967297 <= kb_size <= 5368709120:
             division = '5'
         elif kb_size >= 5368709121:
-            LOGGER.warning("workout_division(): TAR file is too large for DPX splitting: %s KB", kb_size)
+            LOGGER.warning("workout_division(): TAR or Luma Y file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
     return division
@@ -329,14 +330,13 @@ def main():
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         kb_size = sys.argv[1]
         dpx_path = sys.argv[2]
-        encoding = sys.argv[3]  # 'rawcooked' or 'tar' passed from shell script
+        encoding = sys.argv[3]  # 'rawcooked', 'luma' or 'tar' passed from shell script
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
         ## Check if sequence has new numbering that should be updated
-        print(dpx_sequence)
         new_num = read_csv(dpx_sequence)
-        print(new_num)
+        print("DPX sequence: {} Change required?: {}".format(dpx_sequence, new_num))
         # Renumber folder and update dpx_path / dpx_sequence
         if len(new_num) > 0:
             try:
@@ -365,7 +365,7 @@ def main():
         ## No division needed, sequence is below 1.4TB
         if division is None:
             LOGGER.info("No splitting necessary for: %s\nMoving to encoding path for %s", dpx_path, encoding)
-            if 'rawcooked' in encoding:
+            if 'rawcooked' in encoding or 'luma' in encoding:
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
 #                    shutil.move(dpx_path, RAWCOOKED_PATH)
@@ -389,7 +389,7 @@ def main():
                     LOGGER.warning("Unable to move folder to TAR path: %s", dpx_path)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
-        ## Folder is larger than 5TB (TAR) / 5.6TB (RAWcooked) script exit
+        ## Folder is larger than 5TB (TAR/Luma) / 5.6TB (RAWcooked) script exit
         elif 'oversize' in division:
             LOGGER.warning("OVERSIZE FOLDER: Too large for splitting script %s", dpx_path)
             LOGGER.info("Moving oversized folder %s to current_errors/oversized_sequence folder")
