@@ -27,9 +27,8 @@ Script functions:
    h. Each block is moved to it's corresponding new folder, one DPX at a time using shutil.move
 
 State of script:
-Configured and ready to use.
-Testing only been on sub 1TB folder examples.
-Needs large folder copies to be tested against.
+Configured and ready to use
+Implementation across VMs to be completed
 
 Joanna White 2021
 '''
@@ -399,7 +398,10 @@ def main():
         # Folder is larger than 5TB (TAR/Luma) / 5.6TB (RAWcooked) script exit
         elif 'oversize' in division:
             LOGGER.warning("OVERSIZE FOLDER: Too large for splitting script %s", dpx_path)
+            splitting_log("OVERSIZE FOLDER: {}. Moving to current_errors/oversized_sequence/ folder".format(dpx_sequence))
             LOGGER.info("Moving oversized folder %s to current_errors/oversized_sequence folder")
+            LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
+            part_whole_log(dpx_sequence)
             try:
                 shutil.move(dpx_path, OVERSIZED_SEQ)
             except Exception as err:
@@ -414,7 +416,8 @@ def main():
             splitting_log("\n-------------------------------- SPLIT START ----------------------------------- {}".format(TODAY_FULL))
             splitting_log("NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{}".format(dpx_path))
             splitting_log("DPX sequence encoding <{}> is {} KB in size, requiring {} divisions".format(encoding, kb_size, division))
-
+            LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
+            part_whole_log(dpx_sequence)
             # Generate new folder names from dpx_sequence/division
             folder1, folder2, folder3, folder4 = '', '', '', ''
             pre_foldername_list = return_range_prior(dpx_sequence, division)
