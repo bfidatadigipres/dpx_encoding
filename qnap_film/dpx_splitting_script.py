@@ -52,6 +52,7 @@ SPLITTING_LOG = os.path.join(SCRIPT_LOG, 'DPX_splitting.log')
 TAR_PATH = os.path.join(QNAP_PATH, os.environ['DPX_WRAP'])
 RAWCOOKED_PATH = os.path.join(QNAP_PATH, os.environ['DPX_COOK'])
 TODAY = str(datetime.datetime.now())[:10]
+TODAY_FULL = str(datetime.datetime.now())
 
 # Setup logging
 LOGGER = logging.getLogger('dpx_splitting_script.log')
@@ -66,14 +67,16 @@ def read_csv(dpx_sequence):
     '''
     Does fname entry exist in CSV, if yes retrieve data and return in tuple
     '''
-    new_num = ''
+    new_number = ''
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
         for row in readme:
             orig_num = row['original']
             if str(orig_num) == str(dpx_sequence):
-                return row['new_number']
-    fname.close()
+                new_number = row['new_number']
+                return str(new_number)
+            else:
+                return new_number
 
 
 def count_files(dirpath, division):
@@ -164,7 +167,7 @@ def workout_division(arg, kb_size):
 
     # Size calculation for rawcooked RGB encodings
     if 'rawcooked' in arg:
-        if kb_size < 1503238552:
+        if kb_size <= 1503238552:
             division = None
         elif 1503238553 <= kb_size <= 3006477107:
             division = '2'
@@ -178,7 +181,7 @@ def workout_division(arg, kb_size):
 
     # Size calculation for luma or tar encoding sizes
     elif 'tar' in arg or 'luma' in arg:
-        if kb_size < 1073741823:
+        if kb_size <= 1073741823:
             division = None
         elif 1073741824 <= kb_size <= 2147483648:
             division = '2'
@@ -328,15 +331,19 @@ def main():
         sys.exit()
     else:
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
-        kb_size = sys.argv[1]
-        dpx_path = sys.argv[2]
-        encoding = sys.argv[3]  # 'rawcooked', 'luma' or 'tar' passed from shell script
+        kb_size = int(sys.argv[1])
+        dpx_path = str(sys.argv[2])
+        encoding = str(sys.argv[3])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
         ## Check if sequence has new numbering that should be updated
-        new_num = read_csv(dpx_sequence)
-        print("DPX sequence: {} Change required?: {}".format(dpx_sequence, new_num))
+        try:
+            new_num = read_csv(dpx_sequence)
+            print("DPX sequence: {} Change required: {}".format(dpx_sequence, new_num))
+        except Exception as error:
+            new_num = ''
+            print("DPX sequence number {} not located in CSV".format(dpx_sequence))
         # Renumber folder and update dpx_path / dpx_sequence
         if len(new_num) > 0:
             try:
@@ -355,20 +362,20 @@ def main():
         else:
             LOGGER.info("Sequence %s not found in CSV so proceeding with processing:\n%s", dpx_sequence, dpx_path)
 
-        ## Does this sequence need splitting?
+        # Does this sequence need splitting?
         division = workout_division(encoding, kb_size)
 
         # Name preparations for folder splitting
         path_split = os.path.split(dpx_path)
         root_path = path_split[0]
 
-        ## No division needed, sequence is below 1.4TB
+        # No division needed, sequence is below 1.4TB
         if division is None:
             LOGGER.info("No splitting necessary for: %s\nMoving to encoding path for %s", dpx_path, encoding)
             if 'rawcooked' in encoding or 'luma' in encoding:
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
-#                    shutil.move(dpx_path, RAWCOOKED_PATH)
+#                   shutil.move(dpx_path, RAWCOOKED_PATH)
                     LOGGER.info("Move %s to RAWcooked encoding path: %s", dpx_sequence, RAWCOOKED_PATH)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -380,7 +387,7 @@ def main():
             elif 'tar' in encoding:
                 LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to TAR path", dpx_path)
                 try:
-                    shutil.move(dpx_path, TAR_PATH)
+#                    shutil.move(dpx_path, TAR_PATH)
                     LOGGER.info("Move completed to TAR encoding path: %s", dpx_path)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -389,7 +396,7 @@ def main():
                     LOGGER.warning("Unable to move folder to TAR path: %s", dpx_path)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
-        ## Folder is larger than 5TB (TAR/Luma) / 5.6TB (RAWcooked) script exit
+        # Folder is larger than 5TB (TAR/Luma) / 5.6TB (RAWcooked) script exit
         elif 'oversize' in division:
             LOGGER.warning("OVERSIZE FOLDER: Too large for splitting script %s", dpx_path)
             LOGGER.info("Moving oversized folder %s to current_errors/oversized_sequence folder")
@@ -401,10 +408,10 @@ def main():
             LOGGER.critical("========= SCRIPT EXIT - MANUAL ASSISTANCE NEEDED =========")
             sys.exit()
 
-        ## Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
+        # Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
         else:
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
-            splitting_log("\n-------------------------------- SPLIT START -----------------------------------")
+            splitting_log("\n-------------------------------- SPLIT START ----------------------------------- {}".format(TODAY_FULL))
             splitting_log("NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{}".format(dpx_path))
             splitting_log("DPX sequence encoding <{}> is {} KB in size, requiring {} divisions".format(encoding, kb_size, division))
 
@@ -474,6 +481,7 @@ def main():
                         LOGGER.info("Folder %s will be divided into %s divisions now", dpx_sequence, division)
                         block_data = count_files(dpx_dirpath, division)
                         block_list = block_data[0]
+                        splitting_log("\n Block list data (total DPX, DPX per sequence, first DPX per block):\n{}".format(block_list))
 
                         # Output data to splitting log
                         splitting_log("\nFolder {} contains {} DPX items. Requires {} divisions, {} items per new folder".format(dpx_sequence, block_list[0], division, block_list[1]))
@@ -491,22 +499,26 @@ def main():
                         for dictionary in dpx_list:
                             for key, val in dictionary.items():
                                 if 'block2' in key:
+                                    splitting_log("\nMoving block 2 DPX data to {}".format(new_folder1))
                                     for dpx in val:
                                         dpx_to_move = os.path.join(root, dpx)
                                         shutil.move(dpx_to_move, new_folder1)
                                 if 'block3' in key:
+                                    splitting_log("Moving block 3 DPX data to {}".format(new_folder2))
                                     for dpx in val:
                                         dpx_to_move = os.path.join(root, dpx)
                                         shutil.move(dpx_to_move, new_folder2)
                                 if 'block4' in key:
+                                    splitting_log("Moving block 4 DPX data to {}".format(new_folder3))
                                     for dpx in val:
                                         dpx_to_move = os.path.join(root, dpx)
                                         shutil.move(dpx_to_move, new_folder3)
                                 if 'block5' in key:
+                                    splitting_log("Moving block 5 DPX data to {}".format(new_folder4))
                                     for dpx in val:
                                         dpx_to_move = os.path.join(root, dpx)
                                         shutil.move(dpx_to_move, new_folder4)
-
+                        splitting_log("\n-------------------------------- SPLIT END -------------------------------------")
                         LOGGER.info("Splitting completed for path: %s", root)
                         break
             LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -532,8 +544,8 @@ def renumber(dpx_path, new_num):
     DPX path must be supplied without trailing '/'
     '''
     dpx_path = dpx_path.rstrip('/')
-    path, dpx_sequence = os.path.split(dpx_path)
-    new_path = os.path.join(path, new_num)
+    path = os.path.split(dpx_path)
+    new_path = os.path.join(path[0], new_num)
     try:
         os.rename(dpx_path, new_path)
         LOGGER.info("renumber(): Rename paths:\n%s changed to %s", dpx_path, new_path)
