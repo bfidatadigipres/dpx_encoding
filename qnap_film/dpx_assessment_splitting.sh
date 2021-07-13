@@ -6,8 +6,7 @@
 
 # Global variables call environmental variables
 LOG_PATH="${QNAP_FILM}${DPX_SCRIPT_LOG}"
-# DPX_PATH="${QNAP_FILM}${DPX_ASSESS}"
-DPX_PATH="/mnt/qnap_film/Public/test/"
+DPX_PATH="${QNAP_FILM}${DPX_ASSESS}"
 POLICY_PATH="$POLICY_DPX"
 PY3_LAUNCH="${PY3_ENV}"
 SPLITTING="${SPLITTING_SCRIPT}"
@@ -46,8 +45,8 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d | while IFS= read -r files; d
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/$reel/${dpx}"
-#            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
-#            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
 
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
