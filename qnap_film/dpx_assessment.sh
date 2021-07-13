@@ -29,7 +29,7 @@ touch "${DPX_PATH}luma_dpx_list.txt"
 log "===================== DPX assessment workflows start ====================="
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
-find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d | while IFS= read -r files; do
+find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
     # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
     dpx=$(ls "$files" | head -5 | tail -1)
     reel=$(basename "$files")
@@ -114,11 +114,3 @@ cat "${DPX_PATH}luma_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}tar_dpx_list.txt" >> "${DPX_PATH}tar_dpx_failures.log"
 
 log "===================== DPX Assessment workflows ends ====================="
-
-
-
-
-
-
-
-
