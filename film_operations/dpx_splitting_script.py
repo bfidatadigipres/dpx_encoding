@@ -325,26 +325,26 @@ def main():
     If divisions necessary takes steps necessary to subdivide large sequence into sub-folders
     so each folder total file size is beneath 1TB/1.4TB.
     '''
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 2:
         LOGGER.warning("SCRIPT EXITING: Error with shell script input:\n %s", sys.argv)
         sys.exit()
     else:
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
-        kb_size = int(sys.argv[1])
-        dpx_path = str(sys.argv[2])
-        encoding = str(sys.argv[3])
+        data = sys.argv[1]
+        data = data.split(', ')
+        kb_size = int(data[0])
+        dpx_path = str(data[1])
+        encoding = str(data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
         ## Check if sequence has new numbering that should be updated
-        try:
-            new_num = read_csv(dpx_sequence)
-            print("DPX sequence: {} Change required: {}".format(dpx_sequence, new_num))
-        except Exception as error:
-            new_num = ''
-            print("DPX sequence number {} not located in CSV".format(dpx_sequence))
+        new_num = read_csv(dpx_sequence)
         # Renumber folder and update dpx_path / dpx_sequence
-        if len(new_num) > 0:
+        if new_num is None:
+            LOGGER.info("Sequence %s not found in CSV so proceeding with processing:\n%s", dpx_sequence, dpx_path)
+            print("No renaming necessary")
+        elif len(new_num) > 0:
             try:
                 new_path = renumber(dpx_path, new_num)
                 LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
@@ -357,9 +357,6 @@ def main():
                 LOGGER.warning("Renumbering failed, exiting script to avoid processing incorrect files", err)
                 LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                 sys.exit()
-        # No renumbering needed
-        else:
-            LOGGER.info("Sequence %s not found in CSV so proceeding with processing:\n%s", dpx_sequence, dpx_path)
 
         # Does this sequence need splitting?
         division = workout_division(encoding, kb_size)
@@ -374,7 +371,7 @@ def main():
             if 'rawcooked' in encoding or 'luma' in encoding:
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
-#                   shutil.move(dpx_path, RAWCOOKED_PATH)
+                    shutil.move(dpx_path, RAWCOOKED_PATH)
                     LOGGER.info("Move %s to RAWcooked encoding path: %s", dpx_sequence, RAWCOOKED_PATH)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -386,7 +383,7 @@ def main():
             elif 'tar' in encoding:
                 LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to TAR path", dpx_path)
                 try:
-#                    shutil.move(dpx_path, TAR_PATH)
+                    shutil.move(dpx_path, TAR_PATH)
                     LOGGER.info("Move completed to TAR encoding path: %s", dpx_path)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
