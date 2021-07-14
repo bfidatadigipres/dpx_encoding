@@ -75,9 +75,10 @@ done
 
 # Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
 log "Luma Y path items for size check and Python splitting/moving script:"
-list1=$(cat "${DPX_PATH}luma_dpx_list.txt")
+list1=$(grep ^N_ "${DPX_PATH}luma_dpx_list.txt" | rev | sort -n -k1.5 | rev )
 log "$list1"
-cat "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
+grep ^N_ "$list1" > "${DPX_PATH}luma_dpx_list.txt"
+grep ^N_ "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
   kb_size_path=$(du -s "$line1")
   kb_size=${kb_size_path::11}
   kb_strip=$(echo "$kb_size" | xargs)
@@ -87,9 +88,10 @@ done
 
 # Prepare tar_dpx_failure_list for DPX splitting script/move to TAR preservation
 log "TAR path items for size check and Python splitting/moving script:"
-list2=$(cat "${DPX_PATH}tar_dpx_list.txt")
+list2=$(grep ^N_ "${DPX_PATH}tar_dpx_list.txt" | rev | sort -n -k1.5 | rev )
 log "$list2"
-cat "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
+grep ^N_ "$list2" > "${DPX_PATH}tar_dpx_list.txt"
+grep ^N_ "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
   kb_size_path2=$(du -s "$line2")
   kb_size2=${kb_size_path2::11}
   kb_strip2=$(echo "$kb_size2" | xargs)
@@ -99,9 +101,10 @@ done
 
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 log "RAWcooked path items for size check and Python splitting/moving script:"
-list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt")
+list3=$(grep ^N_ "${DPX_PATH}rawcooked_dpx_list.txt" | rev | sort -n -k1.5 | rev )
 log "$list3"
-cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
+grep ^N_ "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
+grep ^N_ "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
   kb_size_path3=$(du -s "$line3")
   kb_size3=${kb_size_path3::11}
   kb_strip3=$(echo "$kb_size3" | xargs)
