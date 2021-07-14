@@ -10,7 +10,7 @@ LOG_PATH="${ISILON}${DPX_SCRIPT_LOG}"
 DPX_PATH="${ISILON}${DPX_ASSESS}"
 POLICY_PATH="${POLICY_DPX}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT}"
+SPLITTING="${SPLITTING_SCRIPT_ISILON}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
@@ -22,9 +22,11 @@ function log {
 rm "${DPX_PATH}rawcooked_dpx_list.txt"
 rm "${DPX_PATH}tar_dpx_list.txt"
 rm "${DPX_PATH}luma_dpx_list.txt"
+rm "${DPX_PATH}python_list.txt"
 touch "${DPX_PATH}rawcooked_dpx_list.txt"
 touch "${DPX_PATH}tar_dpx_list.txt"
 touch "${DPX_PATH}luma_dpx_list.txt"
+touch "${DPX_PATH}python_list.txt"
 
 # Write first log output
 log "===================== DPX assessment workflows start ====================="
@@ -75,42 +77,39 @@ done
 
 # Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
 log "Luma Y path items for size check and Python splitting/moving script:"
-list1=$(grep ^N_ "${DPX_PATH}luma_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | rev | sort -n -k1.5 | rev )
 log "$list1"
-grep ^N_ "$list1" > "${DPX_PATH}luma_dpx_list.txt"
-grep ^N_ "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
-  kb_size_path=$(du -s "$line1")
-  kb_size=${kb_size_path::11}
-  kb_strip=$(echo "$kb_size" | xargs)
-  log "Size of $line1 is $kb_strip KB. Passing to Python script..."
-  parallel --jobs 1 "$PY3_LAUNCH" "$SPLITTING" "$kb_strip" "$line" "luma";
+echo "$list1" > "${DPX_PATH}luma_dpx_list.txt"
+cat "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
+  kb_size=$(du -s "$line1" | cut -f1)
+  log "Size of $line1 is $kb_size KB. Passing to Python script..."
+  echo "$kb_size, $line1, luma" >> "${DPX_PATH}python_list.txt";
 done
 
 # Prepare tar_dpx_failure_list for DPX splitting script/move to TAR preservation
 log "TAR path items for size check and Python splitting/moving script:"
-list2=$(grep ^N_ "${DPX_PATH}tar_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+list2=$(cat "${DPX_PATH}tar_dpx_list.txt" | rev | sort -n -k1.5 | rev )
 log "$list2"
-grep ^N_ "$list2" > "${DPX_PATH}tar_dpx_list.txt"
-grep ^N_ "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
-  kb_size_path2=$(du -s "$line2")
-  kb_size2=${kb_size_path2::11}
-  kb_strip2=$(echo "$kb_size2" | xargs)
-  log "Size of $line2 is $kb_strip2 KB. Passing to Python script..."
-  parallel --jobs 1 "$PY3_LAUNCH" "$SPLITTING" "$kb_strip2" "$line2" "tar";
+echo "$list2" > "${DPX_PATH}tar_dpx_list.txt"
+cat "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
+  kb_size2=$(du -s "$line2" | cut -f1)
+  log "Size of $line2 is $kb_size2 KB. Passing to Python script..."
+  echo "$kb_size2, $line2, tar" >> "${DPX_PATH}python_list.txt";
 done
 
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 log "RAWcooked path items for size check and Python splitting/moving script:"
-list3=$(grep ^N_ "${DPX_PATH}rawcooked_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | rev | sort -n -k1.5 | rev )
 log "$list3"
-grep ^N_ "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
-grep ^N_ "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
-  kb_size_path3=$(du -s "$line3")
-  kb_size3=${kb_size_path3::11}
-  kb_strip3=$(echo "$kb_size3" | xargs)
-  log "Size of $line3 is $kb_strip3 KB. Passing to Python script..."
-  parallel --jobs 1 "$PY3_LAUNCH" "$SPLITTING" "$kb_strip3" "$line3" "rawcooked";
+echo "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
+cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
+  kb_size3=$(du -s "$line3" | cut -f1)
+  log "Size of $line3 is $kb_size3 KB. Passing to Python script..."
+  echo "$kb_size3, $line3, rawcooked" >> "${DPX_PATH}python_list.txt";
 done
+
+# Take python_list.txt and iterate through entries, passing to Python script
+grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
 
 # Append latest pass/failures to movement logs
 cat "${DPX_PATH}rawcooked_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
