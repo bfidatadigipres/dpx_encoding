@@ -155,11 +155,11 @@ Script function:
 - The folders are not subsequently moved onto their encoding paths, but rather wait for the assessment script to pass again and run each folder through a size check.
 
 Table 1  
-    `RAWCOOKED RGB                               RAWCOOKED LUMA                          TAR WRAP`  
-    `1.4TB - 2.8TB   │   division = 2            1TB - 2TB   │   division = 2            1TB - 2TB   │   division = 2`  
-    `2.8TB - 4.2TB   │   division = 3            2TB - 3TB   │   division = 3            2TB - 3TB   │   division = 3`  
-    `4.2TB - 5.6TB   │   division = 4            3TB - 4TB   │   division = 4            3TB - 4TB   │   division = 4`  
-    `                                            4TB - 5TB   │   division = 5            4TB - 5TB   │   division = 5`  
+  `RAWCOOKED RGB                               RAWCOOKED LUMA                          TAR WRAP`  
+  `1.4TB - 2.8TB   │   division = 2            1TB - 2TB   │   division = 2            1TB - 2TB   │   division = 2`  
+  `2.8TB - 4.2TB   │   division = 3            2TB - 3TB   │   division = 3            2TB - 3TB   │   division = 3`  
+  `4.2TB - 5.6TB   │   division = 4            3TB - 4TB   │   division = 4            3TB - 4TB   │   division = 4`  
+  `                                            4TB - 5TB   │   division = 5            4TB - 5TB   │   division = 5`  
 
 ### dpx_rawcook.sh
 
