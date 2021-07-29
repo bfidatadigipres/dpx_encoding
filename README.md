@@ -104,25 +104,62 @@ Global.log is created by DPI ingest scripts to map processing of files as they a
 
 ## THE SCRIPTS
 
-### dpx_assessment.sh
+### dpx_assessment.sh [updated to launch dpx_splitting_script.py]
 
 This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
 
 Script functions:
-- Refreshes the DPX success and failure lists so clean for each run
+- Refreshes the DPX success and failure lists, tar, rawcooked, luma and python lists so clean for each run of the script, avoiding path failures.
 - Looks within the dpx_to_assess/ folder for DPX sequence directories at pixel ratio folder level. Eg, 2048x1556/ (found at mindepth 3 / maxdepth3)
 - Takes the fifth DPX within this folder and stores in a 'dpx' variable, creates 'filename' and 'scan' variables using the basename and dirname of path
 - Greps for the 'filename' within script_logs/rawcooked_dpx_success.log and script_logs/tar_dpx_failures.log. If appears in either then the file is skipped. If not:
   - Compares 'dpx' to Mediaconch policy rawcooked_dpx_policy.xml (policy specifically written to pass/fail RAWcooked encodings)
-  - If pass writes 'filename' to dpx_success_list.txt
-  - If fail writes 'filename' to dpx_failures_list.txt and outputs reason for failure to script_logs/dpx_assessment.log
-- Moves dpx_failures_list.txt entries to tar_preservation/dpx_to_wrap/ folder
-- Moves dpx_success_list enties to rawcooked/dpx_to_cook/ folder
-- Appends the pass and failures from this pass to rawcooked_dpx_success.log and tar_dpx_failures.log
+  - If pass, looks for metadata indicating if the DPX have RGB or Luma (Y) colourspace, before writing 'filename' to rawcooked_dpx_list.txt or luma_dpx_list.txt
+  - If fail writes 'filename' to tar_dpx_list.txt and outputs reason for failure to script_logs/dpx_assessment.log
+- Each list created in previous stage is sorted by its part whole, and passed into a loop that calculates the total folder size in KB, then writes this data to new list python_list.txt
+- The contents of python_list.txt are passed one at a time to the Python splitting script for size assessment and potential splitting. From here they are moved to their encoding paths.
+- Appends the luma, rawcooked and tar failure lists to rawcooked_dpx_success.log and tar_dpx_failures.log
 
 Requires use of rawcooked_dpx_policy.xml.
 
+### dpx_splitting_script.py
+
+This script is not listed in the crontab as it is launched at the end dpx_assessment.sh to arrange movement of the image sequence, and where necessary splits the folders into smaller folders to allow for RAWcooked / TAR wrapping of a finished file no larger that 1TB.
+
+Script function:
+- Receives three arguments within SYS.ARGV[1], splitting them into:
+  - Total KB size of the DPX sequence
+  - Path to DPX sequence
+  - Encoding type - rawcooked, luma or tar
+- Checks if the DPX sequence name is listed in splitting_document.csv
+  - If yes, renumbers the folder and updates the dpx_sequence/dpx_path variables
+  - If no, skips onto next stage
+- Divisions are calculated based upon the DPX sequence total KB size. The options returned include:
+  - No division needed because the folder is under the minimum encoding size for Imagen. The DPX folders are moved to their encoding paths.
+     Script exits, completed.
+  - Oversized folder. The folder is too large to be divided by this script and needs human intervention. The folder is moved to current_errors/oversized_sequences/ folder and the error log is appended.
+     Script exits, completed.
+  - Divisions are required by either 2, 3, 4 or 5 splits depending on the size of the DPX sequence and whether the encoding is for RAWcooked RGB, RAWcooked luma or TAR wrapping (see table 1)
+    Script continues to next step
+- Splittings functions begin:
+  - DPX_splitting.log is updated with details of the DPX sequence that required splitting
+  - New folder names are generated for the split folder additions and old numbers have new folder part wholes calculated for them. The current DPX sequence folder has it’s number updated, and the dpx_sequence and dpx_path variables are updated.
+  - All new folder names, and amended folder part wholes are updated to splitting_document.csv
+  - DPX sequence path is iterated over finding all folders within it that contain files ending in ‘.dpx’ or ‘.DPX’. This will find all instances of scan01, scan02 folders within the DPX path and splits/moves each equally.
+  e. New folders have new paths created, incorporating full down to the level of the DPX files.
+  f. All DPX files within the DPX path are counted per scan folder, divided as per division (2, 3, 4 or 5 - see table 1).
+  g. The new folder list and first DPX of each block of data is written to the DPX_splitting.log
+  h. Each block is moved to it’s corresponding new folder, one DPX at a time using Python’s shutil function.
+
+- The folders are not subsequently moved onto their encoding paths, but rather wait for the assessment script to pass again and run each folder through a size check.
+
+Table 1
+RAWcooked RGB                           RAWcooked luma                      TAR wrap  
+1.4TB - 2.8TB  |  division = 2          1TB - 2TB  |  division = 2          1TB - 2TB  |  division = 2  
+2.8TB - 4.2TB  |  division = 3          2TB - 3TB  |  division = 3          2TB - 3TB  |  division = 3  
+4.2TB - 5.6TB  |  division = 4          3TB - 4TB  |  division = 4          3TB - 4TB  |  division = 4  
+                                        4TB - 5TB  |  division = 5          4TB - 5TB  |  division = 5  
 
 ### dpx_rawcook.sh
 
