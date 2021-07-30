@@ -162,6 +162,8 @@ Table 1
 | 4.2TB to 5.6TB | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 4 Divisions     |  
 |                | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
 
+NOTES: We've only recently started RAWcooked encoding Y (Luma) DPX sequences, and on average the first few hundred Matroska files have approximate size reductions of 27%. This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
+
 ### dpx_rawcook.sh
 
 This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --check-padding command against check_padding_list, second with --check command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
