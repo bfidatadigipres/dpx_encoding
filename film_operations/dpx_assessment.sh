@@ -32,7 +32,7 @@ log "===================== DPX assessment workflows start ====================="
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Maxdepth Mindepth temporarily fixed at 4, but will need adjusting to 3 in future
-find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d | while IFS= read -r files; do
+find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -r files; do
     # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
     dpx=$(ls "$files" | head -5 | tail -1)
     reel=$(basename "$files")
