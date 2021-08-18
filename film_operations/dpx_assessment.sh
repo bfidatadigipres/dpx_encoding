@@ -48,8 +48,8 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/$reel/${dpx}"
-            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
-            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+#            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+#            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
 
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
@@ -109,6 +109,7 @@ cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
 done
 
 # Take python_list.txt and iterate through entries, passing to Python script
+log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
 grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
 
 # Append latest pass/failures to movement logs
