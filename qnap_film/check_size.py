@@ -41,7 +41,7 @@ def read_csv(folder_num):
 
 def get_size(folder_path):
     '''
-    Call subprocess du -s amd return in kb
+    Call subprocess du -s and return in kb
     '''
     command = [
         "du",
