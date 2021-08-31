@@ -31,14 +31,14 @@ touch "${DPX_PATH}python_list.txt"
 log "===================== DPX assessment workflows start ====================="
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
+# Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
 find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
     # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
     dpx=$(ls "$files" | head -5 | tail -1)
-    reel=$(basename "$files")
+    dimensions=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
-    dimensions=$(basename "$(dirname "$(dirname "$files")")")
-    filename=$(basename "$(dirname "$(dirname "$(dirname "$files")")")")
-    file_scan_name="$filename/$dimensions/$scans"
+    filename=$(basename "$(dirname "$(dirname "$files")")")
+    file_scan_name="$filename/$scans"
     count_queued_pass=$(grep -c "$file_scan_name" "${DPX_PATH}rawcook_dpx_success.log")
     count_queued_fail=$(grep -c "$file_scan_name" "${DPX_PATH}tar_dpx_failures.log")
 
