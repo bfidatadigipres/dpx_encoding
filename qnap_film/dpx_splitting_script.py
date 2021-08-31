@@ -27,8 +27,9 @@ Script functions:
    h. Each block is moved to it's corresponding new folder, one DPX at a time using shutil.move
 
 State of script:
-Configured and ready to use
-Implementation across VMs to be completed
+Configured and functional splitting
+Does not have CID field location set for storing splitting data
+Does not have write to text file of splitting data, to be stored as attachment in each MKV
 
 Joanna White 2021
 '''
@@ -268,7 +269,6 @@ def folder_update_creation(dpx_sequence, division, root_path):
         folder2 = os.path.join(root_path, dpx_seq_new_folder2)
         folder3 = os.path.join(root_path, dpx_seq_new_folder3)
 
-
     if division == '5':
         whole += 4
         dpx_seq_renumber = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
@@ -375,7 +375,7 @@ def main():
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
                     print("Move file: {} to {}".format(dpx_path, RAWCOOKED_PATH))
-#                   shutil.move(dpx_path, RAWCOOKED_PATH)
+                    shutil.move(dpx_path, RAWCOOKED_PATH)
                     LOGGER.info("Move %s to RAWcooked encoding path: %s", dpx_sequence, RAWCOOKED_PATH)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -388,7 +388,7 @@ def main():
                 LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to TAR path", dpx_path)
                 try:
                     print("Move file: {} to {}".format(dpx_path, TAR_PATH))
-#                    shutil.move(dpx_path, TAR_PATH)
+                    shutil.move(dpx_path, TAR_PATH)
                     LOGGER.info("Move completed to TAR encoding path: %s", dpx_path)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -412,8 +412,14 @@ def main():
             LOGGER.critical("========= SCRIPT EXIT - MANUAL ASSISTANCE NEEDED =========")
             sys.exit()
 
-        # Folder requires splitting activities (can this function serve all divisions if lists are iterable?)
+        # Folder requires splitting activities
+        # JMW commenting out until three new functions written to write splitting data to CID/text file
+        # and perform check count after move of files to ensure new folder contents correct
         else:
+            LOGGER.info("Skipping: Splitting needed for folders larger than 1TB/1.4TB: %s for %s", division, dpx_path)
+            splitting_log(f"FOLDERS FOR SPLITTING: {dpx_sequence}. Skipping until CID fields isolated for splitting data")
+
+            '''
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
             splitting_log("\n-------------------------------- SPLIT START ----------------------------------- {}".format(TODAY_FULL))
             splitting_log("NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{}".format(dpx_path))
@@ -526,7 +532,32 @@ def main():
                         splitting_log("\n-------------------------------- SPLIT END -------------------------------------")
                         LOGGER.info("Splitting completed for path: %s", root)
                         break
+            '''
             LOGGER.info("==================== END Python3 DPX splitting script END ====================")
+
+
+def post_move_check(filepath, total_files):
+    '''
+    Count files in filepath, and match to total_file move
+    If not same raise alert that move failed
+    '''
+    pass
+
+
+def write_to_cid(message):
+    '''
+    Writes DPX range per file to CID field
+    plus sibling splitting details
+    '''
+    pass
+
+
+def write_to_text(message, filepath):
+    '''
+    Writes DPX range and splitting details to txt file
+    For embedding in MKV at filepath supplied
+    '''
+    pass
 
 
 def mass_move(dpx_path, new_path):

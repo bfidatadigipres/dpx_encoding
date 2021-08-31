@@ -4,6 +4,8 @@
 # === DPX clean up, compare to global.log and delete if completed ===
 # ===================================================================
 
+## DELETION CURRENTLY DISABLED
+
 # Global variables extracted from environmental variables
 DPX_PATH="${FILM_OPS}${DPX_COMPLETE}"
 DPX_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"

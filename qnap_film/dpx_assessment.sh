@@ -108,6 +108,7 @@ cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
 done
 
 # Take python_list.txt and iterate through entries, passing to Python script
+log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
 grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
 
 # Append latest pass/failures to movement logs

@@ -28,6 +28,7 @@ log "===================== Post-RAWcook workflows STARTED ====================="
 # Script temporary file recreate (delete at end of script)
 touch "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
 touch "${MKV_DESTINATION}successful_mkv_list.txt"
+touch "${MKV_DESTINATION}matroska_deletion.txt"
 touch "${MKV_DESTINATION}matroska_deletion_list.txt"
 touch "${MKV_DESTINATION}stale_encodings.txt"
 
@@ -105,9 +106,48 @@ grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 4- | rev | p
 log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed/:"
 cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${DPX_PATH}post_rawcook.log"
 
-# ===========================================================================
-# Error/Warning message failure checks - retry or raise in current errors ===
-# ===========================================================================
+# ==========================================================================
+# Error: the reversibility file is becoming big. --output-version 2 pass ===
+# ==========================================================================
+
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r large_logs; do
+  error_check1=$(grep 'Error: undecodable file is becoming too big.\|Error: the reversibility file is becoming big.' "$large_logs")
+  mkv_fname1=$(basename "$large_logs" | rev | cut -c 5- | rev )
+  dpx_folder1=$(basename "$large_logs" | rev | cut -c 9- | rev )
+  if [ -z "$error_check1" ];
+    then
+      log "MKV ${mkv_fname1} log has no large reversibility file warning. Skipping."
+    else
+      retry_check1=$(grep "$mkv_fname1" "${MKV_DESTINATION}reversibility_list.txt")
+      log "MKV ${mkv_fname1} has error detected. Checking if already had --output-version 2 pass"
+      if [ -z "$retry_check1" ];
+        then
+          log "NEW ENCODING ERROR: ${mkv_fname1} adding to reversibility_list"
+          echo "${DPX_PATH}dpx_to_cook/${dpx_folder1}" >> "${MKV_DESTINATION}reversibility_list.txt"
+          mv "${large_logs}" "${MKV_DESTINATION}logs/retry_${mkv_fname1}.txt"
+        else
+          log "REPEAT ENCODING ERROR: ${mkv_fname1} encountered repeated reversibility data error"
+          echo "${mkv_fname1} REPEAT REVERSIBILITY DATA ERROR FOR SEQUENCE:" >> "${ERRORS}dpx_encoding_errors.log"
+          echo "${DPX_PATH}dpx_to_cook/${dpx_folder1}" >> "${ERRORS}dpx_encoding_errors.log"
+          echo "${mkv_fname1}" >> "${MKV_DESTINATION}matroska_deletion.txt"
+          mv "${large_logs}" "${MKV_DESTINATION}logs/fail_${mkv_fname1}.txt"
+      fi
+  fi
+done
+
+# Add list of reversibility data error to dpx_post_rawcooked.log
+log "MKV files that will be deleted due to reversibility data error in logs (if present):"
+cat "${MKV_DESTINATION}matroska_deletion.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+# Delete broken Matroska files if they exist (unlikely as error exits before encoding)
+grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+
+# Add list of first time errors items to log, that will be re-encoded with --output-version 2
+log "DPX sequences that will be re-encoded using --output-version 2:"
+cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+
+# ===================================================================================
+# General Error/Warning message failure checks - retry or raise in current errors ===
+# ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r fail_logs; do
   error_check=$(grep 'issues detected\|Error:\|Conversion failed!\|Warning:\|not supported with the current license key\|WARNING\|not supported by the current license key' "$fail_logs")
@@ -117,20 +157,12 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= re
     then
       log "MKV ${mkv_fname} log has no error or warning messages. Likely an interrupted or incomplete encoding"
     else
-      retry_check=$(grep "$mkv_fname" "${MKV_DESTINATION}check_padding_list.txt")
-      log "MKV ${mkv_fname} has error detected. Checking if already had --check-padding pass"
-      if [ -z "$retry_check" ];
-        then
-          log "NEW ENCODING ERROR: ${mkv_fname} adding to check_padding_list"
-          echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${MKV_DESTINATION}check_padding_list.txt"
-          mv "${fail_logs}" "${MKV_DESTINATION}logs/retry_${mkv_fname}.txt"
-        else
-          log "REPEAT ENCODING ERROR: ${mkv_fname} encountered repeated error"
-          echo "${mkv_fname} REPEAT ENCODING ERROR RAISED FOR SEQUENCE:" >> "${ERRORS}dpx_encoding_errors.log"
-          echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${ERRORS}dpx_encoding_errors.log"
-          echo "${mkv_fname}" >> "${MKV_DESTINATION}matroska_deletion.txt"
-          mv "${fail_logs}" "${MKV_DESTINATION}logs/fail_${mkv_fname}.txt"
-      fi
+      log "UNKNOWN ENCODING ERROR: ${mkv_fname} encountered error"
+      echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${MKV_DESTINATION}error_list.txt"
+      echo "${mkv_fname} REPEAT ENCODING ERROR RAISED FOR SEQUENCE:" >> "${ERRORS}dpx_encoding_errors.log"
+      echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${ERRORS}dpx_encoding_errors.log"
+      echo "${mkv_fname}" >> "${MKV_DESTINATION}matroska_deletion_list.txt"
+      mv "${fail_logs}" "${MKV_DESTINATION}logs/fail_${mkv_fname}.txt"
   fi
 done
 
@@ -141,8 +173,8 @@ cat "${MKV_DESTINATION}matroska_deletion_list.txt" >> "${SCRIPT_LOG}dpx_post_raw
 grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
 
 # Add list of first time errors items to log, that will be re-encoded with --check-padding
-log "DPX sequences that will be re-encoded using --check-padding (if any):"
-cat "${MKV_DESTINATION}check_padding_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+log "DPX sequences that have unknown error failures in logs:"
+cat "${MKV_DESTINATION}error_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 
 # ===============================================================
 # FOR ==== INCOMPLETE ==== - i.e. killed processes ==============
@@ -193,4 +225,5 @@ mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawc
 rm "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
 rm "${MKV_DESTINATION}successful_mkv_list.txt"
 rm "${MKV_DESTINATION}matroska_deletion_list.txt"
+rm "${MKV_DESTINATION}matroska_deletion.txt"
 rm "${MKV_DESTINATION}stale_encodings.txt"
