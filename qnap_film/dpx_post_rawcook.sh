@@ -174,10 +174,6 @@ cat "${MKV_DESTINATION}matroska_deletion_list.txt" >> "${SCRIPT_LOG}dpx_post_raw
 # Delete broken Matroska files
 grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
 
-# Add list of first time errors items to log, that will be re-encoded with --check-padding
-log "DPX sequences that have unknown error failures in logs:"
-cat "${MKV_DESTINATION}error_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
-
 # ===============================================================
 # FOR ==== INCOMPLETE ==== - i.e. killed processes ==============
 # ===============================================================
