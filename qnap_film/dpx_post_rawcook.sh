@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # ====================================================================
 # === Clean up and inspect logs for problem DPX sequence encodings ===
@@ -97,14 +97,15 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= re
 done
 
 # Move successfully encoded MKV files to autoingest
-grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_AUTOINGEST}{}"
+#grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_AUTOINGEST}{}"
 # Move the successful txt files to logs folder
-grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
+#grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
 # Move successful DPX sequence folders to dpx_completed/
-grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 4- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
+#grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 4- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
 # Add list of moved items to post_rawcooked.log
-log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed/:"
-cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${DPX_PATH}post_rawcook.log"
+log "*** Automated move to Autoingest temporarily suspended for test ***"
+#log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed:"
+#cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 
 # ==========================================================================
 # Error: the reversibility file is becoming big. --output-version 2 pass ===
