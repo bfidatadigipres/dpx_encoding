@@ -17,8 +17,10 @@ function log {
 
 # Remove or generate temporary files per script run
 rm "${MKV_DEST}temporary_rawcook_list.txt"
+rm "${MKV_DEST}temporary_retry_list.txt"
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
+touch "${MKV_DEST}temporary_retry_list.txt"
 
 # Write a START note to the logfile
 log "===================== DPX RAWcook START ====================="
@@ -40,22 +42,19 @@ grep '/mnt/' "${MKV_DEST}reversibility_list.txt" | while IFS= read -r retry; do
   fi
 done
 
-# Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt
-grep ^N_ "${MKV_DEST}temporary_retry_list.txt" | sort -n -k10.12 | head -20 > "${MKV_DEST}retry_list.txt"
+# Sort the temporary_rawcook_list by part of extension, pass to rawcook_list.txt
+grep ^N_ "${MKV_DEST}temporary_retry_list.txt" | sort -n -k10.12 | uniq > "${MKV_DEST}retry_list.txt"
 cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
 log "DPX folder will be cooked using --output-version 2:\n${cook_retry}"
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list.txt" | parallel --jobs 6 "rawcooked -y --all --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list.txt" | parallel --jobs 3 "rawcooked -y --all --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+
+#rm "${MKV_DEST}reversibility_list.txt"
 
 # ========================
 # === RAWcook pass two ===
 # ========================
-
-# Remove or generate temporary files per script run
-rm "${MKV_DEST}temporary_rawcook_list.txt"
-ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
-touch "${MKV_DEST}temporary_rawcook_list.txt"
 
 # When large reversibility cooks complete target all N_ folders, and pass any not already being processed to temporary_rawcook_list.txt
 log "Outputting files from DPX_PATH to list, if not already queued"
@@ -70,7 +69,7 @@ find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -name "N_*" | while IFS= read
 done
 
 # Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt and write items to log
-grep ^N_ "${MKV_DEST}temporary_rawcook_list.txt" | sort -n -k10.12 | head -20 > "${MKV_DEST}rawcook_list.txt"
+grep ^N_ "${MKV_DEST}temporary_rawcook_list.txt" | sort -n -k10.12 | uniq | head -20 > "${MKV_DEST}rawcook_list.txt"
 cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
 log "DPX folder will be cooked: ${cook_list}"
 
