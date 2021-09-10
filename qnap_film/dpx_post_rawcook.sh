@@ -25,13 +25,15 @@ DATE_FULL=$(date +'%Y-%m-%d  - %T')
 # Write a START note to the logfile
 log "===================== Post-RAWcook workflows STARTED ====================="
 
-# Script temporary file recreate (delete at end of script)
+# Script temporary file recreation, deleted at end
 touch "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
 touch "${MKV_DESTINATION}successful_mkv_list.txt"
 touch "${MKV_DESTINATION}matroska_deletion.txt"
 touch "${MKV_DESTINATION}matroska_deletion_list.txt"
 touch "${MKV_DESTINATION}stale_encodings.txt"
 touch "${MKV_DESTINATION}error_list.txt"
+# Deleted in dpx_rawcook.sh
+touch "${MKV_DESTINATION}reversibility_list.txt"
 
 # =======================================================================================
 # Matroska size check remove files to Killed folder, and folders moved to check_size/ ===
@@ -91,7 +93,7 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= re
     then
       log "SKIP: Matroska $mkv_filename has not completed, or has errors detected"
     else
-      log "COMPLETED: RAWcooked MKV $mkv_filename has completed successfully and will be moved to DPI ingest"
+      log "COMPLETED: RAWcooked MKV $mkv_filename has completed successfully and will be moved to autoingest"
       echo "$dpx_success_path" >> "${MKV_DESTINATION}rawcooked_success.log"
       echo "$mkv_filename" >> "${MKV_DESTINATION}successful_mkv_list.txt"
   fi
@@ -226,4 +228,3 @@ rm "${MKV_DESTINATION}matroska_deletion_list.txt"
 rm "${MKV_DESTINATION}matroska_deletion.txt"
 rm "${MKV_DESTINATION}stale_encodings.txt"
 rm "${MKV_DESTINATION}error_list.txt"
-
