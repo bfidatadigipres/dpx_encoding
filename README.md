@@ -11,7 +11,7 @@ These bash shell scripts are not designed to be run from the command line, but v
 
 These handle the complete encoding process from start to finish, including assessment of the DPX sequences suitability for RAWcooked encoding, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path.
 
-RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type moving failed files to a seprate folder, and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula, using --check-padding. If it fails again an error is issued to an current errors log, flagging the folder in need of human intervention.
+RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type moving failed files to a seprate folder, and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula, using '--output-version 2'. If it fails again an error is issued to an current errors log, flagging the folder in need of human intervention.
 
 The TAR script wraps the files, verifies the wrap using 7zip and then generates an MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.  Here the final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
 
@@ -104,7 +104,7 @@ Global.log is created by DPI ingest scripts to map processing of files as they a
 
 ## THE SCRIPTS
 
-### dpx_assessment.sh [updated to launch dpx_splitting_script.py]
+### dpx_assessment.sh [Launches Python splitting script]
 
 This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
@@ -123,7 +123,7 @@ Script functions:
 
 Requires use of rawcooked_dpx_policy.xml.
 
-### dpx_splitting_script.py
+### dpx_splitting_script.py [Partially implemented]
 
 This script is not listed in the crontab as it is launched at the end dpx_assessment.sh to arrange movement of the image sequence, and where necessary splits the folders into smaller folders to allow for RAWcooked / TAR wrapping of a finished file no larger that 1TB.
 
@@ -147,12 +147,13 @@ Script function:
   - New folder names are generated for the split folder additions and old numbers have new folder part wholes calculated for them. The current DPX sequence folder has it’s number updated, and the dpx_sequence and dpx_path variables are updated.
   - All new folder names, and amended folder part wholes are updated to splitting_document.csv
   - DPX sequence path is iterated over finding all folders within it that contain files ending in ‘.dpx’ or ‘.DPX’. This will find all instances of scan01, scan02 folders within the DPX path and splits/moves each equally.
-  e. New folders have new paths created, incorporating full down to the level of the DPX files.
+  e. New folders have new paths created, incorporating all sub folders down to the level of the DPX files.
   f. All DPX files within the DPX path are counted per scan folder, divided as per division (2, 3, 4 or 5 - see table 1).
   g. The new folder list and first DPX of each block of data is written to the DPX_splitting.log
   h. Each block is moved to it’s corresponding new folder, one DPX at a time using Python’s shutil function.
-
-- The folders are not subsequently moved onto their encoding paths, but rather wait for the assessment script to pass again and run each folder through a size check.
+  i. [To be implemented: checks that the files all moved correctly]  
+- [To be implemented: Search to check if all part wholes are present and under required size limit. Only when all are present and correct can they advance to their encoding paths]  
+- [To be implemented: Human readable data of the splits added to DPI database field for retrieval, and added to each folder in a text file for long-term embedding in MKV container]  
 
 Table 1  
 | RAWcooked RGB  | RAWcooked Luma  | TAR wrapping    | Total divisions |  
@@ -166,23 +167,25 @@ NOTES: We've only recently started RAWcooked encoding Y (Luma) DPX sequences, an
 
 ### dpx_rawcook.sh
 
-This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --check-padding command against check_padding_list, second with --check command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
+This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --all --output-version 2 command against reversibility_list, second with just --all command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
 
 Script functions:
 - Refreshes the temporary_rawcooked_list.txt and temp_queued_list.txt  
   
 PASS ONE:  
-- Feeds list of DPX sequence folders from check_padding_list.txt into loop and compares against rawcooked_success.log and temp_queued_list.txt
+- Feeds list of DPX sequence folders from reversibility_list.txt into loop and compares against rawcooked_success.log and temp_queued_list.txt
   - If DPX sequence not on either lists the folder name is written to temporary_retry_list.txt
-- Takes the temporary_retry_list.txt and performs filter of all names by last 5 digits (part whole) passing 01* first
-- Trims first twenty from this filtered list and passes to retry_list.txt and outputs this list to the log, with details about encoding using --check-padding
+- Takes the temporary_retry_list.txt and performs filter of all names by part whole extension
+- Sorts into a unique list and passes to retry_list.txt and outputs this list to the log, with details about encoding using --output-version 2
 - Passes retry_list.txt DPX sequences to GNU parallel to start RAWcooked encoding multiple jobs at a time
   Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
-  
+
+- Refreshes temp_queued_list.txt again
+
 PASS TWO:
 - Feeds list of DPX sequences in dpx_to_cook/ into loop and compares against rawcooked_success.log and temp_queued_list.txt
   - If a DPX sequence is not on either lists the folder name is written to temporary_rawcook_list.txt
-- Takes the temporary_rawcook_list.txt and performs filter of all names by last 5 digits (part whole) passing 01* first
+- Takes the temporary_rawcook_list.txt and performs filter of all names by part whole extension
 - Trims first twenty from this filtered list and passes to rawcook_list.txt and outputs this list to the log, allowing for analysis later
 - Passes these DPX sequence names to GNU parallel to start RAWcooked encoding multiple jobs at a time
   Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
@@ -213,13 +216,21 @@ Grep logs for pass statement of Mediaconch passed files:
   - Moves successfully cooked DPX sequences to dpx_completed/ path
   - Moves log file to logs/ path
 
-Grep remaining logs for error or warning statements:
-- Searches through remaining log files for instances that uses words like 'Error', 'Conversion failed!', 'Warning', 'WARNING' etc.
-- Checks if any of these erroring files have already been added to check_padding_list.
-   If no, the file is added to list, DPX sequence left in place, logs appended 'retry_' and the file will be reencoded using --check-padding
-   If yes, outputs list of erroring files to log and to current_errors logs
+Grep remaining logs for signs of oversized reversibility files:
+- Searches through log files for use of term 'Error: undecodable file is becoming too big.'
+- Checks any found filenames against the reversibility_list.txt to see if they have already been logged
+   If no, the filename is added to the reversibility list for first pass RAWcooked encoding (in dpx_rawcook.sh)
+   If yes, a repeat encoding problem is logged in the dpx_encoding_errors.log
    - Deletes Matroska files that have same name as the log files
    - Moves failed logs to logs folder prepended 'fail_'
+
+Greps remaining logs for any generic Error messages:
+- Searches through log files for use of term 'Error:', 'Reversability was checked, issues detected, see below' etc.
+   If not found then the script skips on
+   If found, an unknown encoding error is registered
+   - The filename is output to error_list.txt and the dpx_encoding_errors.log
+   - Logs are prepended 'fail_' and moved to Logs/ folder
+   - The associated Matroska is deleted where present
 
 Search for log files that have not been modified in over 24 hours (1440 minutes):
 - For all mkv.txt files older than 1440 minutes since last modified (ie stale encodings):
