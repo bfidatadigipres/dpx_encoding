@@ -147,11 +147,11 @@ Script function:
   - New folder names are generated for the split folder additions and old numbers have new folder part wholes calculated for them. The current DPX sequence folder has it’s number updated, and the dpx_sequence and dpx_path variables are updated.
   - All new folder names, and amended folder part wholes are updated to splitting_document.csv
   - DPX sequence path is iterated over finding all folders within it that contain files ending in ‘.dpx’ or ‘.DPX’. This will find all instances of scan01, scan02 folders within the DPX path and splits/moves each equally.
-  e. New folders have new paths created, incorporating all sub folders down to the level of the DPX files.
-  f. All DPX files within the DPX path are counted per scan folder, divided as per division (2, 3, 4 or 5 - see table 1).
-  g. The new folder list and first DPX of each block of data is written to the DPX_splitting.log
-  h. Each block is moved to it’s corresponding new folder, one DPX at a time using Python’s shutil function.
-  i. [To be implemented: checks that the files all moved correctly]  
+  - New folders have new paths created, incorporating all sub folders down to the level of the DPX files.
+  - All DPX files within the DPX path are counted per scan folder, divided as per division (2, 3, 4 or 5 - see table 1).
+  - The new folder list and first DPX of each block of data is written to the DPX_splitting.log
+  - Each block is moved to it’s corresponding new folder, one DPX at a time using Python’s shutil function.
+  - [To be implemented: checks that the files all moved correctly]  
 - [To be implemented: Search to check if all part wholes are present and under required size limit. Only when all are present and correct can they advance to their encoding paths]  
 - [To be implemented: Human readable data of the splits added to DPI database field for retrieval, and added to each folder in a text file for long-term embedding in MKV container]  
 
