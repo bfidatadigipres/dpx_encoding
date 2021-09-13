@@ -154,12 +154,12 @@ cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook
 # ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r fail_logs; do
-  error_check=$(grep 'Error:\|Conversion failed!\|Warning:\|not supported with the current license key\|WARNING\|not supported by the current license key' "$fail_logs")
+  error_check=$(grep 'Reversability was checked, issues detected, see below.\|Error:\|Conversion failed!\|Please contact info@mediaarea.net if you want support of such content.' "$fail_logs")
   mkv_fname=$(basename "$fail_logs" | rev | cut -c 5- | rev )
   dpx_folder=$(basename "$fail_logs" | rev | cut -c 9- | rev )
   if [ -z "$error_check" ];
     then
-      log "MKV ${mkv_fname} log has no error or warning messages. Likely an interrupted or incomplete encoding"
+      log "MKV ${mkv_fname} log has no error messages. Likely an interrupted or incomplete encoding"
     else
       log "UNKNOWN ENCODING ERROR: ${mkv_fname} encountered error"
       echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${MKV_DESTINATION}error_list.txt"
@@ -208,7 +208,7 @@ log "===================== Post-rawcook workflows ENDED ====================="
 
 # Update the count of successful cooks at top of the success log
 # First create new temp_success_log with timestamp
-echo "===================== Updated ===================== $DATE_FULL" > "${MKV_DESTINATION}temp_rawcooked_success.log"
+echo "===================== Updated ===================== $DATE_FULL" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 
 # Count lines in success_log and create count variable, output that count to new success log, then output all lines with /mnt* to the new log
 grep '/mnt/' "${MKV_DESTINATION}rawcooked_success.log" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
@@ -216,7 +216,7 @@ success_count=$(grep -c '/mnt/' "${MKV_DESTINATION}temp_rawcooked_success.log")
 echo "===================== Successful cooks: $success_count ===================== $DATE_FULL" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 
 # Sort the log and remove any non-unique lines
-sort "${MKV_DESTINATION}temp_rawcooked_success.log" | uniq | sort -r >> "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
+grep '/mnt/' "${MKV_DESTINATION}temp_rawcooked_success.log" | sort -r | uniq > "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
 
 # Move the new log renaming it to overwrite the old log
 mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"
