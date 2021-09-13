@@ -50,11 +50,14 @@ log "DPX folder will be cooked using --output-version 2:\n${cook_retry}"
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
 cat "${MKV_DEST}retry_list.txt" | parallel --jobs 3 "rawcooked -y --all --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
-#rm "${MKV_DEST}reversibility_list.txt"
+rm "${MKV_DEST}reversibility_list.txt"
 
 # ========================
 # === RAWcook pass two ===
 # ========================
+
+# Refresh temporary queued list
+ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 
 # When large reversibility cooks complete target all N_ folders, and pass any not already being processed to temporary_rawcook_list.txt
 log "Outputting files from DPX_PATH to list, if not already queued"

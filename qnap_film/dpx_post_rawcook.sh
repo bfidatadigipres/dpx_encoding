@@ -86,7 +86,7 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 # =============================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r fname; do
-  success_check=$(grep 'Reversability was checked, no issue detected' "$fname")
+  success_check=$(grep 'Reversability was checked, no issue detected.' "$fname")
   mkv_filename=$(basename "$fname" | rev | cut -c 5- | rev )
   dpx_success_path=$("$fname" | rev | cut -c 9- | rev )
   if [ -z "$success_check" ];
@@ -102,13 +102,13 @@ done
 # Move successfully encoded MKV files to autoingest
 #grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_AUTOINGEST}{}"
 # Move the successful txt files to logs folder
-#grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
+grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
 # Move successful DPX sequence folders to dpx_completed/
-#grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 4- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
+grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 4- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
 # Add list of moved items to post_rawcooked.log
 log "*** Automated move to Autoingest temporarily suspended for test ***"
-#log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed:"
-#cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed:"
+cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 
 # ==========================================================================
 # Error: the reversibility file is becoming big. --output-version 2 pass ===
@@ -154,7 +154,7 @@ cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook
 # ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r fail_logs; do
-  error_check=$(grep 'issues detected\|Error:\|Conversion failed!\|Warning:\|not supported with the current license key\|WARNING\|not supported by the current license key' "$fail_logs")
+  error_check=$(grep 'Error:\|Conversion failed!\|Warning:\|not supported with the current license key\|WARNING\|not supported by the current license key' "$fail_logs")
   mkv_fname=$(basename "$fail_logs" | rev | cut -c 5- | rev )
   dpx_folder=$(basename "$fail_logs" | rev | cut -c 9- | rev )
   if [ -z "$error_check" ];
@@ -216,7 +216,7 @@ success_count=$(grep -c '/mnt/' "${MKV_DESTINATION}temp_rawcooked_success.log")
 echo "===================== Successful cooks: $success_count ===================== $DATE_FULL" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 
 # Sort the log and remove any non-unique lines
-sort "${MKV_DESTINATION}temp_rawcooked_success.log" | uniq | sort -r > "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
+sort "${MKV_DESTINATION}temp_rawcooked_success.log" | uniq | sort -r >> "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
 
 # Move the new log renaming it to overwrite the old log
 mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"
