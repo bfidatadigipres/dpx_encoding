@@ -48,7 +48,7 @@ cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
 log "DPX folder will be cooked using --output-version 2:\n${cook_retry}"
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list.txt" | parallel --jobs 3 "rawcooked -y --all --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list.txt" | parallel --jobs 5 "rawcooked -y --all --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -77,6 +77,6 @@ cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
 log "DPX folder will be cooked: ${cook_list}"
 
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 3 "rawcooked -y --all -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 5 "rawcooked -y --all -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="

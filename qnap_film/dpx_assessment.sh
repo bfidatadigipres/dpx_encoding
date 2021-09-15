@@ -46,9 +46,9 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
         then
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
-            log "- ${file_scan_name}/$reel/${dpx}"
-            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
-            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+            log "- ${file_scan_name}/${dimensions}/${dpx}"
+#            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+#            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
 
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
@@ -76,7 +76,7 @@ done
 
 # Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
 log "Luma Y path items for size check and Python splitting/moving script:"
-list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | sort -n -k10.12 )
 log "$list1"
 echo "$list1" > "${DPX_PATH}luma_dpx_list.txt"
 cat "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
@@ -87,7 +87,7 @@ done
 
 # Prepare tar_dpx_failure_list for DPX splitting script/move to TAR preservation
 log "TAR path items for size check and Python splitting/moving script:"
-list2=$(cat "${DPX_PATH}tar_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+list2=$(cat "${DPX_PATH}tar_dpx_list.txt" | sort -n -k10.12 )
 log "$list2"
 echo "$list2" > "${DPX_PATH}tar_dpx_list.txt"
 cat "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
@@ -98,7 +98,7 @@ done
 
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 log "RAWcooked path items for size check and Python splitting/moving script:"
-list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | sort -n -k10.12 )
 log "$list3"
 echo "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
 cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
