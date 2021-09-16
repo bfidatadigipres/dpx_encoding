@@ -375,7 +375,7 @@ def main():
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
                     print("Move file: {} to {}".format(dpx_path, RAWCOOKED_PATH))
-#                    shutil.move(dpx_path, RAWCOOKED_PATH)
+                    shutil.move(dpx_path, RAWCOOKED_PATH)
                     LOGGER.info("Move %s to RAWcooked encoding path: %s", dpx_sequence, RAWCOOKED_PATH)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -388,7 +388,7 @@ def main():
                 LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to TAR path", dpx_path)
                 try:
                     print("Move file: {} to {}".format(dpx_path, TAR_PATH))
-#                    shutil.move(dpx_path, TAR_PATH)
+                    shutil.move(dpx_path, TAR_PATH)
                     LOGGER.info("Move completed to TAR encoding path: %s", dpx_path)
                     LOGGER.info("Script exiting")
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
@@ -404,10 +404,10 @@ def main():
             LOGGER.info("Moving oversized folder %s to current_errors/oversized_sequence folder")
             LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
             part_whole_log(dpx_sequence)
-#            try:
-#                shutil.move(dpx_path, OVERSIZED_SEQ)
-#            except Exception as err:
-#                LOGGER.warning("Unable to move %s to oversized_sequence/ folder", dpx_sequence, err)
+            try:
+                shutil.move(dpx_path, OVERSIZED_SEQ)
+            except Exception as err:
+                LOGGER.warning("Unable to move %s to oversized_sequence/ folder", dpx_sequence, err)
             LOGGER.warning("Script will exit, manual intervention needed for this file")
             LOGGER.critical("========= SCRIPT EXIT - MANUAL ASSISTANCE NEEDED =========")
             sys.exit()
