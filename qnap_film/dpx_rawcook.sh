@@ -45,7 +45,8 @@ done
 # Sort the temporary_rawcook_list by part of extension, pass to rawcook_list.txt
 grep ^N_ "${MKV_DEST}temporary_retry_list.txt" | sort -n -k10.12 | uniq > "${MKV_DEST}retry_list.txt"
 cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
-log "DPX folder will be cooked using --output-version 2:\n${cook_retry}"
+log "DPX folder will be cooked using --output-version 2:"
+log "${cook_retry}"
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
 cat "${MKV_DEST}retry_list.txt" | parallel --jobs 5 "rawcooked -y --all --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
@@ -74,7 +75,8 @@ done
 # Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt and write items to log
 grep ^N_ "${MKV_DEST}temporary_rawcook_list.txt" | sort -n -k10.12 | uniq | head -20 > "${MKV_DEST}rawcook_list.txt"
 cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
-log "DPX folder will be cooked: ${cook_list}"
+log "DPX folder will be cooked:"
+log "${cook_list}"
 
 # Begin RAWcooked processing with GNU Parallel
 cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 5 "rawcooked -y --all -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"

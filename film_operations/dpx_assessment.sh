@@ -78,7 +78,7 @@ done
 # Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}luma_dpx_list.txt" ]; then
   log "Luma Y path items for size check and Python splitting/moving script:"
-  list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+  list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | sort -n -k10.12 )
   log "$list1"
   echo "$list1" > "${DPX_PATH}luma_dpx_list.txt"
   cat "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
@@ -91,7 +91,7 @@ fi
 # Prepare tar_dpx_failure_list for DPX splitting script/move to TAR preservation
 if [ -s "${DPX_PATH}tar_dpx_list.txt" ]; then
   log "TAR path items for size check and Python splitting/moving script:"
-  list2=$(cat "${DPX_PATH}tar_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+  list2=$(cat "${DPX_PATH}tar_dpx_list.txt" | sort -n -k10.12 )
   log "$list2"
   echo "$list2" > "${DPX_PATH}tar_dpx_list.txt"
   cat "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
@@ -104,7 +104,7 @@ fi
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}rawcooked_dpx_list.txt" ]; then
   log "RAWcooked path items for size check and Python splitting/moving script:"
-  list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | rev | sort -n -k1.5 | rev )
+  list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | sort -n -k10.12 )
   log "$list3"
   echo "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
   cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do

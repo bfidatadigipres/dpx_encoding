@@ -27,7 +27,7 @@ Script functions:
    h. Each block is moved to it's corresponding new folder, one DPX at a time using shutil.move
 
 State of script:
-Configured and functional splitting
+Splitting offline until following features added:
 Does not have CID field location set for storing splitting data
 Does not have write to text file of splitting data, to be stored as attachment in each MKV
 

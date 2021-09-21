@@ -24,7 +24,7 @@ function log {
 log "============= DPX clean up script START ============="
 
 # Create list for folders in dpx_completed/ folder ordered by second digit of the extensions 01of**
-find "$DPX_PATH" -type d -maxdepth 1 -mindepth 1 | rev | sort -n -k1.5 | rev > "${DPX_PATH}temp_dpx_list.txt"
+find "$DPX_PATH" -maxdepth 1 -mindepth 1 -type d | sort -n -k10.12 > "${DPX_PATH}temp_dpx_list.txt"
 
 # Refresh files_for_deletion_list.txt
 rm "${DPX_PATH}files_for_deletion_list.txt"
@@ -80,7 +80,7 @@ if [ -z "$file_list" ]
         grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
         log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+#        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 log "============= DPX clean up script END ============="
