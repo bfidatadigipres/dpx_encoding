@@ -41,7 +41,7 @@ touch "${MKV_DESTINATION}reversibility_list.txt"
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +10 | while IFS= read -r fname; do
     filename=$(basename "$fname")
-    object=$(echo "$filename" | rev | cut -c 11- | rev)
+    object=$(echo "$filename" | rev | cut -c 12- | rev)
     size=$(du -m "$fname" | cut -f1 )
     if [ "${size}" -gt 1048560 ]
         then
@@ -207,15 +207,15 @@ log "===================== Post-rawcook workflows ENDED ====================="
 
 # Update the count of successful cooks at top of the success log
 # First create new temp_success_log with timestamp
-echo "===================== Updated ===================== $DATE_FULL" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
+echo "===================== Updated ===================== $DATE_FULL" > "${MKV_DESTINATION}temp_rawcooked_success.log"
 
 # Count lines in success_log and create count variable, output that count to new success log, then output all lines with /mnt* to the new log
-grep '/mnt/' "${MKV_DESTINATION}rawcooked_success.log" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
+cat "${MKV_DESTINATION}rawcooked_success.log" | grep '/mnt/' >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 success_count=$(grep -c '/mnt/' "${MKV_DESTINATION}temp_rawcooked_success.log")
 echo "===================== Successful cooks: $success_count ===================== $DATE_FULL" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 
 # Sort the log and remove any non-unique lines
-grep '/mnt/' "${MKV_DESTINATION}temp_rawcooked_success.log" | sort -r | uniq > "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
+cat "${MKV_DESTINATION}temp_rawcooked_success.log" | grep '/mnt/' | sort -r | uniq > "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
 
 # Move the new log renaming it to overwrite the old log
 mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"

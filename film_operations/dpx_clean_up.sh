@@ -4,6 +4,8 @@
 # === DPX clean up, compare to global.log and delete if completed ===
 # ===================================================================
 
+## Deletion temporarily disabled
+
 # Global variables extracted from environmental variables
 DPX_PATH="${FILM_OPS}${DPX_COMPLETE}"
 DPX_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
@@ -80,7 +82,7 @@ if [ -z "$file_list" ]
         grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
         log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+#        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 log "============= DPX clean up script END ============="

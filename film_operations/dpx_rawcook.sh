@@ -16,11 +16,15 @@ function log {
 } >> "${SCRIPT_LOG}dpx_rawcook.log"
 
 # Remove or generate temporary files per script run
+rm "${MKV_DEST}retry_list.txt"
+rm "${MKV_DEST}rawcook_list.txt"
 rm "${MKV_DEST}temporary_rawcook_list.txt"
 rm "${MKV_DEST}temporary_retry_list.txt"
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
 touch "${MKV_DEST}temporary_retry_list.txt"
+touch "${MKV_DEST}retry_list.txt"
+touch "${MKV_DEST}rawcook_list.txt"
 
 # Write a START note to the logfile
 log "===================== DPX RAWcook START ====================="
