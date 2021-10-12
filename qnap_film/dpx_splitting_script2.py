@@ -535,12 +535,11 @@ def main():
                         splitting_log(f"{key} will be renumbered {val}")
                         cid_data.append(f"{key} has been renumbered {val}")
 
-            # Find dpx_dirpath for all scan folders containing DPX files
+            # Find path for all scan folders containing DPX files
             new_folder1, new_folder2, new_folder3, new_folder4 = '', '', '', ''
             for root, dirs, files in os.walk(dpx_path):
                 for file in files:
                     if file.endswith((".dpx", ".DPX")):
-                        dpx_dirpath = root
                         folder_paths = root.split(f"{dpx_sequence}")
                         LOGGER.info("*** Folder path for splitting %s", root)
                         splitting_log(f"\n*** Making new folders with new sequence names for path: {root}")
@@ -559,7 +558,7 @@ def main():
 
                         # Obtain: file_count, cuts, dpx_block data
                         LOGGER.info("Folder %s will be divided into %s divisions now", dpx_sequence, division)
-                        block_data = count_files(dpx_dirpath, division)
+                        block_data = count_files(root, division)
                         block_list = block_data[0]
                         splitting_log(f"\n Block list data (total DPX, DPX per sequence, first DPX per block):\n{block_list}")
                         cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}")
@@ -641,11 +640,11 @@ def main():
                                     else:
                                         splitting_log(f"All DPX files checked and remain in place in original folder {dpx_sequence}")
                                     # Check correct total of files in first sequence, no stragglers
-                                    length_check = len(os.listdir(os.path.join(root, dpx_path)))
+                                    length_check = len([f for f in os.listdir(root) if f.endswith(('.dpx', '.DPX'))])
                                     if int(length_check) == int(block_list[1]):
-                                        LOGGER.info("Correct number of DPX remain in original sequence %s", os.path.join(root, dpx_path))
+                                        LOGGER.info("Correct number of DPX remain in original sequence %s", os.path.join(root))
                                     else:
-                                        LOGGER.warning("Incorrect number of items remain in original sequence: %s", os.path.join(root, dpx_path))
+                                        LOGGER.warning("Incorrect number of DPX files remain in original sequence: %s", os.path.join(root))
                                         LOGGER.warning("There are %s files in folder, when there should be %s DPX files", int(block_list[1], length_check)
 
                         cid_data.append(f"---------------- {dpx_sequence} SPLIT COMPLETE -----------------")
