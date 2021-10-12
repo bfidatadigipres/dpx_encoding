@@ -8,8 +8,8 @@
 DPX_PATH="${QNAP_FILM}${DPX_COMPLETE}"
 DPX_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
 GLOB_LOG="${QNAP_FILM}${GLOBAL_LOG}"
-FOR_DELETION="${QNAP_FILM}$[TO_DELETE}"
-ERRORS="${QNAP_FILM}${CURRENT_ERRORS]"
+FOR_DELETION="${QNAP_FILM}${TO_DELETE}"
+ERRORS="${QNAP_FILM}${CURRENT_ERRORS}"
 
 # Global date variables
 THIS_MONTH=$(date --date="$(date +%Y-%m-%d)" "+%Y-%m")
@@ -76,11 +76,12 @@ if [ -z "$file_list" ]
     else
         log "Moving any documented files to deletion path:"
         log "$file_list"
-        # Moves successfully ingested items in deleted list to 'to_delete/' folder
+        # Moves successfully ingested items in deleted list to delete folder
         grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
         log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-#        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 log "============= DPX clean up script END ============="
+
