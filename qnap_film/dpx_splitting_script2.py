@@ -40,8 +40,7 @@ Script functions:
    next pass to assess and relocate in time.
 
 State of new script:
-Updates complete and to be tested/linter pass
-along with part_whole.move.py to be written
+Updates complete and tested
 
 Joanna White 2021
 '''
@@ -116,18 +115,14 @@ def read_csv(dpx_sequence):
         readme = csv.DictReader(fname)
         for row in readme:
             orig_num = row['original']
-            if str(orig_num) != str(dpx_sequence):
-                return new_number
-
-            new_number = row['new_number']
-            return str(new_number)
+            if str(orig_num) == str(dpx_sequence):
+                new_number = row['new_number']
+        return str(new_number)
 
 
 def count_files(dirpath, division):
     '''
     Counts total DPX files in supplied sorted folder and returns the division totals
-    Including first DPX in each block as lists, eg for single split:
-    ['38411', '9602', '0084600.dpx', '0096003.dpx', '0105605.dpx', '0115207.dpx']
     Plus returns list of dictionary blocks of dpx numbers for move/checks
     '''
     block_list = []
@@ -215,19 +210,6 @@ def workout_division(arg, kb_size):
 
     # Size calculation for rawcooked RGB encodings (now 1.3TB increments, upto 5.2TB)
     if 'rawcooked' in arg:
-        '''
-        if kb_size <= 139586437:
-            division = None
-        elif 139586437 <= kb_size <= 279172874:
-            division = '2'
-        elif 279172874 <= kb_size <= 418759311:
-            division = '3'
-        elif 418759311 <= kb_size <= 558345748:
-            division = '4'
-        elif kb_size >= 558345748:
-            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
-            division = 'oversize'
-        '''
         if 'rawcooked' in arg:
             if kb_size <= 1395864370:
                 division = None

@@ -104,7 +104,6 @@ def rename(part_whole_path):
     column, if found rename folder to 'new_name' column
     '''
     folder_list = [ i for i in os.listdir(part_whole_path) if os.path.isdir(os.path.join(part_whole_path, i)) ]
-    print(folder_list)
     for item in folder_list:
         item_path = os.path.join(part_whole_path, item)
         new_name = read_csv(item)
@@ -130,7 +129,6 @@ def main():
     part_path = os.path.split(os.path.dirname(PART_TAR))[0]
     for root, dirs, files in os.walk(part_path):
         for directory in dirs:
-            print(directory)
             range_list = []
             seq_paths = []
             dirpath = os.path.join(root, directory)
@@ -202,7 +200,6 @@ def folder_moves(seq_path):
     Move sequnce paths to transcode paths
     '''
     for item in seq_path:
-        print(item)
         if '/tar/' in str(item):
             try:
                 shutil.move(item, TAR_PATH)
