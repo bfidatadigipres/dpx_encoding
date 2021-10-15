@@ -40,9 +40,8 @@ Script functions:
    next pass to assess and relocate in time.
 
 State of new script:
-Not yet implemented
 Updates complete and to be tested/linter pass
-Waiting for part_whole.move.py to be written
+along with part_whole.move.py to be written
 
 Joanna White 2021
 '''
@@ -57,17 +56,17 @@ import datetime
 import requests
 
 # Global variables
-QNAP_PATH = os.environ['FILM_OPS']
-ERRORS = os.path.join(QNAP_PATH, os.environ['CURRENT_ERRORS'])
+DPX_PATH = os.environ['QNAP_FILM']
+ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
-SCRIPT_LOG = os.path.join(QNAP_PATH, os.environ['DPX_SCRIPT_LOG'])
+SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 PART_WHOLE_LOG = os.path.join(ERRORS, 'part_whole_search.log')
 SPLITTING_LOG = os.path.join(SCRIPT_LOG, 'DPX_splitting.log')
-TAR_PATH = os.path.join(QNAP_PATH, os.environ['DPX_WRAP'])
-RAWCOOKED_PATH = os.path.join(QNAP_PATH, os.environ['DPX_COOK'])
-PART_RAWCOOK = os.path.join(QNAP_PATH, os.environ['PART_RAWCOOK'])
-PART_TAR = os.path.join(QNAP_PATH, os.environ['PART_TAR'])
+TAR_PATH = os.path.join(DPX_PATH, os.environ['DPX_WRAP'])
+RAWCOOKED_PATH = os.path.join(DPX_PATH, os.environ['DPX_COOK'])
+PART_RAWCOOK = os.path.join(DPX_PATH, os.environ['PART_RAWCOOK'])
+PART_TAR = os.path.join(DPX_PATH, os.environ['PART_TAR'])
 TODAY = str(datetime.datetime.now())[:10]
 CID_API = os.environ['CID_API']
 
@@ -89,11 +88,23 @@ def get_cid_data(dpx_sequence):
     search = f"object_number='{ob_num}'"
     query = {'databse': 'items',
              'search': search,
-             'output': 'json',
-             'fields': 'priref'}
+             'output': 'json'}
     results = requests.get(CID_API, params=query)
     results = results.json()
-    return results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
+    try:
+        utb_content = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.content']
+    except (IndexError, KeyError):
+        utb_content = ''
+    try:
+        utb_fieldname = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.fieldname']
+    except (IndexError, KeyError):
+        utb_fieldname = ''
+    try:
+        priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
+    except (IndexError, KeyError):
+        priref = ''
+
+    return (utb_content, utb_fieldname, priref)
 
 
 def read_csv(dpx_sequence):
@@ -204,17 +215,31 @@ def workout_division(arg, kb_size):
 
     # Size calculation for rawcooked RGB encodings (now 1.3TB increments, upto 5.2TB)
     if 'rawcooked' in arg:
-        if kb_size <= 1395864370:
+        '''
+        if kb_size <= 139586437:
             division = None
-        elif 1395864370 <= kb_size <= 2791728740:
+        elif 139586437 <= kb_size <= 279172874:
             division = '2'
-        elif 2791728740 <= kb_size <= 4187593110:
+        elif 279172874 <= kb_size <= 418759311:
             division = '3'
-        elif 4187593110 <= kb_size <= 5583457480:
+        elif 418759311 <= kb_size <= 558345748:
             division = '4'
-        elif kb_size >= 5583457480:
+        elif kb_size >= 558345748:
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
+        '''
+        if 'rawcooked' in arg:
+            if kb_size <= 1395864370:
+                division = None
+            elif 1395864370 <= kb_size <= 2791728740:
+                division = '2'
+            elif 2791728740 <= kb_size <= 4187593110:
+                division = '3'
+            elif 4187593110 <= kb_size <= 5583457480:
+                division = '4'
+            elif kb_size >= 5583457480:
+                LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
+                division = 'oversize'
 
     # Size calculation for luma or tar encoding sizes
     elif 'tar' in arg or 'luma' in arg:
@@ -370,21 +395,28 @@ def main():
         data = sys.argv[1]
         data = data.split(', ')
         kb_size = int(data[0])
+        print(kb_size)
         dpx_path = str(data[1])
+        print(dpx_path)
         encoding = str(data[2])
+        print(encoding)
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
+        print(dpx_sequence)
         LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
 
         # Separate singleton files from part wholes
         if dpx_sequence.endswith('_01of01'):
             singleton = True
+            print("Singleton True")
         else:
             new_num = read_csv(dpx_sequence)
             singleton = False
+            print("Singleton False")
 
             # Renumber part whole folder, update dpx_path / dpx_sequence
-            if new_num is None:
+            print(new_num)
+            if len(new_num) == 0:
                 LOGGER.info("Sequence %s not found in CSV so proceeding with processing:\n%s", dpx_sequence, dpx_path)
             elif len(new_num) > 0:
                 try:
@@ -392,7 +424,7 @@ def main():
                     LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
                     LOGGER.info("DPX sequence path %s will be reconfigured to %s", dpx_path, new_path)
                     splitting_log("\n*** DPX sequence found in CSV and needs renumbering")
-                    splitting_log("DPX sequence path {} being renumbered to {}".format(dpx_path, new_path))
+                    splitting_log("DPX sequence path {} being renamed to {}".format(dpx_path, new_path))
                     dpx_path = new_path
                     dpx_sequence = new_num
                 except Exception as err:
@@ -402,7 +434,7 @@ def main():
 
         # Does this sequence need splitting?
         division = workout_division(encoding, kb_size)
-
+        print(division)
         # Name preparations for folder splitting
         path_split = os.path.split(dpx_path)
         root_path = path_split[0]
@@ -410,7 +442,7 @@ def main():
         # No division needed, sequence is below 1.3TB and folder is 01of01
         if (division is None and singleton):
             LOGGER.info("No splitting necessary for: %s\nMoving to encoding path for %s", dpx_path, encoding)
-            if 'rawcooked' in encoding or 'luma' in encoding:
+            if ('rawcooked' in encoding or 'luma' in encoding):
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
                     shutil.move(dpx_path, RAWCOOKED_PATH)
@@ -438,7 +470,7 @@ def main():
         # No splitting, but item is part whole and needs processing by part_whole_move.py
         elif (division is None and not singleton):
             LOGGER.info("No splitting necessary for: %s\nMoving to part_whole_split path", dpx_path)
-            if 'rawcooked' in encoding or 'luma' in encoding:
+            if ('rawcooked' in encoding or 'luma' in encoding):
                 LOGGER.info("Moving DPX sequence to part_whole_split/rawcooked path: %s", dpx_sequence)
                 try:
                     shutil.move(dpx_path, PART_RAWCOOK)
@@ -482,10 +514,11 @@ def main():
         else:
             cid_data = []
             LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
-            splitting_log(f"\n-------------------------------- SPLIT START ----------------------------------- {str(datetime.datetime.now())}")
+            splitting_log(f"\n------ {dpx_sequence} SPLIT START ------ {str(datetime.datetime.now())}")
             splitting_log(f"NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{dpx_path}")
-            splitting_log(f"DPX sequence encoding <{encoding}> is {kb_size} KB in size, requiring {division} divisions")
-            cid_data.append(f"DPX folder required splitting: {dpx_sequence}", f"DPX folder size: {kb_size} kb required {division} divisions")
+            splitting_log(f"DPX sequence encoding <{encoding}> is {kb_size} KB in size, requiring {division} divisions\n")
+            cid_data.append(f"DPX folder required splitting: {dpx_sequence}")
+            cid_data.append(f"DPX folder size: {kb_size} kb required {division} divisions\n")
             LOGGER.info("Adding %s sequence number to part_whole log in current_errors/ folder", dpx_sequence)
             part_whole_log(dpx_sequence)
             # Generate new folder names from dpx_sequence/division
@@ -506,14 +539,14 @@ def main():
                 folder4 = data[4]
             post_foldername_list = return_range_following(dpx_sequence, division)
             # Append all new numbers to CSV
-            splitting_log("\nNew folder numbers:")
+            splitting_log("New folder numbers:")
             cid_data.append("New folder numbers:")
             if len(pre_foldername_list) > 0:
                 for dic in pre_foldername_list:
                     for key, val in dic.items():
                         write_csv(key, val)
-                        splitting_log(f"{key} will be renumbered {val}")
-                        cid_data.append(f"{key} has been renumbered {val}")
+                        splitting_log(f"{key} will be renamed {val}")
+                        cid_data.append(f"{key} has been renamed {val}")
             for dic in foldername_list_new:
                 for key, val in dic.items():
                     if dpx_sequence in key:
@@ -526,14 +559,14 @@ def main():
                         LOGGER.info("DPX path updated: %s", dpx_path)
                 for key, val in dic.items():
                     write_csv(key, val)
-                    splitting_log(f"{key} will be renumbered {val}")
-                    cid_data.append(f"{key} has been renumbered {val}")
+                    splitting_log(f"{key} will be renamed {val}")
+                    cid_data.append(f"{key} has been renamed {val}")
             if len(post_foldername_list) > 0:
                 for dic in post_foldername_list:
                     for key, val in dic.items():
                         write_csv(key, val)
-                        splitting_log(f"{key} will be renumbered {val}")
-                        cid_data.append(f"{key} has been renumbered {val}")
+                        splitting_log(f"{key} will be renamed {val}")
+                        cid_data.append(f"{key} has been renamed {val}")
 
             # Find path for all scan folders containing DPX files
             new_folder1, new_folder2, new_folder3, new_folder4 = '', '', '', ''
@@ -543,7 +576,7 @@ def main():
                         folder_paths = root.split(f"{dpx_sequence}")
                         LOGGER.info("*** Folder path for splitting %s", root)
                         splitting_log(f"\n*** Making new folders with new sequence names for path: {root}")
-                        cid_data.append(f"New division folders created using: {dpx_sequence}{folder_paths[1]}")
+                        cid_data.append(f"\nNew division folders created using: {dpx_sequence}{folder_paths[1]}")
                         new_folder1 = os.path.join(folder1, os.path.relpath(root, dpx_path))
                         make_dirs(new_folder1)
                         if folder2:
@@ -561,10 +594,11 @@ def main():
                         block_data = count_files(root, division)
                         block_list = block_data[0]
                         splitting_log(f"\n Block list data (total DPX, DPX per sequence, first DPX per block):\n{block_list}")
-                        cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}")
+                        cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}\n")
                         # Output data to splitting log
                         splitting_log(f"\nFolder {dpx_sequence} contains {block_list[0]} DPX items. Requires {division} divisions, {block_list[1]} items per new folder")
                         splitting_log(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
+                        cid_data.append(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
                         cid_data.append(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
                         if folder2:
                             splitting_log(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
@@ -632,6 +666,8 @@ def main():
                                     else:
                                         splitting_log(f"All DPX files copied and checked in {folder4}")
 
+                        for dictionary in dpx_list:
+                            for key, val in dictionary.items():
                                 if 'block1' in key:
                                     # Check first sequence has correct remaining files from block list
                                     missing_list = move_check(val, root)
@@ -645,37 +681,42 @@ def main():
                                         LOGGER.info("Correct number of DPX remain in original sequence %s", os.path.join(root))
                                     else:
                                         LOGGER.warning("Incorrect number of DPX files remain in original sequence: %s", os.path.join(root))
-                                        LOGGER.warning("There are %s files in folder, when there should be %s DPX files", int(block_list[1], length_check)
-
-                        cid_data.append(f"---------------- {dpx_sequence} SPLIT COMPLETE -----------------")
-
-                        # Update splitting data in text file to each new folder for encoding
-                        make_text_file(cid_data, dpx_path)
-                        make_text_file(cid_data, folder1)
-                        if folder2:
-                            make_text_file(cid_data, folder2)
-                        if folder3:
-                            make_text_file(cid_data, folder3)
-                        if folder4:
-                            make_text_file(cid_data, folder4)
-
-                        # Update splitting data to CID item record UTB.content (temporary)
-                        LOGGER.info("Updating split information to CID Item record")
-                        priref = get_cid_data(dpx_sequence)
-                        if len(priref) > 1:
-                            success = record_append(priref, cid_data)
-                            if success:
-                                LOGGER.info("CID splitting data appended to priref %s", priref)
-                                splitting_log(f"Splitting data written to CID priref {priref}")
-                            else:
-                                LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
-                                splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
-                        else:
-                            LOGGER.warning("Failed to retrieve priref and unable to write splitting data to CID")
-                            splitting_log(f"*** Failed to obtain Priref for {dpx_sequence}. Please manually append to CID")
-                        splitting_log("\n-------------------------------- SPLIT END -------------------------------------")
-                        LOGGER.info("Splitting completed for path: %s", root)
+                                        LOGGER.warning("There are %s files in folder, when there should be %s DPX files", int(block_list[1]), length_check)
+                        cid_data.append(f"\n------ {dpx_sequence}{folder_paths[1]} SPLIT COMPLETE ------\n")
                         break
+
+            # Update splitting data in text file to each new folder for encoding
+            cid_data_string = '\n'.join(cid_data)
+            make_text_file(cid_data_string, dpx_path)
+            make_text_file(cid_data_string, folder1)
+            if folder2:
+                make_text_file(cid_data_string, folder2)
+            if folder3:
+                make_text_file(cid_data_string, folder3)
+            if folder4:
+                make_text_file(cid_data_string, folder4)
+
+            # Update splitting data to CID item record UTB.content (temporary)
+            LOGGER.info("Updating split information to CID Item record")
+            utb_content, utb_fieldname, priref = get_cid_data(dpx_sequence)
+            old_payload = ''
+            if 'DPX splitting summary' in str(utb_fieldname):
+                for item in utb_content:
+                    old_payload = item.replace('\r\n', '\n')
+                    LOGGER.info("CID record already has UTB content. Preserving original payload: %s", old_payload)
+            if len(priref) > 1:
+                success = record_append(priref, cid_data_string, old_payload)
+                if success:
+                    LOGGER.info("CID splitting data appended to priref %s", priref)
+                    splitting_log(f"Splitting data written to CID priref {priref}")
+                else:
+                    LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
+                    splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
+            else:
+                LOGGER.warning("Failed to retrieve priref and unable to write splitting data to CID")
+                splitting_log(f"*** Failed to obtain Priref for {dpx_sequence}. Please manually append to CID")
+            splitting_log(f"\n------ SPLIT END {dpx_sequence} ------ {str(datetime.datetime.now())}")
+            LOGGER.info("Splitting completed for path: %s", root)
 
     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
 
@@ -727,7 +768,7 @@ def make_text_file(cid_data_list, folderpath):
             log_data.close()
     with open(text_path, 'a') as log_data:
         log_data.write(
-            f'-------------- Splitting activity: {datetime.datetime.now()} --------------'
+            f'-------------- Splitting activity: {str(datetime.datetime.now())[:19]} --------------\n'
         )
 
         for item in cid_data_list:
@@ -752,8 +793,7 @@ def mass_move(dpx_path, new_path):
 def renumber(dpx_path, new_num):
     '''
     Split dpx_number from path and append new number for new_dpx_path
-    Shutil move / or os.rename to change the name over.
-    DPX path must be supplied without trailing '/'
+    os.rename to change the name over.
     '''
     dpx_path = dpx_path.rstrip('/')
     path = os.path.split(dpx_path)
@@ -804,7 +844,6 @@ def splitting_log(data):
     '''
     if len(data) > 0:
         with open(SPLITTING_LOG, 'a') as log:
-            LOGGER.info("splitting_log(): Filename splitting data appended to splitting log:\n< %s >", data)
             log.write(data + "\n")
             log.close()
 
@@ -816,31 +855,28 @@ def part_whole_log(fname):
     to this list. Handles if ob_num already listed, or if log removed, replaces and appends number.
     '''
     ob_num = fname[:-7]
-
+    object_number = f"ob_num\n"
     with open(PART_WHOLE_LOG, 'a+') as log:
-        log.seek(0)
-        data = log.read()
-        for line in data:
-            if ob_num in str(line):
-                LOGGER.info("part_whole_log(): Object number %s already in part whole search log, skipping", ob_num)
-            else:
-                if len(data) > 0:
-                    log.write("\n")
-                LOGGER.info("part_whole_log(): Object number %s appended to part_whole log in errors folder", ob_num)
-                log.write(ob_num)
+        log.write(object_number)
         log.close()
 
 
-def record_append(priref, cid_data_list):
+def record_append(priref, cid_data, original_data):
     '''
     Writes splitting data to CID UTB content field
     Temporary location, awaiting permanent CID location
+    JOANNA: Add extraction of utb, and append original entries to end of this payload.
     '''
-    payload_head = f"<adlibXML><recordList><record priref='{priref}''>"
-    splitting_data = "\n".join(cid_data_list)
-    payload_addition = f"<utb.fieldname>'DPX splitting summary'</utb.fieldname><utb.content><![CDATA[{splitting_data}]]></utb.content>"
+    name = 'datadigipres'
+    date = str(datetime.datetime.now())[:10]
+    time = str(datetime.datetime.now())[11:19]
+    notes = 'Automated DPX splitting script, record of actions against this item.'
+    summary = 'DPX splitting summary'
+    payload_head = f"<adlibXML><recordList><record priref='{priref}'>"
+    payload_addition = f"<utb.fieldname>{summary}</utb.fieldname><utb.content><![CDATA[{cid_data}{original_data}]]></utb.content>"
+    payload_edit = f"<edit.name>{name}</edit.name><edit.date>{date}</edit.date><edit.time>{time}</edit.time><edit.notes>{notes}</edit.notes>"
     payload_end = "</record></recordList></adlibXML>"
-    payload = payload_head + payload_addition + payload_end
+    payload = payload_head + payload_addition + payload_edit + payload_end
 
     lock_success = write_lock(priref)
     if lock_success:
@@ -862,6 +898,7 @@ def write_lock(priref):
         post_response = requests.post(
             CID_API,
             params={'database': 'items', 'command': 'lockrecord', 'priref': f'{priref}', 'output': 'json'})
+        print(post_response.text)
         return True
     except Exception as err:
         LOGGER.warning("write_lock(): Lock record wasn't applied to record %s\n%s", priref, err)

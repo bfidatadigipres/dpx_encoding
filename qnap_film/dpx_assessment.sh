@@ -47,8 +47,8 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/${dimensions}/${dpx}"
-            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
-            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+#            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+#            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
 
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
@@ -113,10 +113,10 @@ if [ -s "${DPX_PATH}rawcooked_dpx_list.txt" ]; then
   done
 fi
 
-# Take python_list.txt and iterate through entries, passing to Python script
+# Take python_list.txt and iterate through entries, passing to Python script one of each instance
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
-  grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
+  grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
 fi
 
 # Append latest pass/failures to movement logs
