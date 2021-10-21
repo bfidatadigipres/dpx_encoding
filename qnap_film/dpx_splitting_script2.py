@@ -739,10 +739,10 @@ def move_retry(missing_list, root, folder):
             LOGGER.critical("move_retry(): Missing DPX not found: %s", item)
 
 
-def make_text_file(cid_data_list, folderpath):
+def make_text_file(cid_data, folderpath):
     '''
     Appends splitting message if file created, otherwise creates
-    new text file and appends new message to it
+    new text file and appends new string message to it
     '''
     text_path = os.path.join(folderpath, 'splitting_information.txt')
     if not os.path.isfile(text_path):
@@ -753,8 +753,7 @@ def make_text_file(cid_data_list, folderpath):
             f'-------------- Splitting activity: {str(datetime.datetime.now())[:19]} --------------\n'
         )
 
-        for item in cid_data_list:
-            log_data.write(f"{item}")
+        log_data.write(f"{cid_data}")
         log_data.write("\n")
         log_data.close()
 
@@ -837,7 +836,7 @@ def part_whole_log(fname):
     to this list. Handles if ob_num already listed, or if log removed, replaces and appends number.
     '''
     ob_num = fname[:-7]
-    object_number = f"ob_num\n"
+    object_number = f"{ob_num}\n"
     with open(PART_WHOLE_LOG, 'a+') as log:
         log.write(object_number)
         log.close()
