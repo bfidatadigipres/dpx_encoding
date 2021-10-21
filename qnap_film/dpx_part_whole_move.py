@@ -6,7 +6,6 @@ dpx_part_whole_move.py
 Script functions:
 1. Look in part_whole_split/rawcooked and part_whole_split/tar
    for sequences moved to holding point that are under 1TB encoding size
-   Use os.listdir() targeting each path
 2. Checks through all folder names, if any appear in left
    column of CSV then rename each file appropriately.
 3. Sorts all files into part whole and process 01of* only
@@ -22,7 +21,8 @@ Notes:
 A sequence will not be in this folder unless it is beneath 1TB/1.3TB.
 A sequence will not be in this folder if it has one part whole - 01of01
 It's unlikely part wholes will be split across tar/rawcook paths, but
-the script should be prepared for such a case
+the script is prepared for this and will look for and move to correct
+encoding paths accordingly.
 
 Joanna White 2021
 '''
@@ -134,35 +134,37 @@ def main():
             dirpath = os.path.join(root, directory)
             if directory.startswith('N_'):
                 if directory.endswith('01of01'):
-                    print(f"No part whole actions needed for {dirpath} directory")
+                    LOGGER.info("Directory with 01of01 found: %s", directory)
+                    LOGGER.info("Moving straight to encoding path")
                     if '/tar/' in str(dirpath):
                         shutil.move(dirpath, TAR_PATH)
                     elif '/rawcook/' in str(dirpath):
                         shutil.move(dirpath, RAWCOOKED_PATH)
                 elif re.match(".+01of*", directory):
-                    print(f"Directory range being extracted for {directory}")
+                    LOGGER.info("First directory in sequence found: %s", directory)
                     range_list = return_range(directory)
+                    LOGGER.info("Range list extracted: %s", range_list)
                 else:
                     continue
 
             seq_paths = check_sequence_range(range_list, part_path)
-            if seq_paths:
-                print("All sequences present and can be moved to encoding path")
+            if directory.startswith('N_') and seq_paths:
+                LOGGER.info("All sequences present in part_whole_split and can be moved to encoding path")
                 success = folder_moves(seq_paths)
                 if success:
-                    print(f"Folders moved to new locations successfully:\n{seq_paths}")
+                    LOGGER.info("Folders moved to new locations successfully:\n%s\n", seq_paths)
                 else:
-                    print(f"Move failed for one or more folder:\n{seq_paths}")
-            else:
-                LOGGER.info("NOT MOVING: %s sequence parts missing", directory)
-                print(f"NOT MOVING: {directory} sequence parts missing.")
-    LOGGER.info("============= DPX PART WHOLE MOVE END =============\n")
+                    LOGGER.warning("Move failed for one of more folder:\n%s\n", seq_paths)
+            elif directory.startswith('N_') and not seq_paths:
+                LOGGER.info("NOT MOVING: %s sequence parts missing from folder\n", directory)
 
+    LOGGER.info("============= DPX PART WHOLE MOVE END =============\n")
 
 
 def check_sequence_range(sequence_range, part_path):
     '''
-    Checks for all present in path and returns boolean
+    Checks for all present in path and returns False boolean
+    if any one is missing, or returns whole sequence path list
     '''
     seq_paths = []
     for item in sequence_range:
@@ -173,9 +175,8 @@ def check_sequence_range(sequence_range, part_path):
         elif os.path.isdir(dirpath_raw):
             seq_paths.append(dirpath_raw)
         else:
-            print(f"Directory {item} not found in {part_path} folders")
+            LOGGER.info("check_sequence_range(): Directory %s missing from %s folder", item, part_path)
             return None
-
     return seq_paths
 
 
