@@ -49,7 +49,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
             log "- ${file_scan_name}/$reel/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
-            byte_size=$(du -s -b "${filename}")
+            byte_size=$(du -s -b "${DPX_PATH}${filename}")
             echo "${filename} total folder size in bytes before splitting: ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Start comparison of first dpx file against mediaconch policy
