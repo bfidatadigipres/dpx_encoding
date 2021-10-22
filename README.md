@@ -1,15 +1,15 @@
 ## DPX preservation scripts
 
-The BFI National Archive recently developed workflows using open source software RAWcooked to convert DPX film scans into FFv1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these DPX automation workflows.  The aim of these scripts is to turn large DPX image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX sequences to FFV1 can reduce the overall file size by half, and allow the DPX image sequence to be played in VLC or similar software for instant review.
+The BFI National Archive recently developed workflows using open source software RAWcooked to convert 2K and 4K DPX film scans into FFv1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these DPX automation workflows.  The aim of these scripts is to turn large DPX image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX sequences to FFV1 can reduce the overall file size by half (2K RGB files), and allow the DPX image sequence to be played in VLC or similar software for instant review.
 
-These scripts are available under the MIT licence. They have been recently redeveloped and as such have a few untested features within the code, which will be updated as testing continues in coming weeks. If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
+These scripts are available under the MIT licence. They have been recently redeveloped and may contain some untested features within the code. If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
 
 
 ## Overview
 
-These bash shell scripts are not designed to be run from the command line, but via cron scheduling. As a result there is no built in help command, so please refer to this README and the script comments for information about script functionality.
+These bash shell scripts and Python scripts are not designed to be run from the command line, but via cron scheduling. As a result there is no built in help command, so please refer to this README and the script comments for information about script functionality.
 
-These handle the complete encoding process from start to finish, including assessment of the DPX sequences suitability for RAWcooked encoding, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path.
+These scripts handle the complete encoding process from start to finish, including assessment of the DPX sequences suitability for RAWcooked encoding, splitting of sequences too large for ingest into our DPI, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path.
 
 RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type moving failed files to a seprate folder, and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula, using '--output-version 2'. If it fails again an error is issued to an current errors log, flagging the folder in need of human intervention.
 
@@ -22,9 +22,9 @@ These scripts are run from Ubuntu 20.04LTS installed server and rely upon variou
 
 Several open source softwares are used from Media Area. Please follow the links below to find out more:  
 RAWcooked version 21.09 - https://mediaarea.net/rawcooked (dpx_rawcook.sh is not compatible with any earlier versions of RAWcooked)  
-FFmpeg Version 4 - https://ffmpeg.org/  
-MediaConch - https://mediaarea.net/mediaconch  
-MediaInfo - https://mediaarea.net/mediainfo  
+FFmpeg Version 4+ - https://ffmpeg.org/  
+MediaConch V18.03.2+ - https://mediaarea.net/mediaconch  
+MediaInfo V19.09 - https://mediaarea.net/mediainfo (dpx_assessment.sh is not currently compatible with later versions if 4K scans in use)  
 
 To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own that may include the following):  
 
@@ -35,12 +35,12 @@ To run the concurrent processes the scripts use GNU Parallel which will require 
     available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb
 
 The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
-`sudo apt install p7zip-full`
+`sudo apt install p7zip-full`  
 
 
-## Environmental variable storage
+## Environmental variable storage  
 
-These scripts are being operated on each server under a specific user, who has environmental variables storing all path data for the script operations. These environmental variables are persistent so can be called indefinitely. When being called from crontab it's critical that the crontab user is set to the correct user with associated environmental variables.
+These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely.  
 
 
 ## Operational environment
@@ -56,6 +56,9 @@ automation_dpx
 │   ├── dpx_to_assess  
 │   │   ├── N_3623284_03of03  
 │   │   └── N_489875_2_08of08  
+│   ├── part_whole_split  
+│   │   ├── rawcook  
+│   │   └── tar  
 │   ├── rawcooked  
 │   │   ├── dpx_to_cook  
 │   │   │   └── N_473236_01of02  
@@ -80,22 +83,22 @@ automation_dpx
 ## Supporting crontab actions
 
 The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
-To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them on the hour. It is common for the lock files to disappear when a server is rebooted, etc.
+To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them every hour. It is common for the lock files to disappear when a server is rebooted, etc.
 
 The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
-dpx_assessment.sh - Twice a day at 12:35 am and 12:35pm  
+dpx_assessment.sh - Every eight hours on the half hour (launches dpx_splitting_script.py processing one job at a time).    
 dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
-dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8:15am, 4:15pm, and 12:15am  
-dpx_tar_script.sh - Runs once a day at 5pm  
-dpx_clean_up.sh - Runs once a day at 4am  
+dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8am, 4pm, and 12am  
+dpx_tar_script.sh - Runs once a day at 10pm  
+dpx_clean_up.sh - Runs once a day at 5am  
 
 DPX Encoding script crontab entries:  
 
-    `35    */12  *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment.sh`
+    `30    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment.sh`
     `*/15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/film_operations/dpx_rawcook.sh`
-    `15    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh`
-    `0     17    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/dpx_tar_script.sh`
-    `0     4     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/film_operations/dpx_clean_up.sh`  
+    `0    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh`
+    `0     22    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/dpx_tar_script.sh`
+    `0     5     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/film_operations/dpx_clean_up.sh`  
     `*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh`  
     
 ## global.log
@@ -107,24 +110,25 @@ Global.log is created by DPI ingest scripts to map processing of files as they a
 
 ### dpx_assessment.sh [Launches Python splitting script]
 
-This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the first DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
+This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the fifth DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
 
 Script functions:
 - Refreshes the DPX success and failure lists, tar, rawcooked, luma and python lists so clean for each run of the script, avoiding path failures.
-- Looks within the dpx_to_assess/ folder for DPX sequence directories at pixel ratio folder level. Eg, 2048x1556/ (found at mindepth 3 / maxdepth3)
+- Looks within the dpx_to_assess/ folder for DPX sequence directories at pixel ratio folder level. Eg, 2048x1556/ (found at mindepth 3 / maxdepth 3)
 - Takes the fifth DPX within this folder and stores in a 'dpx' variable, creates 'filename' and 'scan' variables using the basename and dirname of path
 - Greps for the 'filename' within script_logs/rawcooked_dpx_success.log and script_logs/tar_dpx_failures.log. If appears in either then the file is skipped. If not:
   - Compares 'dpx' to Mediaconch policy rawcooked_dpx_policy.xml (policy specifically written to pass/fail RAWcooked encodings)
-  - If pass, looks for metadata indicating if the DPX have RGB or Luma (Y) colourspace, before writing 'filename' to rawcooked_dpx_list.txt or luma_dpx_list.txt
+  - If pass, looks for metadata indicating if the DPX are 4K, have RGB or Luma (Y) colourspace, before writing 'filename' to rawcooked_dpx_list.txt or luma_4k_dpx_list.txt
   - If fail writes 'filename' to tar_dpx_list.txt and outputs reason for failure to script_logs/dpx_assessment.log
 - Each list created in previous stage is sorted by its part whole, and passed into a loop that calculates the total folder size in KB, then writes this data to new list python_list.txt
-- The contents of python_list.txt are passed one at a time to the Python splitting script for size assessment and potential splitting. From here they are moved to their encoding paths.
-- Appends the luma, rawcooked and tar failure lists to rawcooked_dpx_success.log and tar_dpx_failures.log
+- The contents of python_list.txt are passed one at a time to the Python splitting script for size assessment and potential splitting. From here they are moved to their encoding paths if 01of01, or into the part_whole_split folder if multiple parts exist.
+- Appends the luma, 4K, rawcooked and tar failure lists to rawcooked_dpx_success.log and tar_dpx_failures.log
 
 Requires use of rawcooked_dpx_policy.xml.
 
-### dpx_splitting_script.py [Partially implemented]
+
+### dpx_splitting_script2.py
 
 This script is not listed in the crontab as it is launched at the end dpx_assessment.sh to arrange movement of the image sequence, and where necessary splits the folders into smaller folders to allow for RAWcooked / TAR wrapping of a finished file no larger that 1TB.
 
@@ -132,43 +136,59 @@ Script function:
 - Receives three arguments within SYS.ARGV[1], splitting them into:
   - Total KB size of the DPX sequence
   - Path to DPX sequence
-  - Encoding type - rawcooked, luma or tar
-- Checks if the DPX sequence name is listed in splitting_document.csv
+  - Encoding type - rawcooked, luma, 4k or tar
+- Checks if the DPX sequence name is listed in splitting_document.csv first column 'original' name
   - If yes, renumbers the folder and updates the dpx_sequence/dpx_path variables
   - If no, skips onto next stage
 - Divisions are calculated based upon the DPX sequence total KB size. The options returned include:
-  - No division needed because the folder is under the minimum encoding size for Imagen. The DPX folders are moved to their encoding paths.
+  - No division needed because the folder is under the minimum encoding size for Imagen. The DPX folders are moved to their encoding paths if the have the part whole 01of01. If not they are moved straight to part_whole_split folder to await their remaining parts.  
      Script exits, completed.
-  - Oversized folder. The folder is too large to be divided by this script and needs human intervention. The folder is moved to current_errors/oversized_sequences/ folder and the error log is appended.
+  - Oversized folder. The folder is too large to be divided by this script and needs human intervention (over 5.2TB). The folder is moved to current_errors/oversized_sequences/ folder and the error log is appended.
      Script exits, completed.
-  - Divisions are required by either 2, 3, 4 or 5 splits depending on the size of the DPX sequence and whether the encoding is for RAWcooked RGB, RAWcooked luma or TAR wrapping (see table 1)
+  - Divisions are required by either 2, 3, 4 or 5 splits depending on the size of the DPX sequence and whether the encoding is for RAWcooked RGB, RAWcooked luma, RAWcooked 4K or TAR wrapping (see table 1)
     Script continues to next step
 - Splittings functions begin:
   - DPX_splitting.log is updated with details of the DPX sequence that required splitting
   - New folder names are generated for the split folder additions and old numbers have new folder part wholes calculated for them. The current DPX sequence folder has it’s number updated, and the dpx_sequence and dpx_path variables are updated.
-  - All new folder names, and amended folder part wholes are updated to splitting_document.csv
+  - All original folder names, new folder names, and today's date are updated respectively to splitting_document.csv
   - DPX sequence path is iterated over finding all folders within it that contain files ending in ‘.dpx’ or ‘.DPX’. This will find all instances of scan01, scan02 folders within the DPX path and splits/moves each equally.
   - New folders have new paths created, incorporating all sub folders down to the level of the DPX files.
   - All DPX files within the DPX path are counted per scan folder, divided as per division (2, 3, 4 or 5 - see table 1).
   - The new folder list and first DPX of each block of data is written to the DPX_splitting.log
   - Each block is moved to it’s corresponding new folder, one DPX at a time using Python’s shutil function.
-  - [To be implemented: checks that the files all moved correctly]  
-- [To be implemented: Search to check if all part wholes are present and under required size limit. Only when all are present and correct can they advance to their encoding paths]  
-- [To be implemented: Human readable data of the splits added to DPI database field for retrieval, and added to each folder in a text file for long-term embedding in MKV container]  
+  - Each block is checked that the files all moved correctly, where any are missing a second move attempt is made.  
+- Human readable data of the splits added to DPI database field for retrieval, and added to each folder in a text file for long-term embedding in MKV container.  
+
+Requires supporting documentation: splitting_document.csv, DPX_splitting.log
 
 Table 1  
-| RAWcooked RGB  | RAWcooked Luma  | TAR wrapping    | Total divisions |  
-| -------------- | --------------- | --------------- | --------------- |  
-| 1.4TB to 2.8TB | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 2 Divisions     |  
-| 2.8TB to 4.2TB | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 3 Divisions     |  
-| 4.2TB to 5.6TB | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 4 Divisions     |  
-|                | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
+| RAWcooked RGB  | RAWcooked Luma  | RAWcooked 4K    | TAR wrapping    | Total divisions |  
+| -------------- | --------------- | --------------- | --------------- | --------------- |  
+| 1.3TB to 2.6TB | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 2 Divisions     |  
+| 2.6TB to 3.9TB | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 3 Divisions     |  
+| 3.9TB to 5.2TB | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 4 Divisions     |  
+|                | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
 
-NOTES: We've only recently started RAWcooked encoding Y (Luma) DPX sequences, and on average the first few hundred Matroska files have approximate size reductions of 27%. This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
+NOTES: We've only recently started RAWcooked encoding Y (Luma) and 4K DPX sequences, and on average the first Matroska files have approximate size reductions of 27% (Luma Y) and 10% (RGB 4K). This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
+
+
+### dpx_part_whole_move.py
+
+This Python3 script has been written to check for complete part whole sequences and where present to move the files together as a unit onto the encoding paths. The sequences are only moved into the part_whole_split folder when they are within their safe encoding size, and when they are part of a series of reels.
+
+Script functions:
+- Looks in part_whole_split/ subfolders rawcook/ and tar/ for sequences. Checks every sequence's folder name in the splitting_document.csv and if found in the 'original' name column then the folder name is updated to reflect changes to the situation of the whole reel collection (another part must have required splitting actions).
+- Next it sorts through files looking for 01of01, where present (by human accident only) moves straight to transcode path determined by whether the file is found in the tar/ or rawcook/ subfolder.
+- Looks for any remaining sequences with the part whole 01of* only, and expands the part whole in to the name range for the folder and stores as a Python list, for example:  ['N_123456_01of03', 'N_123456_02of03', 'N_123456_03of03']  
+- Checks in both tar/ and rawcook/ folders for these folder names, if any are absent the then script exits with a message to log saying that there sequence parts missing. Where all sequences are found, then each found folder is moved onto it's respective encoding path.
+- Update the script actions to the log.
+
+Requires supporting documentation: splitting_document.csv  
+
 
 ### dpx_rawcook.sh
 
-This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --all --output-version 2 command against reversibility_list, second with just --all command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
+This script runs two passes of the DPX sequences in dpx_to_cook/, first pass running --all --no-accept-gaps --output-version 2 command against reversibility_list, second with just --all --no-accept-gaps command. It is run from /etc/crontab every 15 minutes which is protected by Flock lock to ensure the script cannot run more than one instance at a time.
 
 Script functions:
 - Refreshes the temporary_rawcooked_list.txt and temp_queued_list.txt  
