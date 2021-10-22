@@ -3,7 +3,7 @@
 '''
 *** THIS SCRIPT MUST RUN FROM SHELL LAUNCH SCRIPT RUNNING PARALLEL 1 JOB AT A TIME ***
 Receives three sys.argv items from shell script:
-KB size, path to folder, and encoding type (tar or luma/rawcooked)
+KB size, path to folder, and encoding type (tar or luma_4k/rawcooked)
 
 Script functions:
 1. Checks if dpx sequence name is 01of01
@@ -223,8 +223,8 @@ def workout_division(arg, kb_size):
                 LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
                 division = 'oversize'
 
-    # Size calculation for luma or tar encoding sizes
-    elif 'tar' in arg or 'luma' in arg:
+    # Size calculation for luma_4k or tar encoding sizes
+    elif 'tar' in arg or 'luma_4k' in arg:
         if kb_size <= 1073741823:
             division = None
         elif 1073741824 <= kb_size <= 2147483648:
@@ -236,7 +236,7 @@ def workout_division(arg, kb_size):
         elif 4294967297 <= kb_size <= 5368709120:
             division = '5'
         elif kb_size >= 5368709121:
-            LOGGER.warning("workout_division(): TAR or Luma Y file is too large for DPX splitting: %s KB", kb_size)
+            LOGGER.warning("workout_division(): TAR, Luma Y or 4K file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
     return division
@@ -377,24 +377,18 @@ def main():
         data = sys.argv[1]
         data = data.split(', ')
         kb_size = int(data[0])
-        print(kb_size)
         dpx_path = str(data[1])
-        print(dpx_path)
         encoding = str(data[2])
-        print(encoding)
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
-        print(dpx_sequence)
         LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
 
         # Separate singleton files from part wholes
         if dpx_sequence.endswith('_01of01'):
             singleton = True
-            print("Singleton True")
         else:
             new_num = read_csv(dpx_sequence)
             singleton = False
-            print("Singleton False")
 
             # Renumber part whole folder, update dpx_path / dpx_sequence
             print(new_num)
@@ -421,10 +415,10 @@ def main():
         path_split = os.path.split(dpx_path)
         root_path = path_split[0]
 
-        # No division needed, sequence is below 1.3TB and folder is 01of01
+        # No division needed, sequence is below 1.3TB/1TB and folder is 01of01
         if (division is None and singleton):
             LOGGER.info("No splitting necessary for: %s\nMoving to encoding path for %s", dpx_path, encoding)
-            if ('rawcooked' in encoding or 'luma' in encoding):
+            if ('rawcooked' in encoding or 'luma_4k' in encoding):
                 LOGGER.info("Moving DPX sequence to RAWcooked path: %s", dpx_sequence)
                 try:
                     shutil.move(dpx_path, RAWCOOKED_PATH)
@@ -452,7 +446,7 @@ def main():
         # No splitting, but item is part whole and needs processing by part_whole_move.py
         elif (division is None and not singleton):
             LOGGER.info("No splitting necessary for: %s\nMoving to part_whole_split path", dpx_path)
-            if ('rawcooked' in encoding or 'luma' in encoding):
+            if ('rawcooked' in encoding or 'luma_4k' in encoding):
                 LOGGER.info("Moving DPX sequence to part_whole_split/rawcooked path: %s", dpx_sequence)
                 try:
                     shutil.move(dpx_path, PART_RAWCOOK)
@@ -477,7 +471,7 @@ def main():
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
 
-        # Folder is larger than 5TB (TAR/Luma) / 5.2TB (RAWcooked) script exit
+        # Folder is larger than 5TB (TAR/Luma/4K) / 5.2TB (RAWcooked) script exit
         elif 'oversize' in division:
             LOGGER.warning("OVERSIZE FOLDER: Too large for splitting script %s", dpx_path)
             splitting_log(f"OVERSIZE FOLDER: {dpx_sequence}. Moving to current_errors/oversized_sequence/ folder")
@@ -575,10 +569,10 @@ def main():
                         LOGGER.info("Folder %s will be divided into %s divisions now", dpx_sequence, division)
                         block_data = count_files(root, division)
                         block_list = block_data[0]
-                        splitting_log(f"\n Block list data (total DPX, DPX per sequence, first DPX per block):\n{block_list}")
                         cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}\n")
                         # Output data to splitting log
-                        splitting_log(f"\nFolder {dpx_sequence} contains {block_list[0]} DPX items. Requires {division} divisions, {block_list[1]} items per new folder")
+                        splitting_log(f"\nFolder {dpx_sequence} contains {block_list[0]} DPX items. Requires {division} divisions, {block_list[1]} items per folder")
+                        splitting_log(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
                         splitting_log(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
                         cid_data.append(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
                         cid_data.append(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
@@ -893,7 +887,7 @@ def write_payload(priref, payload):
         CID_API,
         params={'database': 'items', 'command': 'updaterecord', 'xmltype': 'grouped', 'output': 'json'},
         data={'data': payload})
-
+    print(post_response.text)
     if "<error><info>" in str(post_response.text):
         LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
         return False

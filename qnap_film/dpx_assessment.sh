@@ -20,11 +20,11 @@ function log {
 # Refresh temporary success/failure lists
 rm "${DPX_PATH}rawcooked_dpx_list.txt"
 rm "${DPX_PATH}tar_dpx_list.txt"
-rm "${DPX_PATH}luma_dpx_list.txt"
+rm "${DPX_PATH}luma_4k_dpx_list.txt"
 rm "${DPX_PATH}python_list.txt"
 touch "${DPX_PATH}rawcooked_dpx_list.txt"
 touch "${DPX_PATH}tar_dpx_list.txt"
-touch "${DPX_PATH}luma_dpx_list.txt"
+touch "${DPX_PATH}luma_4k_dpx_list.txt"
 touch "${DPX_PATH}python_list.txt"
 
 # Write first log output
@@ -59,14 +59,22 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
                     log "$check"
                     echo "${DPX_PATH}$filename" >> "${DPX_PATH}tar_dpx_list.txt"
                 else
-                    descriptor=$(mediainfo --Details=1 "${files}/$dpx" | grep -i "Descriptor" | grep -i "Luma (Y)")
-                    if [ -z "$descriptor" ]
+                    width_find=$(mediainfo --Details=1 "${files}/$dpx" | grep -i 'Pixels per line:')
+                    read -a array <<< "$width_find"
+                    if [ "${array[4]}" -gt 3999 ]
                         then
-                            log "PASS: RGB $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
-                            echo "${DPX_PATH}$filename" >> "${DPX_PATH}rawcooked_dpx_list.txt"
+                            log "PASS: 4K scan $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
+                            echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_4k_dpx_list.txt"
                         else
-                            log "PASS: Luma (Y) $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
-                            echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_dpx_list.txt"
+                            descriptor=$(mediainfo --Details=1 "${files}/$dpx" | grep -i "Descriptor" | grep -i "Luma (Y)")
+                            if [ -z "$descriptor" ]
+                                then
+                                    log "PASS: RGB $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
+                                    echo "${DPX_PATH}$filename" >> "${DPX_PATH}rawcooked_dpx_list.txt"
+                                else
+                                    log "PASS: Luma (Y) $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
+                                    echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_4k_dpx_list.txt"
+                            fi
                     fi
             fi
         else
@@ -75,16 +83,16 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
     fi
 done
 
-# Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
-if [ -s "${DPX_PATH}luma_dpx_list.txt" ]; then
-  list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | sort -n -k10.12 )
+# Prepare luma_4k_dpx_list for DPX splitting script/move to RAWcooked preservation
+if [ -s "${DPX_PATH}luma_4k_dpx_list.txt" ]; then
+  list1=$(cat "${DPX_PATH}luma_4k_dpx_list.txt" | sort -n -k10.12 )
   log "Luma Y path items for size check and Python splitting/moving script:"
   log "$list1"
-  echo "$list1" > "${DPX_PATH}luma_dpx_list.txt"
-  cat "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
+  echo "$list1" > "${DPX_PATH}luma_4k_dpx_list.txt"
+  cat "${DPX_PATH}luma_4k_dpx_list.txt" | while IFS= read -r line1; do
     kb_size=$(du -s "$line1" | cut -f1)
     log "Size of $line1 is $kb_size KB. Passing to Python script..."
-    echo "$kb_size, $line1, luma" >> "${DPX_PATH}python_list.txt";
+    echo "$kb_size, $line1, luma_4k" >> "${DPX_PATH}python_list.txt";
   done
 fi
 
@@ -122,7 +130,7 @@ fi
 
 # Append latest pass/failures to movement logs
 cat "${DPX_PATH}rawcooked_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
-cat "${DPX_PATH}luma_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
+cat "${DPX_PATH}luma_4k_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}tar_dpx_list.txt" >> "${DPX_PATH}tar_dpx_failures.log"
 
 log "===================== DPX Assessment workflows ends ====================="
