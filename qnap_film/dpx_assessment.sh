@@ -27,9 +27,6 @@ touch "${DPX_PATH}tar_dpx_list.txt"
 touch "${DPX_PATH}luma_4k_dpx_list.txt"
 touch "${DPX_PATH}python_list.txt"
 
-# Write first log output
-log "===================== DPX assessment workflows start ====================="
-
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
 find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
@@ -44,12 +41,15 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
 
     if [ "$count_queued_pass" -eq 0 ] && [ "$count_queued_fail" -eq 0 ];
         then
+            # Write first log output
+            log "===================== DPX assessment workflows start ====================="
+
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/${dimensions}/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
-            byte_size=$(du -s -b "$files}")
+            byte_size=$(du -s -b "${filename}")
             echo "${filename} total folder size in bytes before splitting: ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
@@ -126,11 +126,11 @@ fi
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
   grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
+  log "===================== DPX Assessment workflows ends ====================="
+  log " "
 fi
 
 # Append latest pass/failures to movement logs
 cat "${DPX_PATH}rawcooked_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}luma_4k_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}tar_dpx_list.txt" >> "${DPX_PATH}tar_dpx_failures.log"
-
-log "===================== DPX Assessment workflows ends ====================="

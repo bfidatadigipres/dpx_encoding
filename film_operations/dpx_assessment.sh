@@ -20,15 +20,12 @@ function log {
 # Refresh temporary success/failure lists
 rm "${DPX_PATH}rawcooked_dpx_list.txt"
 rm "${DPX_PATH}tar_dpx_list.txt"
-rm "${DPX_PATH}luma_dpx_list.txt"
+rm "${DPX_PATH}luma_4k_dpx_list.txt"
 rm "${DPX_PATH}python_list.txt"
 touch "${DPX_PATH}rawcooked_dpx_list.txt"
 touch "${DPX_PATH}tar_dpx_list.txt"
-touch "${DPX_PATH}luma_dpx_list.txt"
+touch "${DPX_PATH}luma_4k_dpx_list.txt"
 touch "${DPX_PATH}python_list.txt"
-
-# Write first log output
-log "===================== DPX assessment workflows start ====================="
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Maxdepth Mindepth temporarily fixed at 4, but will need adjusting to 3 in future
@@ -45,11 +42,15 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
 
     if [ "$count_queued_pass" -eq 0 ] && [ "$count_queued_fail" -eq 0 ];
         then
+            # Write first log output
+            log "===================== DPX assessment workflows start ====================="
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/$reel/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+            byte_size=$(du -s -b "${filename}")
+            echo "${filename} total folder size in bytes before splitting: ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
@@ -59,14 +60,22 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
                     log "$check"
                     echo "${DPX_PATH}$filename" >> "${DPX_PATH}tar_dpx_list.txt"
                 else
-                    descriptor=$(mediainfo --Details=1 "${files}/$dpx" | grep -i "Descriptor" | grep -i "Luma (Y)")
-                    if [ -z "$descriptor" ]
+                    width_find=$(mediainfo --Details=1 "${files}/$dpx" | grep -i 'Pixels per line:')
+                    read -a array <<< "$width_find"
+                    if [ "${array[4]}" -gt 3999 ]
                         then
-                            log "PASS: RGB $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
-                            echo "${DPX_PATH}$filename" >> "${DPX_PATH}rawcooked_dpx_list.txt"
+                            log "PASS: 4K scan $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
+                            echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_4k_dpx_list.txt"
                         else
-                            log "PASS: Luma (Y) $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
-                            echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_dpx_list.txt"
+                            descriptor=$(mediainfo --Details=1 "${files}/$dpx" | grep -i "Descriptor" | grep -i "Luma (Y)")
+                            if [ -z "$descriptor" ]
+                                then
+                                    log "PASS: RGB $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
+                                    echo "${DPX_PATH}$filename" >> "${DPX_PATH}rawcooked_dpx_list.txt"
+                                else
+                                    log "PASS: Luma (Y) $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
+                                    echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_4k_dpx_list.txt"
+                            fi
                     fi
             fi
         else
@@ -76,15 +85,15 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
 done
 
 # Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
-if [ -s "${DPX_PATH}luma_dpx_list.txt" ]; then
+if [ -s "${DPX_PATH}luma_4k_dpx_list.txt" ]; then
   log "Luma Y path items for size check and Python splitting/moving script:"
-  list1=$(cat "${DPX_PATH}luma_dpx_list.txt" | sort -n -k10.12 )
+  list1=$(cat "${DPX_PATH}luma_4k_dpx_list.txt" | sort -n -k10.12 )
   log "$list1"
-  echo "$list1" > "${DPX_PATH}luma_dpx_list.txt"
-  cat "${DPX_PATH}luma_dpx_list.txt" | while IFS= read -r line1; do
+  echo "$list1" > "${DPX_PATH}luma_4k_dpx_list.txt"
+  cat "${DPX_PATH}luma_4k_dpx_list.txt" | while IFS= read -r line1; do
     kb_size=$(du -s "$line1" | cut -f1)
     log "Size of $line1 is $kb_size KB. Passing to Python script..."
-    echo "$kb_size, $line1, luma" >> "${DPX_PATH}python_list.txt";
+    echo "$kb_size, $line1, luma_4k" >> "${DPX_PATH}python_list.txt";
   done
 fi
 
@@ -118,11 +127,12 @@ fi
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
   grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
+  log "===================== DPX Assessment workflows ends ====================="
+  log " "
 fi
 
 # Append latest pass/failures to movement logs
 cat "${DPX_PATH}rawcooked_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
-cat "${DPX_PATH}luma_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
+cat "${DPX_PATH}luma_4k_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}tar_dpx_list.txt" >> "${DPX_PATH}tar_dpx_failures.log"
 
-log "===================== DPX Assessment workflows ends ====================="
