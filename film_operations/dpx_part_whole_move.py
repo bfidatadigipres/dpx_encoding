@@ -164,7 +164,7 @@ def main():
 
 def check_sequence_range(sequence_range, part_path):
     '''
-    Checks for all present in path and returns False boolean
+    Checks for all present in path and returns None
     if any one is missing, or returns whole sequence path list
     '''
     seq_paths = []
