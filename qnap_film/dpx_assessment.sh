@@ -86,7 +86,7 @@ done
 # Prepare luma_4k_dpx_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}luma_4k_dpx_list.txt" ]; then
   list1=$(cat "${DPX_PATH}luma_4k_dpx_list.txt" | sort -n -k10.12 )
-  log "Luma Y path items for size check and Python splitting/moving script:"
+  log "RAWcooked Luma Y/4K path items for size check and Python splitting/moving script:"
   log "$list1"
   echo "$list1" > "${DPX_PATH}luma_4k_dpx_list.txt"
   cat "${DPX_PATH}luma_4k_dpx_list.txt" | while IFS= read -r line1; do
@@ -112,7 +112,7 @@ fi
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}rawcooked_dpx_list.txt" ]; then
   list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | sort -n -k10.12 )
-  log "RAWcooked path items for size check and Python splitting/moving script:"
+  log "RAWcooked 2K RGB path items for size check and Python splitting/moving script:"
   log "$list3"
   echo "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
   cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
@@ -127,7 +127,6 @@ if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
   grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
   log "===================== DPX Assessment workflows ends ====================="
-  log " "
 fi
 
 # Append latest pass/failures to movement logs

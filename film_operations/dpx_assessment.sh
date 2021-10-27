@@ -128,7 +128,6 @@ if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
   grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
   log "===================== DPX Assessment workflows ends ====================="
-  log " "
 fi
 
 # Append latest pass/failures to movement logs
