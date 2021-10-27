@@ -37,33 +37,27 @@ log "Comparing dpx_completed/ folder to global.log"
 cat "${DPX_PATH}temp_dpx_list.txt" | while IFS= read -r files; do
     trim_file=$(basename "$files")
     object=$(echo "$trim_file" | rev | cut -c 8- | rev)
-    # Check if file present in part_whole_search, skip if so
-    count=$(grep -c "$object" "${ERRORS}part_whole_search.log")
-    if [ "$count" -eq 0 ];
+    # Check if file present on global log this month/last month
+    on_global=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$THIS_MONTH")
+    if [ -z "$on_global" ]
       then
-        on_global=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$THIS_MONTH")
-        if [ -z "$on_global" ]
+        retry=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$LAST_MONTH")
+        if [ -z "$retry" ]
           then
-            retry=$(grep "$trim_file" "$GLOB_LOG" | grep 'Successfully deleted file' | grep "$LAST_MONTH")
-            if [ -z "$retry" ]
+            skipped=$(grep "$trim_file" "$GLOB_LOG" | grep 'Skip object' | grep "$THIS_MONTH")
+            if [ -z "$skipped" ]
               then
-                skipped=$(grep "$trim_file" "$GLOB_LOG" | grep 'Skip object' | grep "$THIS_MONTH")
-                if [ -z "$skipped" ]
-                  then
-                    log "****** ${files} MKV/TAR HAS NOT PASSED INTO AUTOINGEST! ******"
-                  else
-                    log "${files} MKV/TAR is still being ingested"
-                fi
+                log "****** ${files} MKV/TAR HAS NOT PASSED INTO AUTOINGEST! ******"
               else
-                log "DELETE: ${files} MKV/TAR has been RAWcooked or TAR wrapped and is in Imagen"
-                echo "$trim_file" >> "${DPX_PATH}files_for_deletion_list.txt"
+                log "${files} MKV/TAR is still being ingested"
             fi
           else
             log "DELETE: ${files} MKV/TAR has been RAWcooked or TAR wrapped and is in Imagen"
             echo "$trim_file" >> "${DPX_PATH}files_for_deletion_list.txt"
         fi
       else
-        log "$trim_file is in part_whole_search.log and should be left for splitting scripts"
+        log "DELETE: ${files} MKV/TAR has been RAWcooked or TAR wrapped and is in Imagen"
+        echo "$trim_file" >> "${DPX_PATH}files_for_deletion_list.txt"
     fi
 done
 
@@ -80,7 +74,7 @@ if [ -z "$file_list" ]
         grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
         log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+#        grep ^N_ "${DPX_PATH}files_for_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 log "============= DPX clean up script END ============="
