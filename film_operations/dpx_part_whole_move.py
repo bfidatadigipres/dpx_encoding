@@ -150,12 +150,8 @@ def main():
 
             seq_paths = check_sequence_range(range_list, part_path)
             if directory.startswith('N_') and seq_paths:
-                LOGGER.info("All sequences present in part_whole_split and can be moved to encoding path")
-                success = folder_moves(seq_paths)
-                if success:
-                    LOGGER.info("Folders moved to new locations successfully:\n%s\n", seq_paths)
-                else:
-                    LOGGER.warning("Move failed for one of more folder:\n%s\n", seq_paths)
+                LOGGER.info("All sequences present in part_whole_split and can be moved to encoding path:")
+                folder_moves(seq_paths)
             elif directory.startswith('N_') and not seq_paths:
                 LOGGER.info("NOT MOVING: %s sequence parts missing from folder\n", directory)
 
@@ -205,11 +201,13 @@ def folder_moves(seq_path):
         if '/tar/' in str(item):
             try:
                 shutil.move(item, TAR_PATH)
+                LOGGER.info("Moved to TAR PATH: %s", item)
             except Exception as err:
                 LOGGER.warning("Unable to move files %s to %s\n%s", item, TAR_PATH, err)
         if '/rawcook/' in str(item):
             try:
                 shutil.move(item, RAWCOOKED_PATH)
+                LOGGER.info("Moved to RAWCOOK PATH: %s", item)
             except Exception as err:
                 LOGGER.warning("Unable to move files %s to %s\n%s", item, TAR_PATH, err)
 

@@ -49,7 +49,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
             log "- ${file_scan_name}/$reel/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
-#            byte_size=$(du -s -b "${DPX_PATH}${filename}")
+            byte_size=$(du -s -b "${DPX_PATH}${filename}")
             echo "${filename} total folder size in bytes before splitting: ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Start comparison of first dpx file against mediaconch policy
@@ -86,7 +86,7 @@ done
 
 # Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}luma_4k_dpx_list.txt" ]; then
-  log "Luma Y path items for size check and Python splitting/moving script:"
+  log "RAWcooked Luma Y/4K path items for size check and Python splitting/moving script:"
   list1=$(cat "${DPX_PATH}luma_4k_dpx_list.txt" | sort -n -k10.12 )
   log "$list1"
   echo "$list1" > "${DPX_PATH}luma_4k_dpx_list.txt"
@@ -112,7 +112,7 @@ fi
 
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}rawcooked_dpx_list.txt" ]; then
-  log "RAWcooked path items for size check and Python splitting/moving script:"
+  log "RAWcooked 2K RGB path items for size check and Python splitting/moving script:"
   list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | sort -n -k10.12 )
   log "$list3"
   echo "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
