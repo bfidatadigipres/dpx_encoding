@@ -30,8 +30,8 @@ touch "${DPX_PATH}python_list.txt"
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
 find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
-    # Find fifth DPX of sequence (avoid non-DPX files already in folder or poor formed first/last DPX files)
-    dpx=$(ls "$files" | head -5 | tail -1)
+    # Find first DPX of sequence
+    dpx=$(ls "$files" | head -1 )
     dimensions=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
     filename=$(basename "$(dirname "$(dirname "$files")")")
