@@ -10,7 +10,6 @@ DPX_PATH="${FILM_OPS}${DPX_ASSESS}"
 POLICY_PATH="${POLICY_DPX}"
 PY3_LAUNCH="${PY3_ENV}"
 SPLITTING="${SPLITTING_SCRIPT_FILMOPS}"
-CONTROL_JSON="${LOG_PATH}downtime_control.json"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
