@@ -5,17 +5,28 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-LOG_PATH="${FILM_OPS}${DPX_SCRIPT_LOG}"
+DPX_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${FILM_OPS}${DPX_ASSESS}"
 POLICY_PATH="${POLICY_DPX}"
 PY3_LAUNCH="${PY3_ENV}"
 SPLITTING="${SPLITTING_SCRIPT_FILMOPS}"
+CONTROL_JSON="${LOG_PATH}downtime_control.json"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
     timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
     echo "$1 - $timestamp"
-} >> "${LOG_PATH}dpx_assessment.log"
+} >> "${DPX_LOG}dpx_assessment.log"
+
+# Function to check for control json activity
+function control {
+    boole=$(cat "${LOG_PATH}downtime_control.json" | grep "rawcooked" | awk -F': ' '{print $2}')
+    if [ "$boole" = false, ] ; then
+      log "Control json requests script exit immediately"
+      log "===================== DPX assessment workflow ENDED ====================="
+      exit 0
+    fi
+}
 
 # Refresh temporary success/failure lists
 rm "${DPX_PATH}rawcooked_dpx_list.txt"
@@ -26,6 +37,9 @@ touch "${DPX_PATH}rawcooked_dpx_list.txt"
 touch "${DPX_PATH}tar_dpx_list.txt"
 touch "${DPX_PATH}luma_4k_dpx_list.txt"
 touch "${DPX_PATH}python_list.txt"
+
+# Control check
+control
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Maxdepth Mindepth temporarily fixed at 4, but will need adjusting to 3 in future

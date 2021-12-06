@@ -5,7 +5,7 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-LOG_PATH="${QNAP_FILM}${DPX_SCRIPT_LOG}"
+DPX_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
 DPX_PATH="${QNAP_FILM}${DPX_ASSESS}"
 POLICY_PATH="${POLICY_DPX}"
 PY3_LAUNCH="${PY3_ENV}"
@@ -15,7 +15,17 @@ SPLITTING="${SPLITTING_SCRIPT}"
 function log {
     timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
     echo "$1 - $timestamp"
-} >> "${LOG_PATH}dpx_assessment.log"
+} >> "${DPX_LOG}dpx_assessment.log"
+
+# Function to check for control json activity
+function control {
+    boole=$(cat "${LOG_PATH}downtime_control.json" | grep "rawcooked" | awk -F': ' '{print $2}')
+    if [ "$boole" = false, ] ; then
+      log "Control json requests script exit immediately"
+      log "===================== DPX Assessment workflows ends ====================="
+      exit 0
+    fi
+}
 
 # Refresh temporary success/failure lists
 rm "${DPX_PATH}rawcooked_dpx_list.txt"
@@ -26,6 +36,9 @@ touch "${DPX_PATH}rawcooked_dpx_list.txt"
 touch "${DPX_PATH}tar_dpx_list.txt"
 touch "${DPX_PATH}luma_4k_dpx_list.txt"
 touch "${DPX_PATH}python_list.txt"
+
+# Control check
+control
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>

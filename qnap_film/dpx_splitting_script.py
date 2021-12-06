@@ -51,6 +51,7 @@ import sys
 import shutil
 import logging
 import csv
+import json
 import datetime
 import requests
 
@@ -66,6 +67,7 @@ TAR_PATH = os.path.join(DPX_PATH, os.environ['DPX_WRAP'])
 RAWCOOKED_PATH = os.path.join(DPX_PATH, os.environ['DPX_COOK'])
 PART_RAWCOOK = os.path.join(DPX_PATH, os.environ['PART_RAWCOOK'])
 PART_TAR = os.path.join(DPX_PATH, os.environ['PART_TAR'])
+CONTROL_JSON = os.path.join(os.environ['LOG_PATH'], 'downtime_control.json')
 TODAY = str(datetime.datetime.now())[:10]
 CID_API = os.environ['CID_API']
 
@@ -76,6 +78,17 @@ FORMATTER = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 HDLR.setFormatter(FORMATTER)
 LOGGER.addHandler(HDLR)
 LOGGER.setLevel(logging.INFO)
+
+
+def check_control():
+    '''
+    Check control json for downtime requests
+    '''
+    with open(CONTROL_JSON) as control:
+        j = json.load(control)
+        if not j['rawcooked']:
+            LOGGER.info('Script run prevented by downtime_control.json. Script exiting.')
+            sys.exit('Script run prevented by downtime_control.json. Script exiting.')
 
 
 def get_cid_data(dpx_sequence):
@@ -369,6 +382,8 @@ def main():
     If divisions necessary takes steps necessary to subdivide large sequence into sub-folders
     so each folder total file size is beneath 1TB/1.4TB.
     '''
+    check_control()
+
     if len(sys.argv) < 2:
         LOGGER.warning("SCRIPT NOT STARTING: Error with shell script input:\n %s", sys.argv)
         sys.exit()
@@ -840,7 +855,6 @@ def record_append(priref, cid_data, original_data):
     '''
     Writes splitting data to CID UTB content field
     Temporary location, awaiting permanent CID location
-    JOANNA: Add extraction of utb, and append original entries to end of this payload.
     '''
     name = 'datadigipres'
     date = str(datetime.datetime.now())[:10]
