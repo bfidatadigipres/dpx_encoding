@@ -4,7 +4,6 @@
 *** THIS SCRIPT MUST RUN FROM SHELL LAUNCH SCRIPT RUNNING PARALLEL 1 JOB AT A TIME ***
 Receives three sys.argv items from shell script:
 KB size, path to folder, and encoding type (tar or luma_4k/rawcooked)
-
 Script functions:
 1. Checks if dpx sequence name is 01of01
    If yes, skips on to stage 2 and 3
@@ -38,10 +37,8 @@ Script functions:
 5. Where a DPX sequence is any other part whole, after successful splitting they
    are also left in place to be moved to part_whole_split tar/rawcooked folders to
    next pass to assess and relocate in time.
-
 State of new script:
 Updates complete and tested
-
 Joanna White 2021
 '''
 
@@ -53,7 +50,7 @@ import logging
 import csv
 import json
 import datetime
-import requests
+#import requests
 
 # Global variables
 DPX_PATH = os.environ['FILM_OPS']
@@ -121,16 +118,25 @@ def get_cid_data(dpx_sequence):
 
 def read_csv(dpx_sequence):
     '''
-    Does fname entry exist in CSV, if yes retrieve data and return
+    Does fname entry exist in CSV, if yes retrieve latest sequence
+    number for that entry and return
     '''
-    new_number = ''
+    number_present = True
+    new_sequence = dpx_sequence
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
-        for row in readme:
-            orig_num = row['original']
-            if str(orig_num) == str(dpx_sequence):
-                new_number = row['new_number']
-        return str(new_number)
+
+        while (number_present is True):
+            for row in readme:
+                orig_num = row['original']
+                if str(orig_num) == str(new_sequence):
+                    new_sequence = row['new_number']
+                else:
+                    number_present = False
+    if new_sequence == dpx_sequence:
+        return ''
+    else:
+        return new_sequence
 
 
 def count_files(dirpath, division):
@@ -926,3 +932,4 @@ def unlock_record(priref):
 
 if __name__ == '__main__':
     main()
+
