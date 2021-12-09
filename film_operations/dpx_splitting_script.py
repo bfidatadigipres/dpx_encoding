@@ -50,7 +50,7 @@ import logging
 import csv
 import json
 import datetime
-#import requests
+import requests
 
 # Global variables
 DPX_PATH = os.environ['FILM_OPS']
@@ -95,7 +95,7 @@ def get_cid_data(dpx_sequence):
     ob_num_split = dpx_sequence.split('_')
     ob_num = '-'.join(ob_num_split[0:2])
     search = f"object_number='{ob_num}'"
-    query = {'databse': 'items',
+    query = {'database': 'items',
              'search': search,
              'output': 'json'}
     results = requests.get(CID_API, params=query)

@@ -55,16 +55,25 @@ LOGGER.setLevel(logging.INFO)
 
 def read_csv(dpx_sequence):
     '''
-    Does fname entry exist in CSV, if yes retrieve data and return
+    Does fname entry exist in CSV, if yes retrieve latest sequence
+    number for that entry and return
     '''
-    new_number = ''
+    number_present = True
+    new_sequence = dpx_sequence
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
-        for row in readme:
-            orig_num = row['original']
-            if str(orig_num) == str(dpx_sequence):
-                new_number = row['new_number']
-        return str(new_number)
+
+        while (number_present is True):
+            for row in readme:
+                orig_num = row['original']
+                if str(orig_num) == str(new_sequence):
+                    new_sequence = row['new_number']
+                else:
+                    number_present = False
+    if new_sequence == dpx_sequence:
+        return ''
+    else:
+        return new_sequence
 
 
 def fname_split(fname):

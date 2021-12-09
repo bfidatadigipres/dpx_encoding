@@ -98,7 +98,7 @@ def get_cid_data(dpx_sequence):
     ob_num_split = dpx_sequence.split('_')
     ob_num = '-'.join(ob_num_split[0:2])
     search = f"object_number='{ob_num}'"
-    query = {'databse': 'items',
+    query = {'database': 'items',
              'search': search,
              'output': 'json'}
     results = requests.get(CID_API, params=query)
@@ -121,16 +121,25 @@ def get_cid_data(dpx_sequence):
 
 def read_csv(dpx_sequence):
     '''
-    Does fname entry exist in CSV, if yes retrieve data and return
+    Does fname entry exist in CSV, if yes retrieve latest sequence
+    number for that entry and return
     '''
-    new_number = ''
+    number_present = True
+    new_sequence = dpx_sequence
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
-        for row in readme:
-            orig_num = row['original']
-            if str(orig_num) == str(dpx_sequence):
-                new_number = row['new_number']
-        return str(new_number)
+
+        while (number_present is True):
+            for row in readme:
+                orig_num = row['original']
+                if str(orig_num) == str(new_sequence):
+                    new_sequence = row['new_number']
+                else:
+                    number_present = False
+    if new_sequence == dpx_sequence:
+        return ''
+    else:
+        return new_sequence
 
 
 def count_files(dirpath, division):
@@ -690,6 +699,7 @@ def main():
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
             utb_content, utb_fieldname, priref = get_cid_data(dpx_sequence)
+            LOGGER.info("Retrieved CID Priref: %s", priref)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
                 for item in utb_content:
