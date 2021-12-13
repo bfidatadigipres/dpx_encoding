@@ -5,6 +5,7 @@
 Receives three sys.argv items from shell script:
 KB size, path to folder, and encoding type (tar or luma_4k/rawcooked)
 Script functions:
+0. Checks in CID if dpx_sequence record has 'DPX' in file_type (numbered correctly)
 1. Checks if dpx sequence name is 01of01
    If yes, skips on to stage 2 and 3
    If no, checks if name is in CSV and renames, then skips to stages 2 and 3
@@ -37,6 +38,7 @@ Script functions:
 5. Where a DPX sequence is any other part whole, after successful splitting they
    are also left in place to be moved to part_whole_split tar/rawcooked folders to
    next pass to assess and relocate in time.
+
 State of new script:
 Updates complete and tested
 Joanna White 2021
@@ -60,6 +62,7 @@ SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 PART_WHOLE_LOG = os.path.join(ERRORS, 'part_whole_search.log')
 SPLITTING_LOG = os.path.join(SCRIPT_LOG, 'DPX_splitting.log')
+DPX_REVIEW = os.path.join(DPX_PATH, os.environ['DPX_REVIEW'])
 TAR_PATH = os.path.join(DPX_PATH, os.environ['DPX_WRAP'])
 RAWCOOKED_PATH = os.path.join(DPX_PATH, os.environ['DPX_COOK'])
 PART_RAWCOOK = os.path.join(DPX_PATH, os.environ['PART_RAWCOOK'])
@@ -112,8 +115,12 @@ def get_cid_data(dpx_sequence):
         priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
     except (IndexError, KeyError):
         priref = ''
+    try:
+        file_type = results['adlibJSON']['recordList']['record'][0]['file_type'][0]
+    except (IndexError, KeyError):
+        file_type = ''
 
-    return (utb_content, utb_fieldname, priref)
+    return (utb_content, utb_fieldname, priref, file_type)
 
 
 def read_csv(dpx_sequence):
@@ -402,7 +409,26 @@ def main():
         encoding = str(data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
-        LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
+        utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
+
+        # Sequence CID Item record check
+        if 'dpx' in file_type.lower():
+            LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
+        else:
+            LOGGER.warning("CID record does not have File Type DPX - priref: %s", priref)
+            LOGGER.warning("DPX sequence being moved to dpx_for_review/ folder for further inspection")
+            splitting_log("DPX not found in file_type of CID Item record for this sequence: %s", priref)
+            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            sys.exit()
+        # Filename format correct
+        split_name = dpx_sequence.split('_')
+        if not len(split_name[-1]) == 6:
+            LOGGER.warning("Part whole has incorrect formatting, moving folder to dpx_to_review for further inspection")
+            splitting_log("DPX sequence number's part whole is incorrectly formatted: %s", dpx_sequence)
+            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            sys.exit()
 
         # Separate singleton files from part wholes
         if dpx_sequence.endswith('_01of01'):
@@ -695,7 +721,6 @@ def main():
 
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
-            utb_content, utb_fieldname, priref = get_cid_data(dpx_sequence)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
                 for item in utb_content:
@@ -861,7 +886,6 @@ def record_append(priref, cid_data, original_data):
     '''
     Writes splitting data to CID UTB content field
     Temporary location, awaiting permanent CID location
-    JOANNA: Add extraction of utb, and append original entries to end of this payload.
     '''
     name = 'datadigipres'
     date = str(datetime.datetime.now())[:10]
@@ -913,6 +937,7 @@ def write_payload(priref, payload):
         LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
         return False
     else:
+        LOGGER.info("No error warning in post_response. Payload successfully written")
         return True
 
 
@@ -932,4 +957,3 @@ def unlock_record(priref):
 
 if __name__ == '__main__':
     main()
-
