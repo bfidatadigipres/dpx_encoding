@@ -42,7 +42,7 @@ control
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
-find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; do
+find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -r files; do
     # Find first DPX of sequence
     dpx=$(ls "$files" | head -1 )
     dimensions=$(basename "$files")
@@ -56,14 +56,14 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r files; d
         then
             # Write first log output
             log "===================== DPX assessment workflows start ====================="
-
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/${dimensions}/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
             byte_size=$(du -s -b "${DPX_PATH}${filename}")
-            echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3) before splitting: ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
+            echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
+
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
             if [ -z "$check" ]

@@ -6,6 +6,7 @@ Receives three sys.argv items from shell script:
 KB size, path to folder, and encoding type (tar or luma_4k/rawcooked)
 
 Script functions:
+0. Checks in CID if dpx_sequence record has 'DPX' in file_type (numbered correctly)
 1. Checks if dpx sequence name is 01of01
    If yes, skips on to stage 2 and 3
    If no, checks if name is in CSV and renames, then skips to stages 2 and 3
@@ -39,9 +40,6 @@ Script functions:
    are also left in place to be moved to part_whole_split tar/rawcooked folders to
    next pass to assess and relocate in time.
 
-State of new script:
-Updates complete and tested
-
 Joanna White 2021
 '''
 
@@ -63,6 +61,7 @@ SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 PART_WHOLE_LOG = os.path.join(ERRORS, 'part_whole_search.log')
 SPLITTING_LOG = os.path.join(SCRIPT_LOG, 'DPX_splitting.log')
+DPX_REVIEW = os.path.join(DPX_PATH, os.environ['DPX_REVIEW'])
 TAR_PATH = os.path.join(DPX_PATH, os.environ['DPX_WRAP'])
 RAWCOOKED_PATH = os.path.join(DPX_PATH, os.environ['DPX_COOK'])
 PART_RAWCOOK = os.path.join(DPX_PATH, os.environ['PART_RAWCOOK'])
@@ -115,8 +114,12 @@ def get_cid_data(dpx_sequence):
         priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
     except (IndexError, KeyError):
         priref = ''
+    try:
+        file_type = results['adlibJSON']['recordList']['record'][0]['file_type'][0]
+    except (IndexError, KeyError):
+        file_type = ''
 
-    return (utb_content, utb_fieldname, priref)
+    return (utb_content, utb_fieldname, priref, file_type)
 
 
 def read_csv(dpx_sequence):
@@ -232,18 +235,17 @@ def workout_division(arg, kb_size):
 
     # Size calculation for rawcooked RGB encodings (now 1.3TB increments, upto 5.2TB)
     if 'rawcooked' in arg:
-        if 'rawcooked' in arg:
-            if kb_size <= 1395864370:
-                division = None
-            elif 1395864370 <= kb_size <= 2791728740:
-                division = '2'
-            elif 2791728740 <= kb_size <= 4187593110:
-                division = '3'
-            elif 4187593110 <= kb_size <= 5583457480:
-                division = '4'
-            elif kb_size >= 5583457480:
-                LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
-                division = 'oversize'
+        if kb_size <= 1395864370:
+            division = None
+        elif 1395864370 <= kb_size <= 2791728740:
+            division = '2'
+        elif 2791728740 <= kb_size <= 4187593110:
+            division = '3'
+        elif 4187593110 <= kb_size <= 5583457480:
+            division = '4'
+        elif kb_size >= 5583457480:
+            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
+            division = 'oversize'
 
     # Size calculation for luma_4k or tar encoding sizes
     elif 'tar' in arg or 'luma_4k' in arg:
@@ -405,7 +407,26 @@ def main():
         encoding = str(data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
-        LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
+        utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
+
+        # Sequence CID Item record check
+        if 'dpx' in file_type.lower():
+            LOGGER.info("Processing DPX sequence: %s", dpx_sequence)
+        else:
+            LOGGER.warning("CID record does not have File Type DPX - priref: %s", priref)
+            LOGGER.warning("DPX sequence being moved to dpx_for_review/ folder for further inspection")
+            splitting_log("DPX not found in file_type of CID Item record for this sequence: %s", priref)
+            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            sys.exit()
+        # Filename format correct
+        split_name = dpx_sequence.split('_')
+        if not len(split_name[-1]) == 6:
+            LOGGER.warning("Part whole has incorrect formatting, moving folder to dpx_to_review for further inspection")
+            splitting_log("DPX sequence number's part whole is incorrectly formatted: %s", dpx_sequence)
+            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            sys.exit()
 
         # Separate singleton files from part wholes
         if dpx_sequence.endswith('_01of01'):
@@ -698,13 +719,12 @@ def main():
 
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
-            utb_content, utb_fieldname, priref = get_cid_data(dpx_sequence)
+            utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
             LOGGER.info("Retrieved CID Priref: %s", priref)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
-                for item in utb_content:
-                    old_payload = item.replace('\r\n', '\n')
-                    LOGGER.info("CID record already has UTB content. Preserving original payload: %s", old_payload)
+                old_payload = utb_content.replace('\r\n', '\n')
+                LOGGER.info("CID record already has UTB content. Preserving original payload: %s", old_payload)
             if len(priref) > 1:
                 success = record_append(priref, cid_data_string, old_payload)
                 if success:
