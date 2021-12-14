@@ -22,7 +22,7 @@ function control {
     boole=$(cat "${LOG_PATH}downtime_control.json" | grep "rawcooked" | awk -F': ' '{print $2}')
     if [ "$boole" = false, ] ; then
       log "Control json requests script exit immediately"
-      log "===================== DPX Assessment workflows ends ====================="
+      log "===================== DPX assessment workflow ENDED ====================="
       exit 0
     fi
 }
@@ -44,7 +44,7 @@ control
 # Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
 find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -r files; do
     # Find first DPX of sequence
-    dpx=$(ls "$files" | head -1 )
+    dpx=$(ls "$files" | head -1)
     dimensions=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
     filename=$(basename "$(dirname "$(dirname "$files")")")
@@ -139,7 +139,7 @@ fi
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
   grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
-  log "===================== DPX Assessment workflows ends ====================="
+  log "===================== DPX assessment workflows ENDED ====================="
 fi
 
 # Append latest pass/failures to movement logs

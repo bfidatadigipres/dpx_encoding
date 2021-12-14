@@ -101,7 +101,7 @@ def return_range(dpx_sequence):
     # Create new numbered files
     for count in range(1, whole + 1):
         name = fname + str(count).zfill(2) + 'of' + str(whole).zfill(2)
-         # output name to full range list
+        # output name to full range list
         range_list.append(name)
 
     return range_list
@@ -168,7 +168,7 @@ def main():
 
 def check_sequence_range(sequence_range, part_path):
     '''
-    Checks for all present in path and returns False boolean
+    Checks for all present in path and returns None
     if any one is missing, or returns whole sequence path list
     '''
     seq_paths = []
@@ -215,7 +215,7 @@ def folder_moves(seq_path):
         if '/rawcook/' in str(item):
             try:
                 shutil.move(item, RAWCOOKED_PATH)
-                LOGGER.info("Moved to RAWCOOKED PATH: %s", item)
+                LOGGER.info("Moved to RAWCOOK PATH: %s", item)
             except Exception as err:
                 LOGGER.warning("Unable to move files %s to %s\n%s", item, TAR_PATH, err)
 

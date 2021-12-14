@@ -159,7 +159,7 @@ def main():
 
             seq_paths = check_sequence_range(range_list, part_path)
             if directory.startswith('N_') and seq_paths:
-                LOGGER.info("All sequences present in part_whole_split and can be moved to encoding path:")
+                LOGGER.info("All sequences present in part_whole_split and can be moved to encoding path")
                 folder_moves(seq_paths)
             elif directory.startswith('N_') and not seq_paths:
                 LOGGER.info("NOT MOVING: %s sequence parts missing from folder\n", directory)
