@@ -39,7 +39,7 @@ touch "${MKV_DESTINATION}reversibility_list.txt"
 # Matroska size check remove files to Killed folder, and folders moved to check_size/ ===
 # =======================================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +10 | while IFS= read -r fname; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r fname; do
     filename=$(basename "$fname")
     object=$(echo "$filename" | rev | cut -c 12- | rev)
     size=$(du -m "$fname" | cut -f1 )
@@ -62,8 +62,8 @@ done
 # Matroska checks using MediaConch policy, remove fails to Killed folder ===
 # ==========================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +10 | while IFS= read -r files; do
-  check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass!")
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r files; do
+  check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass! ${files}")
   filename=$(basename "$files")
   if [ -z "$check" ];
     then
@@ -85,7 +85,7 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 # Log check passes move to autoingest and logs folders, and DPX folder move ===
 # =============================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r fname; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
   success_check=$(grep 'Reversability was checked, no issue detected.' "$fname")
   mkv_filename=$(basename "$fname" | rev | cut -c 5- | rev )
   dpx_success_path=$("$fname" | rev | cut -c 9- | rev )
@@ -113,7 +113,7 @@ cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcoo
 # Error: the reversibility file is becoming big. --output-version 2 pass ===
 # ==========================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r large_logs; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r large_logs; do
   error_check1=$(grep 'Error: undecodable file is becoming too big.\|Error: the reversibility file is becoming big.' "$large_logs")
   mkv_fname1=$(basename "$large_logs" | rev | cut -c 5- | rev )
   dpx_folder1=$(basename "$large_logs" | rev | cut -c 9- | rev )
@@ -148,7 +148,7 @@ grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MK
 # General Error/Warning message failure checks - retry or raise in current errors ===
 # ===================================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +10 | while IFS= read -r fail_logs; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fail_logs; do
   error_check=$(grep 'Reversability was checked, issues detected, see below.\|Error:\|Conversion failed!\|Please contact info@mediaarea.net if you want support of such content.' "$fail_logs")
   mkv_fname=$(basename "$fail_logs" | rev | cut -c 5- | rev )
   dpx_folder=$(basename "$fail_logs" | rev | cut -c 9- | rev )
@@ -180,7 +180,7 @@ cat "${MKV_DESTINATION}error_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 # ===============================================================
 
 # This block manages the remaining INCOMPLETE cooks that have been killed or stalled mid-encoding
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +1440 -size +10k | while IFS= read -r stale_logs; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +3880 -size +10k | while IFS= read -r stale_logs; do
   stale_fname=$("$stale_logs" | rev | cut -c 5- | rev )
   stale_basename=$(basename "$stale_logs")
   log "Stalled/killed encoding: ${stale_basename}. Adding to stalled list and deleting log file and Matroska"

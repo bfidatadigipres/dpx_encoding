@@ -721,11 +721,11 @@ def main():
 
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
+            utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
-                for item in utb_content:
-                    old_payload = item.replace('\r\n', '\n')
-                    LOGGER.info("CID record already has UTB content. Preserving original payload: %s", old_payload)
+                old_payload = utb_content.replace('\r\n', '\n')
+                LOGGER.info("CID record already has UTB content. Preserving original payload: %s", old_payload)
             if len(priref) > 1:
                 success = record_append(priref, cid_data_string, old_payload)
                 if success:
