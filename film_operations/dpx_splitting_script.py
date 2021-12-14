@@ -236,18 +236,17 @@ def workout_division(arg, kb_size):
 
     # Size calculation for rawcooked RGB encodings (now 1.3TB increments, upto 5.2TB)
     if 'rawcooked' in arg:
-        if 'rawcooked' in arg:
-            if kb_size <= 1395864370:
-                division = None
-            elif 1395864370 <= kb_size <= 2791728740:
-                division = '2'
-            elif 2791728740 <= kb_size <= 4187593110:
-                division = '3'
-            elif 4187593110 <= kb_size <= 5583457480:
-                division = '4'
-            elif kb_size >= 5583457480:
-                LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
-                division = 'oversize'
+        if kb_size <= 1395864370:
+            division = None
+        elif 1395864370 <= kb_size <= 2791728740:
+            division = '2'
+        elif 2791728740 <= kb_size <= 4187593110:
+            division = '3'
+        elif 4187593110 <= kb_size <= 5583457480:
+            division = '4'
+        elif kb_size >= 5583457480:
+            LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
+            division = 'oversize'
 
     # Size calculation for luma_4k or tar encoding sizes
     elif 'tar' in arg or 'luma_4k' in arg:
