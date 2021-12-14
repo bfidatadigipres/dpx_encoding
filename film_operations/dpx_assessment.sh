@@ -97,10 +97,10 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +10 | while IFS= read -
     fi
 done
 
-# Prepare luma_dpx_list for DPX splitting script/move to RAWcooked preservation
+# Prepare luma_4k_dpx_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}luma_4k_dpx_list.txt" ]; then
-  log "RAWcooked Luma Y/4K path items for size check and Python splitting/moving script:"
   list1=$(cat "${DPX_PATH}luma_4k_dpx_list.txt" | sort -n -k10.12 )
+  log "RAWcooked Luma Y/4K path items for size check and Python splitting/moving script:"
   log "$list1"
   echo "$list1" > "${DPX_PATH}luma_4k_dpx_list.txt"
   cat "${DPX_PATH}luma_4k_dpx_list.txt" | while IFS= read -r line1; do
@@ -112,8 +112,8 @@ fi
 
 # Prepare tar_dpx_failure_list for DPX splitting script/move to TAR preservation
 if [ -s "${DPX_PATH}tar_dpx_list.txt" ]; then
-  log "TAR path items for size check and Python splitting/moving script:"
   list2=$(cat "${DPX_PATH}tar_dpx_list.txt" | sort -n -k10.12 )
+  log "TAR path items for size check and Python splitting/moving script:"
   log "$list2"
   echo "$list2" > "${DPX_PATH}tar_dpx_list.txt"
   cat "${DPX_PATH}tar_dpx_list.txt" | while IFS= read -r line2; do
@@ -125,8 +125,8 @@ fi
 
 # Prepare dpx_success_list for DPX splitting script/move to RAWcooked preservation
 if [ -s "${DPX_PATH}rawcooked_dpx_list.txt" ]; then
-  log "RAWcooked 2K RGB path items for size check and Python splitting/moving script:"
   list3=$(cat "${DPX_PATH}rawcooked_dpx_list.txt" | sort -n -k10.12 )
+  log "RAWcooked 2K RGB path items for size check and Python splitting/moving script:"
   log "$list3"
   echo "$list3" > "${DPX_PATH}rawcooked_dpx_list.txt"
   cat "${DPX_PATH}rawcooked_dpx_list.txt" | while IFS= read -r line3; do
@@ -139,8 +139,8 @@ fi
 # Take python_list.txt and iterate through entries, passing to Python script
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
-  grep '/mnt/' "${DPX_PATH}python_list.txt" | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
-  log "===================== DPX Assessment workflows ends ====================="
+  grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
+  log "===================== DPX assessment workflows ENDED ====================="
 fi
 
 # Append latest pass/failures to movement logs

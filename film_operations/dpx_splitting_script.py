@@ -39,8 +39,6 @@ Script functions:
    are also left in place to be moved to part_whole_split tar/rawcooked folders to
    next pass to assess and relocate in time.
 
-State of new script:
-Updates complete and tested
 Joanna White 2021
 '''
 

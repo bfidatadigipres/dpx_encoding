@@ -720,7 +720,6 @@ def main():
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
             utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
-            LOGGER.info("Retrieved CID Priref: %s", priref)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
                 old_payload = utb_content.replace('\r\n', '\n')
@@ -936,6 +935,7 @@ def write_payload(priref, payload):
         LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
         return False
     else:
+        LOGGER.info("No error warning in post_response. Payload successfully written")
         return True
 
 
