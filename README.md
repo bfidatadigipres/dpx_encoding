@@ -45,7 +45,7 @@ These scripts are being operated on each server using environmental variables th
 
 ## Operational environment
 
-The scripts operate within a defined folder structure. These automation_dpx folders are deposited at various storage locations, and the dpx_encoding repository scripts are broken into folder path names to reflect this, eg ‘film_operations’, ‘qnap_film’. The automation_dpx folder contents is always formatted like this so the scripts work across locations:
+The scripts operate within a defined folder structure. These automation_dpx folders are deposited at various storage locations, and the dpx_encoding repository scripts are broken into folder path names to reflect this, eg ‘film_operations’, ‘qnap_film’ etc. The automation_dpx folder contents is always formatted like this so the scripts work across locations:
 
 automation_dpx  
 ├── current_errors  
@@ -94,17 +94,17 @@ dpx_clean_up.sh - Runs once a day at 5am
 
 DPX Encoding script crontab entries:  
 
-    `30    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment.sh`
-    `*/15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/film_operations/dpx_rawcook.sh`
-    `0     */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh`
-    `0     22    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/dpx_tar_script.sh`
-    `0     5     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/film_operations/dpx_clean_up.sh`  
-    `0     21    *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log` 
-    `*/55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh`  
+    30    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment.sh  
+    */15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/film_operations/dpx_rawcook.sh  
+    0     */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh  
+    0     22    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/dpx_tar_script.sh  
+    0     5     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/film_operations/dpx_clean_up.sh  
+    0     21    *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log  
+    */55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
     
 ## global.log
 
-Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the automation_dpx/script_logs folder, just before dpx_clean_up.sh accesses it.
+Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the a central Logs folder, just before dpx_clean_up.sh accesses it.
 
 
 ## THE SCRIPTS
@@ -138,6 +138,9 @@ Script function:
   - Total KB size of the DPX sequence
   - Path to DPX sequence
   - Encoding type - rawcooked, luma, 4k or tar
+- Checks if DPX filename/part whole is properly formatted and if 'DPX' string is the file_type in associated DPX Item record
+  - If yes, continue with splitting
+  - If no, exit script with warning in logs and DPX sequence moved to 'dpx_to_review' folder
 - Checks if the DPX sequence name is listed in splitting_document.csv first column 'original' name
   - If yes, renumbers the folder and updates the dpx_sequence/dpx_path variables
   - If no, skips onto next stage
