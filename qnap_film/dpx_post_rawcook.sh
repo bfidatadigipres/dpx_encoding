@@ -144,7 +144,7 @@ cat "${MKV_DESTINATION}matroska_deletion.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.
 # Delete broken Matroska files if they exist (unlikely as error exits before encoding)
 grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
 
-# Add list of first time errors items to log, that will be re-encoded with --output-version 2
+# Add reversibility list to logs for reference
 log "DPX sequences that will be re-encoded using --output-version 2:"
 cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 
@@ -210,7 +210,7 @@ log "===================== Post-rawcook workflows ENDED ====================="
 echo "===================== Updated ===================== $DATE_FULL" > "${MKV_DESTINATION}temp_rawcooked_success.log"
 
 # Count lines in success_log and create count variable, output that count to new success log, then output all lines with /mnt* to the new log
-cat "${MKV_DESTINATION}rawcooked_success.log" | grep 'mnt' >> "${MKV_DESTINATION}temp_rawcooked_success.log"
+cat "${MKV_DESTINATION}rawcooked_success.log" | grep '/mnt/' >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 success_count=$(grep -c '/mnt/' "${MKV_DESTINATION}temp_rawcooked_success.log")
 echo "===================== Successful cooks: $success_count ===================== $DATE_FULL" >> "${MKV_DESTINATION}temp_rawcooked_success.log"
 

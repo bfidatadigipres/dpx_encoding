@@ -16,10 +16,10 @@ function log {
 } >> "${SCRIPT_LOG}dpx_rawcook.log"
 
 # Remove or generate temporary files per script run
-rm "${MKV_DEST}retry_list.txt"
-rm "${MKV_DEST}rawcook_list.txt"
 rm "${MKV_DEST}temporary_rawcook_list.txt"
 rm "${MKV_DEST}temporary_retry_list.txt"
+rm "${MKV_DEST}retry_list.txt"
+rm "${MKV_DEST}rawcook_list.txt"
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
 touch "${MKV_DEST}temporary_retry_list.txt"
@@ -52,7 +52,7 @@ cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
 log "DPX folder will be cooked using --output-version 2:"
 log "${cook_retry}"
 
-# Begin RAWcooked processing with GNU Parallel using --check-padding
+# Begin RAWcooked processing with GNU Parallel using --output-version 2
 cat "${MKV_DEST}retry_list.txt" | parallel --jobs 5 "rawcooked -y --all --no-accept-gaps --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"

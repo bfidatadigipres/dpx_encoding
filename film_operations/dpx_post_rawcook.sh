@@ -106,7 +106,7 @@ grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${
 # Move successful DPX sequence folders to dpx_completed/
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 5- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
 # Add list of moved items to post_rawcooked.log
-log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed/:"
+log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed:"
 cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 
 # ==========================================================================
@@ -144,6 +144,10 @@ cat "${MKV_DESTINATION}matroska_deletion.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.
 # Delete broken Matroska files if they exist (unlikely as error exits before encoding)
 grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
 
+# Add reversibility list to logs for reference
+log "DPX sequences that will be re-encoded using --output-version 2:"
+cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+
 # ===================================================================================
 # General Error/Warning message failure checks - retry or raise in current errors ===
 # ===================================================================================
@@ -171,16 +175,12 @@ cat "${MKV_DESTINATION}matroska_deletion_list.txt" >> "${SCRIPT_LOG}dpx_post_raw
 # Delete broken Matroska files
 grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
 
-# Add list of first time errors items to log, that will be re-encoded with --check-padding
-log "DPX sequences that have unknown error failures in logs:"
-cat "${MKV_DESTINATION}error_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
-
 # ===============================================================
 # FOR ==== INCOMPLETE ==== - i.e. killed processes ==============
 # ===============================================================
 
 # This block manages the remaining INCOMPLETE cooks that have been killed or stalled mid-encoding
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +3880 -size +10k | while IFS= read -r stale_logs; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +2880 -size +10k | while IFS= read -r stale_logs; do
   stale_fname=$("$stale_logs" | rev | cut -c 5- | rev )
   stale_basename=$(basename "$stale_logs")
   log "Stalled/killed encoding: ${stale_basename}. Adding to stalled list and deleting log file and Matroska"

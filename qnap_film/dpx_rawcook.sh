@@ -29,7 +29,6 @@ touch "${MKV_DEST}rawcook_list.txt"
 # Write a START note to the logfile
 log "===================== DPX RAWcook START ====================="
 
-
 # ========================
 # === RAWcook pass one ===
 # ========================
@@ -40,14 +39,14 @@ grep '/mnt/' "${MKV_DEST}reversibility_list.txt" | while IFS= read -r retry; do
   folder_retry=$(basename "$retry")
   count_cooked_2=$(grep -c "$folder_retry" "${MKV_DEST}rawcooked_success.log")
   count_queued_2=$(grep -c "$folder_retry" "${MKV_DEST}temp_queued_list.txt")
-  # Those not already queued/active passed to list, or else bypassed
+  # Those not already queued/active passed to list, else bypassed
   if [ "$count_cooked_2" -eq 0 ] && [ "$count_queued_2" -eq 0 ];
    then
     echo "$folder_retry" >> "${MKV_DEST}temporary_retry_list.txt"
   fi
 done
 
-# Sort the temporary_rawcook_list by part of extension, pass to rawcook_list.txt
+# Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt
 grep ^N_ "${MKV_DEST}temporary_retry_list.txt" | sort -n -k10.12 | uniq > "${MKV_DEST}retry_list.txt"
 cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
 log "DPX folder will be cooked using --output-version 2:"

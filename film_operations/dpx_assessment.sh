@@ -136,7 +136,7 @@ if [ -s "${DPX_PATH}rawcooked_dpx_list.txt" ]; then
   done
 fi
 
-# Take python_list.txt and iterate through entries, passing to Python script
+# Take python_list.txt and iterate through entries, passing to Python script one of each instance
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
   grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
