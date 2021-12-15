@@ -5,11 +5,11 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-DPX_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
-DPX_PATH="${QNAP_FILM}${DPX_ASSESS}"
+DPX_LOG="${QNAP_FILMOPS}${DPX_SCRIPT_LOG}"
+DPX_PATH="${QNAP_FILMOPS}${DPX_ASSESS}"
 POLICY_PATH="${POLICY_DPX}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT_QNAP_FILM}"
+SPLITTING="${SPLITTING_SCRIPT_QNAP_FILMOPS}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {

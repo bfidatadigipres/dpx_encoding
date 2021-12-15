@@ -33,11 +33,21 @@ function log {
 # Start TAR preparations and wrap of DPX sequences
 log "===================== DPX TAR preservation workflow start ====================="
 
-find "$DPX_PATH" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r tar_files; do
+#find "$DPX_PATH" -maxdepth 3 -mindepth 3 -type d | while IFS= read -r tar_files; do
     # Extract usable filenames from the path
-    scans=$(basename $(dirname "$tar_files"))
-    filename=$(basename $(dirname $(dirname "$tar_files")))
-    file_scan_name="${filename}/${scans}/"
+#    scans=$(basename $(dirname "$tar_files"))
+#    filename=$(basename $(dirname $(dirname "$tar_files")))
+#    file_scan_name="${filename}/${scans}/"
+
+find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -r files; do
+    # Find first DPX of sequence
+    dpx=$(ls "$files" | head -1)
+    reel=$(basename "$files")
+    scans=$(basename "$(dirname "$files")")
+    dimensions=$(basename "$(dirname "$(dirname "$files")")")
+    filename=$(basename "$(dirname "$(dirname "$(dirname "$files")")")")
+    file_scan_name="$filename/$dimensions/$scans"
+
     # Check if the files are already being processed
     count_tarred=$(cat "${DESTINATION}tar_checks.txt" | grep -c "$filename")
     if [ "$count_tarred" -eq 0 ];
@@ -136,4 +146,3 @@ cp "${DESTINATION}passed_tar_list.txt" "${DESTINATION}tar_checks.txt"
 
 # Writing script close statement
 log "===================== DPX TAR preservation workflow start ====================="
-

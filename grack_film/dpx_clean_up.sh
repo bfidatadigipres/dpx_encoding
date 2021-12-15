@@ -5,11 +5,11 @@
 # ===================================================================
 
 # Global variables extracted from environmental variables
-DPX_PATH="${QNAP_FILM}${DPX_COMPLETE}"
-DPX_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
+DPX_PATH="${GRACK_FILM}${DPX_COMPLETE}"
+DPX_LOG="${GRACK_FILM}${DPX_SCRIPT_LOG}"
 GLOB_LOG="${GLOBAL_LOG}"
-FOR_DELETION="${QNAP_FILM}${TO_DELETE}"
-ERRORS="${QNAP_FILM}${CURRENT_ERRORS}"
+FOR_DELETION="${GRACK_FILM}${TO_DELETE}"
+ERRORS="${GRACK_FILM}${CURRENT_ERRORS}"
 
 # Global date variables
 THIS_MONTH=$(date --date="$(date +%Y-%m-%d)" "+%Y-%m")
@@ -78,4 +78,3 @@ if [ -z "$file_list" ]
 fi
 
 log "============= DPX clean up script END ============="
-

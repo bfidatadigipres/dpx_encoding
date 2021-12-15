@@ -7,7 +7,7 @@
 # Global variables extracted from environmental variables
 DPX_PATH="${FILM_OPS}${DPX_COMPLETE}"
 DPX_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
-GLOB_LOG="${FILM_OPS}${GLOBAL_LOG}"
+GLOB_LOG="${GLOBAL_LOG}"
 FOR_DELETION="${FILM_OPS}${TO_DELETE}"
 ERRORS="${FILM_OPS}${CURRENT_ERRORS}"
 
