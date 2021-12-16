@@ -15,7 +15,14 @@ import subprocess
 STORE_PATH = os.environ['QNAP_FILM']
 CSV_PATH = os.path.join(STORE_PATH, "size_list.csv")
 NEW_CSV_PATH = os.path.join(STORE_PATH, "all_size_list.csv")
-DPX_SOURCE = os.environ['FILM_OPS']
+DPX_SOURCE = os.path.join(os.environ['FILM_OPS'], 'automation_dpx/encoding')
+
+
+def add_size_list_csv(size_data):
+    '''
+    Add data to size_list.csv from size_list.txt
+    '''
+    pass
 
 
 def read_csv(folder_num):
@@ -24,10 +31,11 @@ def read_csv(folder_num):
     '''
     mkv_path = ''
     filename = ''
+    print(CSV_PATH)
     with open(CSV_PATH, newline='') as fname:
-        readme = csv.DictReader(fname, delimiter='\t')
+        readme = csv.DictReader(fname)
         for row in readme:
-            mkv_path = row['mvk_path']
+            mkv_path = row['mkv_path']
             path_split = os.path.split(mkv_path)
             filename_split = os.path.splitext(path_split[1])
             filename = filename_split[0]
@@ -68,6 +76,7 @@ def main():
     sequence and then write all data to NEW_CSV_PATH
     '''
     for directory in os.listdir(DPX_SOURCE):
+        print(directory)
         if directory.startswith('dpx_completed'):
             folder_path_all = os.path.join(DPX_SOURCE, directory)
             for dir in os.listdir(folder_path_all):
