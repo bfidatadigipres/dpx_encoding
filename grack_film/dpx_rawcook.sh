@@ -7,7 +7,7 @@
 # Global variables extracted from environmental variables
 SCRIPT_LOG="${GRACK_FILM}${DPX_SCRIPT_LOG}"
 DPX_PATH="${GRACK_FILM}${DPX_COOK}"
-MKV_DEST="${GRACK_FILM}${MKV_ENCODED}"
+MKV_DEST="${QNAP_FILM}${MKV_ENCODED}" # Temp to QNAP-03
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
