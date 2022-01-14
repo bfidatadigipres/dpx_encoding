@@ -88,7 +88,7 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
   success_check=$(grep 'Reversability was checked, no issue detected.' "$fname")
   mkv_filename=$(basename "$fname" | rev | cut -c 5- | rev )
-  dpx_success_path=$("$fname" | rev | cut -c 9- | rev )
+  dpx_success_path=$(echo "$fname" | rev | cut -c 9- | rev )
   if [ -z "$success_check" ];
     then
       log "SKIP: Matroska $mkv_filename has not completed, or has errors detected"
