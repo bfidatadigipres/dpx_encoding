@@ -36,7 +36,7 @@ log "============= DPX check script START ============="
 # ================================================================
 
 # Create list for Matroskas in check/ folder with basic sort against whole name
-find "$MKV_PATH" -name -mmin +10 '*.mkv' | sort > "${MKV_PATH}temp_mkv_list.txt"
+find "$MKV_PATH" -name '*.mkv' -mmin +10 | sort > "${MKV_PATH}temp_mkv_list.txt"
 
 # Extract basename to new list for tidy logs/--check path creation
 grep '/mnt/' "${MKV_PATH}temp_mkv_list.txt" | while IFS= read -r mkv_list; do
@@ -57,7 +57,7 @@ grep ^N "${MKV_PATH}mkv_list.txt" | parallel --jobs 5 "rawcooked --check ${MKV_P
 # ===========================================================
 
 # Search for .txt files for success message
-find "${MKV_PATH}" -name -mmin +10 "*.mkv.txt" | while IFS= read -r log_list; do
+find "${MKV_PATH}" -name "*.mkv.txt" | while IFS= read -r log_list; do
   success_check=$(grep 'Reversability was checked, no issue detected.' "$log_list")
   mkv_file=$(basename "$log_list" | rev | cut -c 5- | rev )
   dpx_seq=$(echo "$mkv_file" | rev | cut -c 9- | rev )
