@@ -5,6 +5,7 @@
 # === DPX check_script / deletion of DPX sequence ===
 # ===================================================
 # TO DO: Post raw cook action to move encoding into 'check' folder
+# Only compatible with RAWcooked v21.09+
 
 # Global variables extracted from environmental variables
 MKV_PATH="${QNAP_FILMOPS}${MKV_CHECK}"
