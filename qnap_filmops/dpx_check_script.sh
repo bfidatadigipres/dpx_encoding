@@ -1,4 +1,3 @@
-
 #!/bin/bash -x
 
 # ===================================================
@@ -90,7 +89,7 @@ if [ -z "$fail_list" ]
         {
            echo "MKV files failed to pass --check tests:"
            "$fail_list"
-           "MKV files moved to killed/ folder. Associated DPX sequences moved back to dpx_to_cook/ folder"
+           echo "MKV files moved to killed/ folder. Associated DPX sequences moved back to dpx_to_cook/ folder"
         } >> "${ERRORS}dpx_encoding_errors.log"
 fi
 

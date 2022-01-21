@@ -11,6 +11,7 @@ DPX_DEST="${QNAP_FILMOPS}${DPX_COMPLETE}"
 MKV_DESTINATION="${QNAP_FILMOPS}${MKV_ENCODED}"
 MKV_POLICY="$POLICY_RAWCOOK"
 MKV_AUTOINGEST="${QNAP_FILMOPS}${AUTOINGEST_VID}"
+MKV_CHECK="${QNAP_FILMOPS}${MKV_CHECK}"
 SCRIPT_LOG="${QNAP_FILMOPS}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
@@ -101,6 +102,8 @@ done
 
 # Move successfully encoded MKV files to autoingest
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_AUTOINGEST}{}"
+### Move successfully encoded MKV files to autoingest [ Standby for permission to delete DPX sequences before DPI ingest ]
+### grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_CHECK}{}"
 # Move the successful txt files to logs folder
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
 # Move successful DPX sequence folders to dpx_completed/
