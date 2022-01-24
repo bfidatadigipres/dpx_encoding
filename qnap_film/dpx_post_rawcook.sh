@@ -10,7 +10,6 @@ DPX_PATH="${QNAP_FILM}${RAWCOOKED_PATH}"
 DPX_DEST="${QNAP_FILM}${DPX_COMPLETE}"
 MKV_DESTINATION="${QNAP_FILM}${MKV_ENCODED}"
 MKV_POLICY="$POLICY_RAWCOOK"
-MKV_AUTOINGEST="${QNAP_FILM}${AUTOINGEST_VID}"
 SCRIPT_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
@@ -22,8 +21,14 @@ function log {
 # Global date variable
 DATE_FULL=$(date +'%Y-%m-%d  - %T')
 
-# Write a START note to the logfile
-log "===================== Post-RAWcook workflows STARTED ====================="
+# Check mkv_cooked/ folder populated before starting log writes
+if [ -z "$(ls -A ${MKV_DESTINATION}mkv_cooked/" ]
+  then
+    echo "MKV folder empty, script exiting."
+    exit 1
+  else
+    log "===================== Post-RAWcook workflows STARTED ====================="
+fi
 
 # Script temporary file recreate (delete at end of script)
 touch "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
@@ -81,9 +86,9 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 # Move the txt files to logs folder and prepend -fail- to filename
 grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progress --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/fail_{}.txt"
 
-# =============================================================================
-# Log check passes move to autoingest and logs folders, and DPX folder move ===
-# =============================================================================
+# ===================================================================================
+# Log check passes move to MKV Check folder and logs folders, and DPX folder move ===
+# ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
   success_check=$(grep 'Reversability was checked, no issue detected.' "$fname")
@@ -93,20 +98,20 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
     then
       log "SKIP: Matroska $mkv_filename has not completed, or has errors detected"
     else
-      log "COMPLETED: RAWcooked MKV $mkv_filename has completed successfully and will be moved to DPI ingest"
+      log "COMPLETED: RAWcooked MKV $mkv_filename has completed successfully and will be moved to check folder"
       echo "$dpx_success_path" >> "${MKV_DESTINATION}rawcooked_success.log"
       echo "$mkv_filename" >> "${MKV_DESTINATION}successful_mkv_list.txt"
   fi
 done
 
-# Move successfully encoded MKV files to autoingest
-grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_AUTOINGEST}{}"
+# Move successfully encoded MKV files to check folder
+grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${QNAP_FILM}${MKV_CHECK}{}"
 # Move the successful txt files to logs folder
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
 # Move successful DPX sequence folders to dpx_completed/
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 5- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
 # Add list of moved items to post_rawcooked.log
-log "Successful Matroska files moved to autoingest, DPX sequences for each moved to dpx_completed:"
+log "Successful Matroska files moved to check folder, DPX sequences for each moved to dpx_completed:"
 cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
 
 # ==========================================================================
