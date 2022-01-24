@@ -7,7 +7,7 @@
 # Global variables extracted from environmental variables
 SCRIPT_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${FILM_OPS}${DPX_COOK}"
-MKV_DEST="${QNAP_FILM}${MKV_ENCODED_FILM}"
+MKV_DEST="${FILM_OPS}${MKV_ENCODED_FILM}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
@@ -16,18 +16,25 @@ function log {
 } >> "${SCRIPT_LOG}dpx_rawcook.log"
 
 # Remove or generate temporary files per script run
-rm "${MKV_DEST}temporary_rawcook_list.txt"
-rm "${MKV_DEST}temporary_retry_list.txt"
-rm "${MKV_DEST}retry_list.txt"
-rm "${MKV_DEST}rawcook_list.txt"
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
 touch "${MKV_DEST}temporary_retry_list.txt"
 touch "${MKV_DEST}retry_list.txt"
 touch "${MKV_DEST}rawcook_list.txt"
 
-# Write a START note to the logfile
-log "===================== DPX RAWcook START ====================="
+# Write a START note to the logfile if files for encoding, else exit
+if [ -s "${MKV_DEST}reversibility_list.txt" ]
+  then
+    log "============= DPX RAWcook script START ============="
+  else
+    if [ -z "$(ls -A ${DPX_PATH})" ]
+      then
+        echo "No files available for encoding, script exiting"
+        exit 1
+      else
+        log "============= DPX RAWcook script START ============="
+    fi
+fi
 
 # ========================
 # === RAWcook pass one ===
@@ -53,7 +60,7 @@ log "DPX folder will be cooked using --output-version 2:"
 log "${cook_retry}"
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list.txt" | parallel --jobs 5 "rawcooked -y --all --no-accept-gaps --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list.txt" | parallel --jobs 2 "rawcooked -y --all --no-accept-gaps --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -83,6 +90,11 @@ log "DPX folder will be cooked:"
 log "${cook_list}"
 
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 5 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 2 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="
+
+rm "${MKV_DEST}temporary_rawcook_list.txt"
+rm "${MKV_DEST}temporary_retry_list.txt"
+rm "${MKV_DEST}retry_list.txt"
+rm "${MKV_DEST}rawcook_list.txt"

@@ -16,18 +16,25 @@ function log {
 } >> "${SCRIPT_LOG}dpx_rawcook.log"
 
 # Remove or generate temporary files per script run
-rm "${MKV_DEST}temporary_rawcook_list.txt"
-rm "${MKV_DEST}temporary_retry_list.txt"
-rm "${MKV_DEST}retry_list.txt"
-rm "${MKV_DEST}rawcook_list.txt"
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
 touch "${MKV_DEST}temporary_retry_list.txt"
 touch "${MKV_DEST}retry_list.txt"
 touch "${MKV_DEST}rawcook_list.txt"
 
-# Write a START note to the logfile
-log "===================== DPX RAWcook START ====================="
+# Write a START note to the logfile if files for encoding, else exit
+if [ -s "${MKV_DEST}reversibility_list.txt" ]
+  then
+    log "============= DPX RAWcook script START ============="
+  else
+    if [ -z "$(ls -A ${DPX_PATH})" ]
+      then
+        echo "No files available for encoding, script exiting"
+        exit 1
+      else
+        log "============= DPX RAWcook script START ============="
+    fi
+fi
 
 # ========================
 # === RAWcook pass one ===
@@ -86,3 +93,8 @@ log "${cook_list}"
 cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 5 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="
+
+rm "${MKV_DEST}temporary_rawcook_list.txt"
+rm "${MKV_DEST}temporary_retry_list.txt"
+rm "${MKV_DEST}retry_list.txt"
+rm "${MKV_DEST}rawcook_list.txt"
