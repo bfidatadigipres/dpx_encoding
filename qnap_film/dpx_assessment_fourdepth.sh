@@ -17,6 +17,15 @@ function log {
     echo "$1 - $timestamp"
 } >> "${DPX_LOG}dpx_assessment.log"
 
+# Check for DPX sequences in path before script launch
+if [ -z "$(ls -A ${DPX_PATH})" ]
+  then
+    echo "No files available for encoding, script exiting"
+    exit 1
+  else
+    log "============= DPX Assessment Four Depth START ============="
+fi
+
 # Function to check for control json activity
 function control {
     boole=$(cat "${LOG_PATH}downtime_control.json" | grep "rawcooked" | awk -F': ' '{print $2}')
@@ -55,8 +64,6 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
 
     if [ "$count_queued_pass" -eq 0 ] && [ "$count_queued_fail" -eq 0 ];
         then
-            # Write first log output
-            log "===================== DPX assessment workflows start ====================="
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/${dimensions}/${dpx}"
