@@ -6,7 +6,7 @@
 
 # Global variables call environmental variables
 DPX_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
-DPX_PATH="${QNAP_FILM}${DPX_ASSESS}"
+DPX_PATH="${QNAP_FILM}${DPX_ASSESS_FOUR}"
 POLICY_PATH="${POLICY_DPX}"
 PY3_LAUNCH="${PY3_ENV}"
 SPLITTING="${SPLITTING_SCRIPT_QNAP_FILM}"
@@ -37,10 +37,6 @@ function control {
 }
 
 # Refresh temporary success/failure lists
-rm "${DPX_PATH}rawcooked_dpx_list.txt"
-rm "${DPX_PATH}tar_dpx_list.txt"
-rm "${DPX_PATH}luma_4k_dpx_list.txt"
-rm "${DPX_PATH}python_list.txt"
 touch "${DPX_PATH}rawcooked_dpx_list.txt"
 touch "${DPX_PATH}tar_dpx_list.txt"
 touch "${DPX_PATH}luma_4k_dpx_list.txt"
@@ -154,3 +150,9 @@ fi
 cat "${DPX_PATH}rawcooked_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}luma_4k_dpx_list.txt" >> "${DPX_PATH}rawcook_dpx_success.log"
 cat "${DPX_PATH}tar_dpx_list.txt" >> "${DPX_PATH}tar_dpx_failures.log"
+
+# Clean up temporary files
+rm "${DPX_PATH}rawcooked_dpx_list.txt"
+rm "${DPX_PATH}tar_dpx_list.txt"
+rm "${DPX_PATH}luma_4k_dpx_list.txt"
+rm "${DPX_PATH}python_list.txt"
