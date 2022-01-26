@@ -22,7 +22,7 @@ function log {
 DATE_FULL=$(date +'%Y-%m-%d  - %T')
 
 # Check mkv_cooked/ folder populated before starting log writes
-if [ -z "$(ls -A ${MKV_DESTINATION}mkv_cooked/" ]
+if [ -z "$(ls -A ${MKV_DESTINATION}mkv_cooked/)" ]
   then
     echo "MKV folder empty, script exiting."
     exit 1
@@ -222,9 +222,6 @@ echo "===================== Successful cooks: $success_count ===================
 # Sort the log and remove any non-unique lines
 cat "${MKV_DESTINATION}temp_rawcooked_success.log" | grep '/mnt/' | sort -r | uniq > "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
 
-# Move the new log renaming it to overwrite the old log
-mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"
-
 # Remove temp lists, renewed when script restarts
 rm "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
 rm "${MKV_DESTINATION}successful_mkv_list.txt"
@@ -232,3 +229,6 @@ rm "${MKV_DESTINATION}matroska_deletion_list.txt"
 rm "${MKV_DESTINATION}matroska_deletion.txt"
 rm "${MKV_DESTINATION}stale_encodings.txt"
 rm "${MKV_DESTINATION}error_list.txt"
+
+# Move the new log renaming it to overwrite the old log
+mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"

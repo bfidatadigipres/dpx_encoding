@@ -22,7 +22,7 @@ function log {
 DATE_FULL=$(date +'%Y-%m-%d  - %T')
 
 # Check mkv_cooked/ folder populated before starting log writes
-if [ -z "$(ls -A ${MKV_DESTINATION}mkv_cooked/" ]
+if [ -z "$(ls -A ${MKV_DESTINATION}mkv_cooked/)" ]
   then
     echo "MKV folder empty, script exiting."
     exit 1
