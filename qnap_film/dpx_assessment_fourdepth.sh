@@ -15,7 +15,7 @@ SPLITTING="${SPLITTING_SCRIPT_QNAP_FILM}"
 function log {
     timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
     echo "$1 - $timestamp"
-} >> "${DPX_LOG}dpx_assessment.log"
+} >> "${DPX_LOG}dpx_assessment_fourdepth.log"
 
 # Check for DPX sequences in path before script launch
 if [ -z "$(ls -A ${DPX_PATH})" ]
