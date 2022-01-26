@@ -102,14 +102,6 @@ def get_cid_data(dpx_sequence):
     results = requests.get(CID_API, params=query)
     results = results.json()
     try:
-        utb_content = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.content']
-    except (IndexError, KeyError):
-        utb_content = ''
-    try:
-        utb_fieldname = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.fieldname']
-    except (IndexError, KeyError):
-        utb_fieldname = ''
-    try:
         priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
     except (IndexError, KeyError):
         priref = ''
@@ -118,7 +110,29 @@ def get_cid_data(dpx_sequence):
     except (IndexError, KeyError):
         file_type = ''
 
-    return (utb_content, utb_fieldname, priref, file_type)
+    return (priref, file_type)
+
+
+def get_utb(priref):
+    '''
+    Use requests to retrieve UTB data for associated priref
+    '''
+    search = f"priref='{priref}'"
+    query = {'database': 'items',
+             'search': search,
+             'output': 'json'}
+    results = requests.get(CID_API, params=query)
+    results = results.json()
+    try:
+        utb_content = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.content']
+    except (IndexError, KeyError):
+        utb_content = ''
+    try:
+        utb_fieldname = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.fieldname']
+    except (IndexError, KeyError):
+        utb_fieldname = ''
+
+    return (utb_content, utb_fieldname)
 
 
 def read_csv(dpx_sequence):
@@ -406,7 +420,7 @@ def main():
         encoding = str(data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
-        utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
+        priref, file_type = get_cid_data(dpx_sequence)
 
         # Sequence CID Item record check
         if 'dpx' in file_type.lower():
@@ -718,7 +732,7 @@ def main():
 
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
-            utb_content, utb_fieldname, priref, file_type = get_cid_data(dpx_sequence)
+            utb_content, utb_fieldname = get_utb(priref)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
                 old_payload = utb_content.replace('\r\n', '\n')
