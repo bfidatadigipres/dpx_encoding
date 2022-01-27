@@ -734,13 +734,10 @@ def main():
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
             utb_content, utb_fieldname = get_utb(priref)
-            if utb_content:
-                LOGGER.info("*********UTB content found: %s", utb_content)
             old_payload = ''
-            if 'DPX splitting summary' in str(utb_fieldname):
+            if len(utb_content) > 0:
                 old_payload = utb_content.replace('\r\n', '\n')
-                LOGGER.info("CID record already has UTB content. Preserving original payload: %s", old_payload)
-            if len(priref) > 1:
+                LOGGER.info("********** CID record already has UTB content. Preserving original content: %s", old_payload)
                 success = record_append(priref, cid_data_string, old_payload)
                 if success:
                     LOGGER.info("CID splitting data appended to priref %s", priref)
@@ -749,8 +746,8 @@ def main():
                     LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
                     splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
             else:
-                LOGGER.warning("Failed to retrieve priref and unable to write splitting data to CID")
-                splitting_log(f"*** Failed to obtain Priref for {dpx_sequence}. Please manually append to CID")
+                LOGGER.warning("No UTB content found for this record")
+                splitting_log(f"No prior UTB content found for this record")
             splitting_log(f"\n------ SPLIT END {dpx_sequence} ------ {str(datetime.datetime.now())}")
             LOGGER.info("Splitting completed for path: %s", root)
 
