@@ -734,6 +734,8 @@ def main():
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
             utb_content, utb_fieldname = get_utb(priref)
+            if utb_content:
+                LOGGER.info("*********UTB content found: %s", utb_content)
             old_payload = ''
             if 'DPX splitting summary' in str(utb_fieldname):
                 old_payload = utb_content.replace('\r\n', '\n')
