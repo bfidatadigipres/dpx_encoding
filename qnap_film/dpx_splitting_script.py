@@ -127,13 +127,9 @@ def get_utb(priref):
     try:
         utb_content = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.content']
     except (IndexError, KeyError):
-        utb_content = ''
-    try:
-        utb_fieldname = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.fieldname']
-    except (IndexError, KeyError):
-        utb_fieldname = ''
+        utb_content = ['']
 
-    return (utb_content, utb_fieldname)
+    return utb_content
 
 
 def read_csv(dpx_sequence):
@@ -157,6 +153,19 @@ def read_csv(dpx_sequence):
         return ''
     else:
         return new_sequence
+
+
+def folder_depth(fullpath):
+    '''
+    Check if folder is three depth of four depth
+    '''
+    folders = 0
+    for _, dirnames, _ in os.walk(fullpath):
+        folders += len(dirnames)
+    if folders == 2 or folders == 3:
+        return True
+    else:
+        return False
 
 
 def count_files(dirpath, division):
@@ -441,6 +450,14 @@ def main():
             splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
             sys.exit()
+        # Check folder depths accurate for three/four depth folders
+        check_depth = folder_depth(dpx_path)
+        if not check_depth:
+            LOGGER.warning("Incorrect internal folder structure. Cannot split. Moving to dpx_for_review/")
+            splitting_log("WARNING! Incorrect internal folder structures. Cannot split this folder")
+            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            sys.exit()
 
         # Separate singleton files from part wholes
         if dpx_sequence.endswith('_01of01'):
@@ -537,8 +554,9 @@ def main():
             LOGGER.info("Moving oversized folder %s to current_errors/oversized_sequence folder")
             LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
             part_whole_log(dpx_sequence)
+            oversize_path = os.path.join(OVERSIZED_SEQ, dpx_sequence)
             try:
-                shutil.move(dpx_path, OVERSIZED_SEQ)
+                shutil.move(dpx_path, oversize_path)
             except Exception as err:
                 LOGGER.warning("Unable to move %s to oversized_sequence/ folder\n%s", dpx_sequence, err)
             LOGGER.warning("Script will exit, manual intervention needed for this file")
@@ -733,21 +751,15 @@ def main():
 
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
-            utb_content, utb_fieldname = get_utb(priref)
-            old_payload = ''
-            if len(utb_content) > 0:
-                old_payload = utb_content.replace('\r\n', '\n')
-                LOGGER.info("********** CID record already has UTB content. Preserving original content: %s", old_payload)
-                success = record_append(priref, cid_data_string, old_payload)
-                if success:
-                    LOGGER.info("CID splitting data appended to priref %s", priref)
-                    splitting_log(f"Splitting data written to CID priref {priref}")
-                else:
-                    LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
-                    splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
+            utb_content = get_utb(priref)
+            old_payload = utb_content[0].replace('\r\n', '\n')
+            success = record_append(priref, cid_data_string, old_payload)
+            if success:
+                LOGGER.info("CID splitting data appended to priref %s", priref)
+                splitting_log(f"Splitting data written to CID priref {priref}")
             else:
-                LOGGER.warning("No UTB content found for this record")
-                splitting_log(f"No prior UTB content found for this record")
+                LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
+                splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
             splitting_log(f"\n------ SPLIT END {dpx_sequence} ------ {str(datetime.datetime.now())}")
             LOGGER.info("Splitting completed for path: %s", root)
 
