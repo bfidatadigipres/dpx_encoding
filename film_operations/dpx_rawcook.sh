@@ -7,7 +7,7 @@
 # Global variables extracted from environmental variables
 SCRIPT_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${FILM_OPS}${DPX_COOK}"
-MKV_DEST="${FILM_OPS}${MKV_ENCODED_FILM}"
+MKV_DEST="${FILM_OPS}${MKV_ENCODED}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
