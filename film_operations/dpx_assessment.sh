@@ -46,15 +46,14 @@ touch "${DPX_PATH}python_list.txt"
 control
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
-# Maxdepth Mindepth temporarily fixed at 4, but will need adjusting to 3 in future
-find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -r files; do
+# Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
+find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -r files; do
     # Find first DPX of sequence
     dpx=$(ls "$files" | head -1)
-    reel=$(basename "$files")
+    dimensions=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
-    dimensions=$(basename "$(dirname "$(dirname "$files")")")
-    filename=$(basename "$(dirname "$(dirname "$(dirname "$files")")")")
-    file_scan_name="$filename/$dimensions/$scans"
+    filename=$(basename "$(dirname "$(dirname "$files")")")
+    file_scan_name="$filename/$scans"
     count_queued_pass=$(grep -c "$file_scan_name" "${DPX_PATH}rawcook_dpx_success.log")
     count_queued_fail=$(grep -c "$file_scan_name" "${DPX_PATH}tar_dpx_failures.log")
 
@@ -62,7 +61,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
         then
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
-            log "- ${file_scan_name}/$reel/${dpx}"
+            log "- ${file_scan_name}/${dimensions}/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
             byte_size=$(du -s -b "${DPX_PATH}${filename}")
