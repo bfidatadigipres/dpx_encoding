@@ -47,15 +47,22 @@ These scripts are being operated on each server using environmental variables th
 
 The scripts operate within a defined folder structure. These automation_dpx folders are deposited at various storage locations, and the dpx_encoding repository scripts are broken into folder path names to reflect this, eg ‘film_operations’, ‘qnap_film’ etc. The automation_dpx folder contents is always formatted like this so the scripts work across locations:
 
+```bash
 automation_dpx  
 ├── current_errors  
+│   └── oversized_sequences
 ├── encoding  
 │   ├── dpx_completed  
 │   │   ├── N_3623230_04of04  
-│   │   ├── N_3623278_01of02  
+│   │   ├── N_3623278_01of02
+│   ├── dpx_for_review
+│   │   └── N_489447_01of01  
 │   ├── dpx_to_assess  
 │   │   ├── N_3623284_03of03  
-│   │   └── N_489875_2_08of08  
+│   │   └── N_489875_2_08of08
+│   ├── dpx_to_assess_fourdepth
+│   │   ├── N_294553_01of03
+│   │   └── N_294553_02of03  
 │   ├── part_whole_split  
 │   │   ├── rawcook  
 │   │   └── tar  
@@ -63,6 +70,7 @@ automation_dpx
 │   │   ├── dpx_to_cook  
 │   │   │   └── N_473236_01of02  
 │   │   ├── encoded  
+│   │   │   ├── check  
 │   │   │   ├── killed  
 │   │   │   ├── logs  
 │   │   │   └── mkv_cooked  
@@ -78,7 +86,7 @@ automation_dpx
 │   │   └── tarred_files  
 │   └── to_delete  
 └── QC_files
-
+```
 
 ## Supporting crontab actions
 
@@ -86,38 +94,46 @@ The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.
 To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them every hour. It is common for the lock files to disappear when a server is rebooted, etc.
 
 The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
-dpx_assessment.sh - Every eight hours on the half hour (launches dpx_splitting_script.py processing one job at a time).    
+dpx_assessment.sh / dpx_assessment_fourdepth.sh - Every four hours one or other of the scripts using shared lock (launches dpx_splitting_script.py processing one job at a time).    
 dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
 dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8am, 4pm, and 12am  
 dpx_tar_script.sh - Runs once a day at 10pm  
-dpx_clean_up.sh - Runs once a day at 5am  
+dpx_check_script.sh - Runs once a day at 5am
+dpx_clean_up.sh - Runs once a day at 5am [ deprecated ] 
 
 DPX Encoding script crontab entries:  
 
-    30    */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment.sh  
+    30    */4   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment.sh  
+    05    */4   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment_fourdepth.sh  
     */15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/film_operations/dpx_rawcook.sh  
-    0     */8   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh  
+    45    */4   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh  
     0     22    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/dpx_tar_script.sh  
-    0     5     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_clean_up.lock       /mnt/path/dpx_encoding/film_operations/dpx_clean_up.sh  
-    0     21    *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log  
+    0     5     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_check_script.lock   /mnt/path/dpx_encoding/film_operations/dpx_check_script.sh  
+    15    */4   *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log  
     */55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
     
 ## global.log
 
-Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the a central Logs folder, just before dpx_clean_up.sh accesses it.
+Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the a central Logs folder.
 
 
 ## THE SCRIPTS
 
-### dpx_assessment.sh [Launches Python splitting script]
+### dpx_assessment.sh / dpx_assessment_fourdepth.sh [Launches Python splitting script]
 
-This script assesses a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the fifth DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
-This script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
+These scripts assess a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the fourth DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
+dpx_assessment.sh script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
+dpx_assessment_fourdepth.sh script needs the DPX sequence formatted identically: N_123456_01of01/2048x1556/Scan01/R01of01/<dpx_files>
+They both run from the same Flock lock file to avoid running splits simultaneously which would endanger the ordering process. If the first assessment script is busy using the lock then the second will skip until the next pass.
 
 Script functions:
+- Checks if contents of dpx_to_assess/dpx_to_assess_fourdepth folder has any contents. Exits if not to avoid unecessary log entries
+- Checks downtime_control.json to see if script runs inhibited
 - Refreshes the DPX success and failure lists, tar, rawcooked, luma and python lists so clean for each run of the script, avoiding path failures.
-- Looks within the dpx_to_assess/ folder for DPX sequence directories at pixel ratio folder level. Eg, 2048x1556/ (found at mindepth 3 / maxdepth 3)
-- Takes the fifth DPX within this folder and stores in a 'dpx' variable, creates 'filename' and 'scan' variables using the basename and dirname of path
+- dpx_assessment.sh looks within the dpx_to_assess/ folder for DPX sequence directories at pixel ratio folder level. Eg, 2048x1556/ (found at mindepth 3 / maxdepth 3)
+- dpx_assessment_fourdepth.sh looks within the dpx_to_assess_fourdepth/ folder for DPX sequence directories at reel folder level. Eg, R01of01/ (found at mindepth 4 / maxdepth 4)
+- Takes the first DPX within this folder and stores in a 'dpx' variable, creates further variables using the basename and dirname of path
+- Creates documents for preservation in sequence. These include first dpx metadata, directory tree, whole byte size of directory.
 - Greps for the 'filename' within script_logs/rawcooked_dpx_success.log and script_logs/tar_dpx_failures.log. If appears in either then the file is skipped. If not:
   - Compares 'dpx' to Mediaconch policy rawcooked_dpx_policy.xml (policy specifically written to pass/fail RAWcooked encodings)
   - If pass, looks for metadata indicating if the DPX are 4K, have RGB or Luma (Y) colourspace, before writing 'filename' to rawcooked_dpx_list.txt or luma_4k_dpx_list.txt
@@ -141,15 +157,18 @@ Script function:
 - Checks if DPX filename/part whole is properly formatted and if 'DPX' string is the file_type in associated DPX Item record
   - If yes, continue with splitting
   - If no, exit script with warning in logs and DPX sequence moved to 'dpx_to_review' folder
+- Checks if folder depth is correct for one of two accepted formats, no other folders present that shouldn't be
+  - If yes, continue with splitting
+  - If now, exit script with warning in logs and DPX sequence moved to 'dpx_to_review' folder
 - Checks if the DPX sequence name is listed in splitting_document.csv first column 'original' name
   - If yes, renumbers the folder and updates the dpx_sequence/dpx_path variables
   - If no, skips onto next stage
 - Divisions are calculated based upon the DPX sequence total KB size. The options returned include:
   - No division needed because the folder is under the minimum encoding size for Imagen. The DPX folders are moved to their encoding paths if the have the part whole 01of01. If not they are moved straight to part_whole_split folder to await their remaining parts.  
      Script exits, completed.
-  - Oversized folder. The folder is too large to be divided by this script and needs human intervention (over 5.2TB). The folder is moved to current_errors/oversized_sequences/ folder and the error log is appended.
+  - Oversized folder. The folder is too large to be divided by this script and needs human intervention (over 6TB/6.5TB). The folder is moved to current_errors/oversized_sequences/ folder and the error log is appended.
      Script exits, completed.
-  - Divisions are required by either 2, 3, 4 or 5 splits depending on the size of the DPX sequence and whether the encoding is for RAWcooked RGB, RAWcooked luma, RAWcooked 4K or TAR wrapping (see table 1)
+  - Divisions are required by between 2 and 6 splits depending on the size of the DPX sequence and whether the encoding is for RAWcooked RGB, RAWcooked luma, RAWcooked 4K or TAR wrapping (see table 1)
     Script continues to next step
 - Splittings functions begin:
   - DPX_splitting.log is updated with details of the DPX sequence that required splitting
@@ -157,7 +176,7 @@ Script function:
   - All original folder names, new folder names, and today's date are updated respectively to splitting_document.csv
   - DPX sequence path is iterated over finding all folders within it that contain files ending in ‘.dpx’ or ‘.DPX’. This will find all instances of scan01, scan02 folders within the DPX path and splits/moves each equally.
   - New folders have new paths created, incorporating all sub folders down to the level of the DPX files.
-  - All DPX files within the DPX path are counted per scan folder, divided as per division (2, 3, 4 or 5 - see table 1).
+  - All DPX files within the DPX path are counted per scan folder, divided as per division (2 to 6 - see table 1).
   - The new folder list and first DPX of each block of data is written to the DPX_splitting.log
   - Each block is moved to it’s corresponding new folder, one DPX at a time using Python’s shutil function.
   - Each block is checked that the files all moved correctly, where any are missing a second move attempt is made.  
@@ -171,9 +190,10 @@ Table 1
 | 1.3TB to 2.6TB | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 2 Divisions     |  
 | 2.6TB to 3.9TB | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 3 Divisions     |  
 | 3.9TB to 5.2TB | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 4 Divisions     |  
-|                | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
+| 5.2TB to 6.5TB | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
+|                | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 6 Divisions     |
 
-NOTES: We've only recently started RAWcooked encoding Y (Luma) and 4K DPX sequences, and on average the first Matroska files have approximate size reductions of 27% (Luma Y) and 12% (RGB 4K). This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
+NOTES: We've only recently started RAWcooked encoding Y (Luma) and 4K DPX sequences, and on average the first Matroska files have approximate size reductions of 27% (Luma Y) and 30% (RGB 4K). This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
 
 
 ### dpx_part_whole_move.py
@@ -221,6 +241,7 @@ PASS TWO:
 A script assesses Matroska files, and logs, before deciding if a file can be moved to autoingest or to failures folder. Moves successful DPX sequences to dpx_completed/ folder ready for clean up scripts.
 
 Script functions:  
+- Checks if any items in mkv_cooked folder, if not exits without any Log entries
 - Refresh all temporary lists .txt files generated in the scripts
 
 MKV file size check:
@@ -237,7 +258,7 @@ Grep logs for pass statement of Mediaconch passed files:
 - Script looks through all logs for 'Reversablity was checked, no issue detected' where found:
   - Outputs successful cooked filenames to rawcooked_success.log
   - Prints list to post_rawcook.log
-  - Moves Matroska files using GNU parallel to DPI ingest path
+  - Moves Matroska files using GNU parallel to check/ folder
   - Moves successfully cooked DPX sequences to dpx_completed/ path
   - Moves log file to logs/ path
 
@@ -306,7 +327,37 @@ Following clean up actions for all files and logs using grep passes to GNU paral
 - Failed associated DPX sequences are left in place for a repeat attempt
 
 
-### dpx_clean_up.sh
+### dpx_check_script.sh
+
+This script replaces the clean up script. It runs a rawcooked --check call against each MKV and if it passes moves the MKV to DPI ingest, and moves the DPX sequence to the deletions folder and deletes it immediately.
+
+Run checks against MKV files:
+- First it looks for any MKV files in the check/ folder. If none it exits and avoids any needless log outputs.
+- Create temporary log files that build through script searches:
+  - mkv_list.txt, dpx_deletion_list.txt, successful_mkv_list.txt, failure_mkv_list.txt
+- Find all MKV files not modified for 30 minutes in check/ folder and sort them. Output fullpath to new temp_mkv_list.txt overwriting previous entries.
+- Open temp_mkv_list.txt and extract MKV file basename from each entry. Pass into new list one at a time called mkv_list.txt, which is located in check/ folder. Output this tidy name list to log.
+- Launch GNU parallel to run 5 parallel --check runs against each folder, and output all console statements to log with same MKV file name appended .txt, also placed into check/ folder.
+
+Review of check logs:
+- Review check logs for success statement ‘Reversability was checked, no issue detected.'
+  - Where no success statement is found (failed the --check) the name of the MKV file is written to failure_mkv_list.txt in the check/ folder.
+  - Where a success statement is found (passes the --check) the name of the MKV file is written to successful_mkv_list.txt in check/ folder – and the DPX sequence name is written to dpx_deletion_list.txt placed in the dpx_completed/ folder.
+- The failed_mkv_list.txt is next checked to see if there are any entries:
+  - If no entries, the log is updated that no files failed --check
+  - If MKV files failed the --check function (very unlikely) then a warning is added to the script log, and the contents of the fail list are written to the list (echoing failure statement in previous stage). The dpx_encoding_errors.log is updated with the list of failed --check files. The MKV files are moved into killed/ folder and the MKV associated logs are moved into logs/ folder prepended ‘check_fail_{}'. Finally the associated DPX sequence is moved from dpx_completed/ folder to dpx_to_cook/ folder
+- The success_mkv_list.txt is checked to see if there are any successful MKV checks:
+  - If yes, the MKV files are moved from check/ folder into DPI ingest path for MKV RAWcooked video files. MKV associated logs are moved to logs/ folder prepended ‘check_pass_{}’.
+- The last stage is to move the successful DPX sequences (matched sequence numbers from the MKV file name) into a deletion path and delete. The dpx_deletion_list.txt is read and checked first:
+  - If no contents are found then the log is updated that there are no DPX sequences for deletion
+  - If the list has DPX folder names it proceeds with the following actions:
+    - Moves all DPX directory filenames in list from dpx_completed/ to to_delete/ folder - using GNU parallel 10 jobs at a time.
+    - The list is read again and all matching files within the to_delete/ folder, are deleted - using GNU parallel 3 jobs at a time (DPX deletions can be very CPU use heavy).
+- Temporary txt files are deleted again:
+  - mkv_list.txt, dpx_deletion_list.txt, successful_mkv_list.txt, failure_mkv_list.txt
+
+
+### dpx_clean_up.sh [ DEPRECATED IN FAVOUR OF DPX_CHECK_SCRIPT.SH ]
 
 This script's function is to check completed encodings against a recent copy of DPI ingest's global.log.
 
