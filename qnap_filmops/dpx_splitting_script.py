@@ -232,6 +232,27 @@ def count_files(dirpath, division):
         dpx_list.append({'block4': dpx_sequence[start_block4:start_block5]})
         dpx_list.append({'block5': dpx_sequence[start_block5:]})
 
+    elif division == '6':
+        cuts = int(file_count) // 6
+        dpx_block1 = dpx_sequence[0]
+        start_block2 = cuts
+        start_block3 = (cuts * 2)
+        start_block4 = (cuts * 3)
+        start_block5 = (cuts * 4)
+        start_block6 = (cuts * 5)
+        dpx_block2 = dpx_sequence[start_block2]
+        dpx_block3 = dpx_sequence[start_block3]
+        dpx_block4 = dpx_sequence[start_block4]
+        dpx_block5 = dpx_sequence[start_block5]
+        dpx_block6 = dpx_sequence[start_block6]
+        block_list = [file_count, cuts, dpx_block1, dpx_block2, dpx_block3, dpx_block4, dpx_block5, dpx_block6]
+        dpx_list.append({'block1': dpx_sequence[:start_block2]})
+        dpx_list.append({'block2': dpx_sequence[start_block2:start_block3]})
+        dpx_list.append({'block3': dpx_sequence[start_block3:start_block4]})
+        dpx_list.append({'block4': dpx_sequence[start_block4:start_block5]})
+        dpx_list.append({'block5': dpx_sequence[start_block5:start_block6]})
+        dpx_list.append({'block6': dpx_sequence[start_block6:]})
+
     return (block_list, dpx_list)
 
 
@@ -256,7 +277,7 @@ def workout_division(arg, kb_size):
     division = ''
     kb_size = int(kb_size)
 
-    # Size calculation for rawcooked RGB encodings (now 1.3TB increments, upto 5.2TB)
+    # Size calculation for rawcooked RGB encodings (now 1.3TB increments, upto 6.5TB)
     if 'rawcooked' in arg:
         if kb_size <= 1395864370:
             division = None
@@ -266,7 +287,9 @@ def workout_division(arg, kb_size):
             division = '3'
         elif 4187593110 <= kb_size <= 5583457480:
             division = '4'
-        elif kb_size >= 5583457480:
+        elif 5583457480 <= kb_size <= 6979321850:
+            division = '5'
+        elif kb_size > 6979321850:
             LOGGER.warning("workout_division(): RAWcooked file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
@@ -282,7 +305,9 @@ def workout_division(arg, kb_size):
             division = '4'
         elif 4294967297 <= kb_size <= 5368709120:
             division = '5'
-        elif kb_size >= 5368709121:
+        elif 5368709120 <= kb_size <= 6442450944:
+            division = '6'
+        elif kb_size > 6442450944:
             LOGGER.warning("workout_division(): TAR, Luma Y or 4K file is too large for DPX splitting: %s KB", kb_size)
             division = 'oversize'
 
@@ -314,12 +339,13 @@ def return_range_prior(dpx_sequence, division):
 def folder_update_creation(dpx_sequence, division, root_path):
     '''
     Take DPX path and rename/create new folders based on division
+    Needs refactor for WET issues
     '''
     fname, part, whole = fname_split(dpx_sequence)
     part = int(part)
     whole = int(whole)
     change_list = []
-    folder1, folder2, folder3, folder4 = '', '', '', ''
+    folder1 = folder2 = folder3 = folder4 = folder5 = ''
 
     if division == '2':
         whole += 1
@@ -381,7 +407,32 @@ def folder_update_creation(dpx_sequence, division, root_path):
         folder3 = os.path.join(root_path, dpx_seq_new_folder3)
         folder4 = os.path.join(root_path, dpx_seq_new_folder4)
 
-    return (change_list, folder1, folder2, folder3, folder4)
+    if division == '6':
+        whole += 5
+        dpx_seq_renumber = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
+        part += 1
+        dpx_seq_new_folder1 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
+        part += 1
+        dpx_seq_new_folder2 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
+        part += 1
+        dpx_seq_new_folder3 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
+        part += 1
+        dpx_seq_new_folder4 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
+        part += 1
+        dpx_seq_new_folder5 = fname + str(part).zfill(2) + 'of' + str(whole).zfill(2)
+        change_list.append({dpx_sequence: dpx_seq_renumber})
+        change_list.append({'New folder': dpx_seq_new_folder1})
+        change_list.append({'New folder': dpx_seq_new_folder2})
+        change_list.append({'New folder': dpx_seq_new_folder3})
+        change_list.append({'New folder': dpx_seq_new_folder4})
+        change_list.append({'New folder': dpx_seq_new_folder5})
+        folder1 = os.path.join(root_path, dpx_seq_new_folder1)
+        folder2 = os.path.join(root_path, dpx_seq_new_folder2)
+        folder3 = os.path.join(root_path, dpx_seq_new_folder3)
+        folder4 = os.path.join(root_path, dpx_seq_new_folder4)
+        folder5 = os.path.join(root_path, dpx_seq_new_folder5)
+
+    return (change_list, folder1, folder2, folder3, folder4, folder5)
 
 
 def return_range_following(dpx_sequence, division):
@@ -451,6 +502,7 @@ def main():
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
             sys.exit()
         # Check folder depths accurate for three/four depth folders
+        # This only works for single scan folders, needs alternative that checks from second folder
         check_depth = folder_depth(dpx_path)
         if not check_depth:
             LOGGER.warning("Incorrect internal folder structure. Cannot split. Moving to dpx_for_review/")
@@ -486,7 +538,6 @@ def main():
 
         # Does this sequence need splitting?
         division = workout_division(encoding, kb_size)
-        print(division)
         # Name preparations for folder splitting
         path_split = os.path.split(dpx_path)
         root_path = path_split[0]
@@ -547,7 +598,7 @@ def main():
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
                     sys.exit()
 
-        # Folder is larger than 5TB (TAR/Luma/4K) / 5.2TB (RAWcooked) script exit
+        # Folder is larger than 6TB (TAR/Luma/4K) / 6.5TB (RAWcooked) script exit
         elif 'oversize' in division:
             LOGGER.warning("OVERSIZE FOLDER: Too large for splitting script %s", dpx_path)
             splitting_log(f"OVERSIZE FOLDER: {dpx_sequence}. Moving to current_errors/oversized_sequence/ folder")
@@ -579,7 +630,7 @@ def main():
             post_foldername_list = []
             foldername_list_new = []
             data = []
-            folder1, folder2, folder3, folder4 = '', '', '', ''
+            folder1 = folder2 = folder3 = folder4 = folder5 = ''
             pre_foldername_list = return_range_prior(dpx_sequence, division)
             data = folder_update_creation(dpx_sequence, division, root_path)
             foldername_list_new = data[0]
@@ -590,6 +641,8 @@ def main():
                 folder3 = data[3]
             if data[4]:
                 folder4 = data[4]
+            if data[5]:
+                folder5 = data[5]
             post_foldername_list = return_range_following(dpx_sequence, division)
             # Append all new numbers to CSV
             splitting_log("New folder numbers:")
@@ -622,7 +675,7 @@ def main():
                         cid_data.append(f"{key} has been renamed {val}")
 
             # Find path for all scan folders containing DPX files
-            new_folder1, new_folder2, new_folder3, new_folder4 = '', '', '', ''
+            new_folder1 = new_folder2 = new_folder3 = new_folder4 = new_folder5 = ''
             for root, dirs, files in os.walk(dpx_path):
                 for file in files:
                     if file.endswith((".dpx", ".DPX")):
@@ -641,6 +694,9 @@ def main():
                         if folder4:
                             new_folder4 = os.path.join(folder4, os.path.relpath(root, dpx_path))
                             make_dirs(new_folder4)
+                        if folder5:
+                            new_folder5 = os.path.join(folder5, os.path.relpath(root, dpx_path))
+                            make_dirs(new_folder5)
 
                         # Obtain: file_count, cuts, dpx_block data
                         LOGGER.info("Folder %s will be divided into %s divisions now", dpx_sequence, division)
@@ -662,6 +718,10 @@ def main():
                         if folder4:
                             splitting_log(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
                             cid_data.append(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
+                        if folder5:
+                            splitting_log(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
+                            cid_data.append(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
+
                         LOGGER.info("Block data being calculated and DPX moved to final destinations")
                         dpx_list = block_data[1]
                         for dictionary in dpx_list:
@@ -719,6 +779,19 @@ def main():
                                     else:
                                         splitting_log(f"All DPX files copied and checked in {folder4}")
 
+                                if 'block6' in key:
+                                    splitting_log(f"Moving block 6 DPX data to {new_folder5}")
+                                    cid_data.append(f"Moving block 6 DPX data to {new_folder5}")
+                                    for dpx in val:
+                                        dpx_to_move = os.path.join(root, dpx)
+                                        shutil.move(dpx_to_move, new_folder5)
+                                    # Check move function
+                                    missing_list = move_check(val, new_folder5)
+                                    if len(missing_list) > 0:
+                                        move_retry(missing_list, root, new_folder5)
+                                    else:
+                                        splitting_log(f"All DPX files copied and checked in {folder5}")
+
                         for dictionary in dpx_list:
                             for key, val in dictionary.items():
                                 if 'block1' in key:
@@ -748,6 +821,8 @@ def main():
                 make_text_file(cid_data_string, folder3)
             if folder4:
                 make_text_file(cid_data_string, folder4)
+            if folder5:
+                make_text_file(cid_data_string, folder5)
 
             # Update splitting data to CID item record UTB.content (temporary)
             LOGGER.info("Updating split information to CID Item record")
@@ -823,7 +898,7 @@ def make_text_file(cid_data, folderpath):
 
 def mass_move(dpx_path, new_path):
     '''
-    Function just to move individual DPX file to new directory
+    Function to move individual DPX file to new directory
     '''
     if os.path.exists(dpx_path) and os.path.exists(new_path):
         try:
@@ -968,7 +1043,6 @@ def unlock_record(priref):
     '''
     Only used if write fails and lock was successful, to guard against file remaining locked
     '''
-    # Post to unlock record
     try:
         post_response = requests.post(
             CID_API,
