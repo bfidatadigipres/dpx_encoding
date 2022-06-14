@@ -44,7 +44,7 @@ touch "${MKV_DESTINATION}reversibility_list.txt"
 # Matroska size check remove files to Killed folder, and folders moved to check_size/ ===
 # =======================================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r fname; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r fname; do
     filename=$(basename "$fname")
     object=$(echo "$filename" | rev | cut -c 12- | rev)
     size=$(du -m "$fname" | cut -f1 )
@@ -67,7 +67,7 @@ done
 # Matroska checks using MediaConch policy, remove fails to Killed folder ===
 # ==========================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r files; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r files; do
   check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass! ${files}")
   filename=$(basename "$files")
   if [ -z "$check" ];

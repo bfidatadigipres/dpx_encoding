@@ -15,7 +15,7 @@ SPLITTING="${SPLITTING_SCRIPT_FILMOPS}"
 function log {
     timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
     echo "$1 - $timestamp"
-} >> "${DPX_LOG}dpx_assessment.log"
+} >> "${DPX_LOG}dpx_assessment_fourdepth.log"
 
 # Check for DPX sequences in path before script launch
 if [ -z "$(ls -A ${DPX_PATH})" ]
@@ -46,7 +46,7 @@ touch "${DPX_PATH}python_list.txt"
 control
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
-# Maxdepth Mindepth temporarily fixed at 4, but will need adjusting to 3 in future
+# Configured for four level folders: N_123456_01of01/dimensions/scan01/Reel/<dpx_seq>
 find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -r files; do
     # Find first DPX of sequence
     dpx=$(ls "$files" | head -1)

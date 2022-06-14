@@ -491,7 +491,10 @@ def main():
             LOGGER.warning("DPX sequence being moved to dpx_for_review/ folder for further inspection")
             splitting_log("DPX not found in file_type of CID Item record for this sequence: %s", priref)
             splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
-            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            try:
+                shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            except Exception:
+                LOGGER.warning("Unable to move DPX to dpx_for_review path")
             sys.exit()
         # Filename format correct
         split_name = dpx_sequence.split('_')
@@ -499,7 +502,10 @@ def main():
             LOGGER.warning("Part whole has incorrect formatting, moving folder to dpx_to_review for further inspection")
             splitting_log("DPX sequence number's part whole is incorrectly formatted: %s", dpx_sequence)
             splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
-            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            try:
+                shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            except Exception:
+                LOGGER.warning("Unable to move DPX to dpx_for_review path")
             sys.exit()
         # Check folder depths accurate for three/four depth folders
         # This only works for single scan folders, needs alternative that checks from second folder
@@ -508,7 +514,10 @@ def main():
             LOGGER.warning("Incorrect internal folder structure. Cannot split. Moving to dpx_for_review/")
             splitting_log("WARNING! Incorrect internal folder structures. Cannot split this folder")
             splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
-            shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            try:
+                shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            except Exception:
+                LOGGER.warning("Unable to move DPX to dpx_for_review path")
             sys.exit()
 
         # Separate singleton files from part wholes
