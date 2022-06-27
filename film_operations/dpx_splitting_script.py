@@ -1,4 +1,4 @@
-#!/usr/bin/env LANG=en_UK.UTF-8 /usr/local/bin/python3
+#!/usr/bin/env python3
 
 '''
 *** THIS SCRIPT MUST RUN FROM SHELL LAUNCH SCRIPT RUNNING PARALLEL 1 JOB AT A TIME ***

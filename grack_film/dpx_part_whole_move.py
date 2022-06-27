@@ -1,4 +1,4 @@
-#!/usr/bin/env LANG=en_UK.UTF-8 /usr/local/bin/python3
+#!/usr/bin/env python3
 
 '''
 dpx_part_whole_move.py
