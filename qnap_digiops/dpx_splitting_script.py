@@ -481,7 +481,10 @@ def main():
         encoding = str(data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
+        print(f"DPX sequence: {dpx_sequence}, KB size: {kb_size}")
         priref, file_type = get_cid_data(dpx_sequence)
+
+        print(priref, file_type)
 
         # Sequence CID Item record check
         if 'dpx' in file_type.lower():
@@ -495,6 +498,7 @@ def main():
             sys.exit()
         # Filename format correct
         split_name = dpx_sequence.split('_')
+        print(split_name, len(split_name))
         if not len(split_name[-1]) == 6:
             LOGGER.warning("Part whole has incorrect formatting, moving folder to dpx_to_review for further inspection")
             splitting_log("DPX sequence number's part whole is incorrectly formatted: %s", dpx_sequence)
