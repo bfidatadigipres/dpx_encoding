@@ -40,7 +40,8 @@ The TAR wrapping script uses p7zip-full programme available for download (Ubuntu
 
 ## Environmental variable storage  
 
-These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely.  
+These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely.
+See list at bottom for variable links to folder paths.
 
 
 ## Operational environment
@@ -386,3 +387,51 @@ Else it just outputs to log 'no items for deletion at this time'.
 This short script is called by crontab each day to check that the Flock locks are still available in /var/run.
 Loads with a list of flock lock paths. A for loop checks if each path in the list exists, if not it uses touch to recreate it.
 
+
+### Environmental variable mapping
+
+#### Paths to different storage devices:
+QNAP_FILM, QNAP_FILMOPS, QNAP_FILMOPS2  
+QNAP_DIGIOPS, GRACK_FILM, FILM_OPS  
+  
+#### automation_dpx folder variables:  
+DPX_ASSESS="automation_dpx/encoding/dpx_to_assess/"  
+DPX_ASSESS_FOUR="automation_dpx/encoding/dpx_to_assess_fourdepth/"  
+DPX_COOK="automation_dpx/encoding/rawcooked/dpx_to_cook/"  
+DPX_REVIEW="automation_dpx/encoding/dpx_for_review/"  
+DPX_COMPLETE="automation_dpx/encoding/dpx_completed/"  
+DPX_SCRIPT_LOG="automation_dpx/encoding/script_logs/"  
+RAWCOOKED_PATH="automation_dpx/encoding/rawcooked/"  
+TAR_PRES="automation_dpx/encoding/tar_preservation/"  
+TO_DELETE="automation_dpx/encoding/to_delete/"  
+AUTOINGEST_VID="autoingest/ingest/proxy/video/"  
+AUTOINGEST_STORE="autoingest/ingest/store/document/"  
+MKV_ENCODED="automation_dpx/encoding/rawcooked/encoded/"  
+MKV_CHECK="automation_dpx/encoding/rawcooked/encoded/check/"  
+MKV_ENCODED_FILM="automation_dpx/encoding/rawcooked/encoded_film/"  
+MKV_CHECK_FILM="automation_dpx/encoding/rawcooked/encoded_film/check/"  
+TAR_LOG="automation_dpx/encoding/tar_preservation/logs/"  
+DPX_WRAP="automation_dpx/encoding/tar_preservation/dpx_to_wrap/"  
+DPX_TARRED="automation_dpx/encoding/tar_preservation/tarred_files/"  
+TAR_FAIL="automation_dpx/encoding/tar_preservation/failures/"  
+CURRENT_ERRORS="automation_dpx/current_errors/"  
+PART_TAR="automation_dpx/encoding/part_whole_split/tar/"  
+PART_RAWCOOK="automation_dpx/encoding/part_whole_split/rawcook/"  
+SEQ_RENUMBER="automation_dpx/sequence_renumbering/"
+
+#### dpx_encoding script variables:
+POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml"  
+POLICY_DPX="dpx_encoding/rawcooked_dpx_policy.xml"
+SPLITTING_SCRIPT_QNAP_FILM="dpx_encoding/qnap_film/dpx_splitting_script.py"  
+SPLITTING_SCRIPT_FILMOPS="dpx_encoding/film_operations/dpx_splitting_script.py"  
+SPLITTING_SCRIPT_QNAP_FILMOPS="dpx_encoding/qnap_filmops/dpx_splitting_script.py"
+SPLITTING_SCRIPT_QNAP_FILMOPS2="dpx_encoding/qnap_filmops2/dpx_splitting_script.py"  
+SPLITTING_SCRIPT_QNAP_DIGIOPS="dpx_encoding/qnap_digiops/dpx_splitting_script.py"  
+SPLITTING_SCRIPT_GRACK_FILM="dpx_encoding/grack_film/dpx_splitting_script.py"  
+PY3_TAR_QNAP_FILM="dpx_encoding/qnap_film/dpx_tar_wrapping_checksum.py"  
+PY3_TAR_FILMOPS="dpx_encoding/film_operations/dpx_tar_wrapping_checksum.py"  
+PY3_TAR_QNAP_FILMOPS="dpx_encoding/qnap_filmops/dpx_tar_wrapping_checksum.py"  
+PY3_TAR_QNAP_FILMOPS2="dpx_encoding/qnap_filmops2/dpx_tar_wrapping_checksum.py"  
+PY3_TAR_QNAP_DIGIOPS="dpx_encoding/qnap_digiops/dpx_tar_wrapping_checksum.py"  
+PY3_TAR_GRACK_FILM="dpx_encoding/grack_film/dpx_tar_wrapping_checksum.py"  
+  

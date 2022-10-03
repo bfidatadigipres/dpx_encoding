@@ -60,7 +60,7 @@ log "DPX folder will be cooked using --output-version 2:"
 log "${cook_retry}"
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list.txt" | parallel --jobs 2 "rawcooked -y --all --no-accept-gaps --output-version 2 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -90,7 +90,7 @@ log "DPX folder will be cooked:"
 log "${cook_list}"
 
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 2 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="
 
