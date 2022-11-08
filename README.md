@@ -13,7 +13,7 @@ These scripts handle the complete encoding process from start to finish, includi
 
 RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type moving failed files to a seprate folder, and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula, using '--output-version 2'. If it fails again an error is issued to an current errors log, flagging the folder in need of human intervention.
 
-The TAR script wraps the files, verifies the wrap using 7zip and then generates an MD5 sum of the whole file. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.  Here the final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
+The Python TAR scripts generates checksums for all items in the DPX folder, TAR wraps the folder using Python tarfile then creates checksums of all the tarfile contents and compares the original with the new MD5 checksum manifest. This MD5 manifest is then added into the TAR file, and all processes are output to logs. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.  Here the final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
 
 
 ## Dependencies
@@ -40,7 +40,7 @@ The TAR wrapping script uses p7zip-full programme available for download (Ubuntu
 
 ## Environmental variable storage  
 
-These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely.
+These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely. They are imported to Python scripts near the beginning using ```os.environ['VARIABLE']```, and are called in shell scripts like ```"${VARIABLE}"```. They are saved into the /etc/environment file.
 See list at bottom for variable links to folder paths.
 
 
@@ -80,13 +80,15 @@ automation_dpx
 │   │   └── failures  
 │   ├── script_logs  
 │   ├── tar_preservation  
-│   │   ├── dpx_to_wrap  
+│   │   ├── for_tar_wrap  
 │   │   │   └── N_489855_2_01of01  
 │   │   ├── failures  
 │   │   ├── logs  
-│   │   └── tarred_files  
+│   │   └── checksum_manifests  
 │   └── to_delete  
-└── QC_files
+├── QC_files
+├── unwrap_tar
+└── unwrap_rawcook_mkv
 ```
 
 ## Supporting crontab actions
@@ -108,7 +110,7 @@ DPX Encoding script crontab entries:
     05    */4   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_assess.lock         /mnt/path/dpx_encoding/film_operations/dpx_assessment_fourdepth.sh  
     */15  *     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_rawcook.lock        /mnt/path/dpx_encoding/film_operations/dpx_rawcook.sh  
     45    */4   *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_post_rawcook.lock   /mnt/path/dpx_encoding/film_operations/dpx_post_rawcook.sh  
-    0     22    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/dpx_tar_script.sh  
+    0     22    *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock     /mnt/path/dpx_encoding/film_operations/tar_wrapping_launch.sh  
     0     5     *    *    *       username      /usr/bin/flock -w 0 --verbose /var/run/dpx_check_script.lock   /mnt/path/dpx_encoding/film_operations/dpx_check_script.sh  
     15    */4   *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log  
     */55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
@@ -290,42 +292,9 @@ Search for log files that have not been modified in over 24 hours (1440 minutes)
 Requires use of rawcooked_mkv_policy.xml.
 
 
-### dpx_tar_script.sh
+### taw_wrapping_launch.sh / tar_wrapping_checksum.py
 
-This script handles TAR encoding of any DPX sequences that cannot be RAWcooked encoded due to licence limitations or unsupported features within the DPX. It uses 7zip to wrap the files in 'store' mode without compression, and runs a validation check against the file using 7zip's test feature. The script begins by refreshing four list files, allowing for new lists to be formed that will drive the movement or removal of files.
-
-Script operations:
-
-First find / while loop:
-- Checks against current tar_check list (for most recent tar operations) to see if files found in DPX_PATH are already being processed
-- If not in the current list being worked on:
-  - Generates MD5 checksum manifest for the contents of each DPX sequence found and places in scan folder alongside DPX sequence folder
-  - Adds the DPX sequence to the tar_list.txt for TAR processing
-- If in the current list: Skips.
-Takes grepped tar_list.txt contents and passes to GNU parallel which runs tar wrap jobs concurrently using 7Zip (7z a -mx=0) with no compressions and archive settings. The file it output to TAR_DEST path using filename.tar, and the console output is written to a filename.tar.log and place alongside the tar file.
-
-Second find/while loop:
-- Searches in TAR_DEST for filename.tar files. Checks if the file is greater than 1048560 MB (just under 1TB):
-  - If larger than 1TB the file is moved to the failures folder, and log is appended "failed_oversize" and placed in logs folder, and the filename is output to current_errors log files.
-  - If smaller than 1TB the filename is written to tar_list_complete.txt file for further processing.
-Takes grepped tar_list_complete.txt and passes to GNU parallel for test verification checks using 7zip (7z t) and the console results are appended to the same filename log that the earlier data was written to.
-
-Third find/while loop:
-- Searches in TAR_DEST for filename.tar.log files, opens each using cat and greps (using -i to ignore case) for error or warning messages in both the wrapping and verification messages written to each log.
-  - If error messages found filename is output to a failed_tar_list.txt, and current_errors encoding log is updated with failure
-  - If no error messages found the filename is output to passed_tar_list.txt.
-The passed_tar_list.txt is grepped and results are sent to GNU parallel which makes md5sum for each whole TAR file, outputs to the MD5_PATH Isilon folder.
-The contents of passed_tar_list.txt is copied to tar_checks.txt for assessment at start of next script, in case of script movement failures.
-
-Following clean up actions for all files and logs using grep passes to GNU parallel:
-- Successfully wrapped tar files have MD5 checksum generating
-- Short while loop cleans up this output md5 sum log, formatting for Python DPI ingest scripts
-- Successfully wrapped tar files are moved from TAR_DEST to DPI ingest
-- Successfully associated log files are moved to logs/ folder
-- Successfully associated dpx_to_wrap DPX sequence folders are moved to DPX_WRAPPED (dpx_completed folder)
-- Failed tar wrapped files are moved to failures/ folder
-- Failed associated log files are moved to logs/ folder prepended "failed_filename.tar.log"
-- Failed associated DPX sequences are left in place for a repeat attempt
+Descriptions to follow.
 
 
 ### dpx_check_script.sh
@@ -356,30 +325,6 @@ Review of check logs:
     - The list is read again and all matching files within the to_delete/ folder, are deleted - using GNU parallel 3 jobs at a time (DPX deletions can be very CPU use heavy).
 - Temporary txt files are deleted again:
   - mkv_list.txt, dpx_deletion_list.txt, successful_mkv_list.txt, failure_mkv_list.txt
-
-
-### dpx_clean_up.sh [ DEPRECATED IN FAVOUR OF DPX_CHECK_SCRIPT.SH ]
-
-This script's function is to check completed encodings against a recent copy of DPI ingest's global.log.
-
-Script functions:
-- Find all directories in dpx_completed/ to a max/min depth of one (ie, the N_123456_01of01 folder) and sort them into ascending order using the part whole, 01of*, 02of*, 03of* etc. Output to new temp_dpx_list.txt overwriting earlier version.
-- Refresh the files_for_deletion_list.txt
-
-Check if a directory has same object number to those listed in part_whole_search.log
-- If yes, leave file in place and skip to next directory
-- If no, proceed with following stages
-
-Cat temp_dpx_list.txt while loop:
-- Grep in global_copy.log for instances of the filenames found in DPX_PATH with the string 'Successfully deleted file' from THIS_MONTH and LAST_MONTH only
-- If present: The files is added to the files_for_deletion_list.txt
-- If not found: There is a second grep which looks for filename and string 'Skip object' THIS_MONTH. If found returns a message of 'Still being ingested' to log, but item not added to deletion list / If not found returns a message of 'NOT PASSED INTO AUTOINGEST!' and no filenames are written to deletion list. In all these cases the files are left in place for a comparison at a later date.  The date range THIS_MONTH/LAST_MONTH has been applied to handle instances where a re-encoded file is replacing an older version in DPI after a fault is found with the original file. To avoid the logs giving a false flag of 'deleted' for a given filename, a maximum two month date range is given, on the assumption the clean up scripts will complete the work within this time frame.
-
-Grep files_for_deletion_list.txt for all filenames and stores to file_list variable.
-If loop checks if file_list variable is True (ie, has filenames in list):
-- Moves all DPX directory filenames in list from DPX_PATH to FOR_DELETION folder
-- From within the FOR_DELETION folder, all DPX sequences are deleted. 
-Else it just outputs to log 'no items for deletion at this time'.
 
 
 ### flock_rebuild.sh
