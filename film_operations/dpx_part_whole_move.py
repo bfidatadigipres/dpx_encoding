@@ -83,10 +83,17 @@ def fname_split(fname):
     Return items split up
     '''
     name_split = fname.split('_')
-    part_whole = name_split[2]
-    part, whole = part_whole.split('of')
-
-    return (name_split[0] + '_' + name_split[1] + '_', part, whole)
+    if len(name_split) == 3:
+        part_whole = name_split[2]
+        part, whole = part_whole.split('of')
+        return (f'{name_split[0]}_{name_split[1]}_', part, whole)
+    elif len(name_split) == 4:
+        part_whole = name_split[3]
+        part, whole = part_whole.split('of')
+        return (f'{name_split[0]}_{name_split[1]}_{name_split[2]}_', part, whole)
+    else:
+        LOGGER.warning("Filename %s is not formatted correctly.", fname)
+        return None
 
 
 def return_range(dpx_sequence):

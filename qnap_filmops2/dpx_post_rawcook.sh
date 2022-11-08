@@ -9,7 +9,8 @@ ERRORS="${QNAP_FILMOPS2}${CURRENT_ERRORS}"
 DPX_PATH="${QNAP_FILMOPS2}${RAWCOOKED_PATH}"
 DPX_DEST="${QNAP_FILMOPS2}${DPX_COMPLETE}"
 MKV_DESTINATION="${QNAP_FILMOPS2}${MKV_ENCODED}"
-MKV_POLICY="$POLICY_RAWCOOK"
+CHECK_FOLDER="${QNAP_FILMOPS2}${MKV_CHECK}"
+MKV_POLICY="${POLICY_RAWCOOK}"
 SCRIPT_LOG="${QNAP_FILMOPS2}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
@@ -28,6 +29,7 @@ if [ -z "$(ls -A ${MKV_DESTINATION}mkv_cooked/)" ]
     exit 1
   else
     log "===================== Post-RAWcook workflows STARTED ====================="
+    log "Files present in mkv_cooked folder, checking if ready for processing..."
 fi
 
 # Script temporary file recreate (delete at end of script)
@@ -44,7 +46,7 @@ touch "${MKV_DESTINATION}reversibility_list.txt"
 # Matroska size check remove files to Killed folder, and folders moved to check_size/ ===
 # =======================================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r fname; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r fname; do
     filename=$(basename "$fname")
     object=$(echo "$filename" | rev | cut -c 12- | rev)
     size=$(du -m "$fname" | cut -f1 )
@@ -67,7 +69,7 @@ done
 # Matroska checks using MediaConch policy, remove fails to Killed folder ===
 # ==========================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r files; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r files; do
   check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass! ${files}")
   filename=$(basename "$files")
   if [ -z "$check" ];
@@ -87,7 +89,7 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progress --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/fail_{}.txt"
 
 # ===================================================================================
-# Log check passes move to MKV check folder and logs folders, and DPX folder move ===
+# Log check passes move to MKV Check folder and logs folders, and DPX folder move ===
 # ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
@@ -105,14 +107,19 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
 done
 
 # Move successfully encoded MKV files to check folder
-grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${QNAP_FILMOPS2}${MKV_CHECK}{}"
+grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${CHECK_FOLDER}{}"
 # Move the successful txt files to logs folder
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
 # Move successful DPX sequence folders to dpx_completed/
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | rev | cut -c 5- | rev | parallel --jobs 10 mv "${DPX_PATH}dpx_to_cook/{}" "${DPX_DEST}{}"
 # Add list of moved items to post_rawcooked.log
-log "Successful Matroska files moved to check folder, DPX sequences for each moved to dpx_completed:"
-cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+if [ -s "${MKV_DESTINATION}successful_mkv_list.txt" ];
+  then
+    log "Successful Matroska files moved to check folder, DPX sequences for each moved to dpx_completed:"
+    cat "${MKV_DESTINATION}successful_mkv_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+  else
+    echo "File is empty, skipping"
+fi
 
 # ==========================================================================
 # Error: the reversibility file is becoming big. --output-version 2 pass ===
@@ -144,14 +151,24 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
 done
 
 # Add list of reversibility data error to dpx_post_rawcooked.log
-log "MKV files that will be deleted due to reversibility data error in logs (if present):"
-cat "${MKV_DESTINATION}matroska_deletion.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
-# Delete broken Matroska files if they exist (unlikely as error exits before encoding)
-grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+if [ -s "${MKV_DESTINATION}matroska_deletion.txt" ];
+  then
+    log "MKV files that will be deleted due to reversibility data error in logs (if present):"
+    cat "${MKV_DESTINATION}matroska_deletion.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+    # Delete broken Matroska files if they exist (unlikely as error exits before encoding)
+    grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+  else
+    echo "No MKV files for deletion. Skipping."
+fi
 
 # Add reversibility list to logs for reference
-log "DPX sequences that will be re-encoded using --output-version 2:"
-cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+if [ -s "${MKV_DESTINATION}reversibility_list.txt" ];
+  then
+    log "DPX sequences that will be re-encoded using --output-version 2:"
+    cat "${MKV_DESTINATION}reversibility_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+  else
+    echo "No DPX sequences for re-encoding using --output-version 2. Skipping."
+fi
 
 # ===================================================================================
 # General Error/Warning message failure checks - retry or raise in current errors ===
@@ -175,10 +192,15 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
 done
 
 # Add list of encoding error/warning logs to dpx_post_rawcooked.log
-log "MKV files that will be deleted due to repeated error in logs:"
-cat "${MKV_DESTINATION}matroska_deletion_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
-# Delete broken Matroska files
-grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+if [ -s "${MKV_DESTINATION}matroska_deletion_list.txt" ];
+  then
+    log "MKV files that will be deleted due to repeated error in logs:"
+    cat "${MKV_DESTINATION}matroska_deletion_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+    # Delete broken Matroska files
+    grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+  else
+    echo "No MKV files for deletion at this time. Skipping."
+fi
 
 # ===============================================================
 # FOR ==== INCOMPLETE ==== - i.e. killed processes ==============
@@ -193,10 +215,16 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +2880 -size +10k | 
 done
 
 # Add list of stalled logs to post_rawcooked.log
-log "Stalled files that will be deleted:"
-cat "${MKV_DESTINATION}stale_encodings.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
-# Delete broken log files
-grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | parallel --jobs 10 'rm {}.txt'
+if [ -s "${MKV_DESTINATION}stale_encodings.txt" ];
+  then
+    log "Stalled files that will be deleted:"
+    cat "${MKV_DESTINATION}stale_encodings.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
+    # Delete broken log files
+    grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | parallel --jobs 10 'rm {}.txt'
+  else
+    echo "No stale encodings to process at this time. Skipping."
+fi
+
 # Check for and delete broken Matroska files if they exist
 grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | while IFS= read -r stale_mkv; do
   if [ ! -f "${stale_mkv}" ]

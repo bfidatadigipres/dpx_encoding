@@ -9,6 +9,7 @@ ERRORS="${FILM_OPS}${CURRENT_ERRORS}"
 DPX_PATH="${FILM_OPS}${RAWCOOKED_PATH}"
 DPX_DEST="${FILM_OPS}${DPX_COMPLETE}"
 MKV_DESTINATION="${FILM_OPS}${MKV_ENCODED}"
+CHECK_FOLDER="${FILM_OPS}${MKV_CHECK}"
 MKV_POLICY="${POLICY_RAWCOOK}"
 SCRIPT_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
 
@@ -106,7 +107,7 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
 done
 
 # Move successfully encoded MKV files to check folder
-grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${FILM_OPS}${MKV_CHECK}{}"
+grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${CHECK_FOLDER}{}"
 # Move the successful txt files to logs folder
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/{}.txt"
 # Move successful DPX sequence folders to dpx_completed/
@@ -125,7 +126,7 @@ fi
 # ==========================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r large_logs; do
-  error_check1=$(grep 'Error: the reversibility file is becoming big.\|Error: undecodable file is becoming too big.s' "$large_logs")
+  error_check1=$(grep 'Error: undecodable file is becoming too big.\|Error: the reversibility file is becoming big.' "$large_logs")
   mkv_fname1=$(basename "$large_logs" | rev | cut -c 5- | rev )
   dpx_folder1=$(basename "$large_logs" | rev | cut -c 9- | rev )
   if [ -z "$error_check1" ];
@@ -249,9 +250,6 @@ echo "===================== Successful cooks: $success_count ===================
 # Sort the log and remove any non-unique lines
 cat "${MKV_DESTINATION}temp_rawcooked_success.log" | grep '/mnt/' | sort -r | uniq > "${MKV_DESTINATION}temp_rawcooked_success_unique.log"
 
-# Move the new log renaming it to overwrite the old log
-mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"
-
 # Remove temp lists, renewed when script restarts
 rm "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
 rm "${MKV_DESTINATION}successful_mkv_list.txt"
@@ -259,3 +257,6 @@ rm "${MKV_DESTINATION}matroska_deletion_list.txt"
 rm "${MKV_DESTINATION}matroska_deletion.txt"
 rm "${MKV_DESTINATION}stale_encodings.txt"
 rm "${MKV_DESTINATION}error_list.txt"
+
+# Move the new log renaming it to overwrite the old log
+mv "${MKV_DESTINATION}temp_rawcooked_success_unique.log" "${MKV_DESTINATION}rawcooked_success.log"

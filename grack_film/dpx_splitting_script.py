@@ -46,10 +46,10 @@ Joanna White 2021
 # Global packages
 import os
 import sys
-import shutil
-import logging
 import csv
 import json
+import shutil
+import logging
 import datetime
 import requests
 
@@ -57,6 +57,7 @@ import requests
 DPX_PATH = os.environ['GRACK_FILM']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
+OVERSIZE_LOG = os.path.join(ERRORS, 'oversize_files_error.log')
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 PART_WHOLE_LOG = os.path.join(ERRORS, 'part_whole_search.log')
@@ -142,7 +143,7 @@ def read_csv(dpx_sequence):
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
 
-        while (number_present is True):
+        while number_present is True:
             for row in readme:
                 orig_num = row['original']
                 if str(orig_num) == str(new_sequence):
@@ -519,7 +520,6 @@ def main():
             singleton = False
 
             # Renumber part whole folder, update dpx_path / dpx_sequence
-            print(new_num)
             if len(new_num) == 0:
                 LOGGER.info("Sequence %s not found in CSV so proceeding with processing:\n%s", dpx_sequence, dpx_path)
             elif len(new_num) > 0:
@@ -606,6 +606,7 @@ def main():
             LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
             part_whole_log(dpx_sequence)
             oversize_path = os.path.join(OVERSIZED_SEQ, dpx_sequence)
+            oversize_log(f"{dpx_path}\tRAWcooked DPX too large for ingest to DPI - size {file_stats.st_size} bytes")
             try:
                 shutil.move(dpx_path, oversize_path)
             except Exception as err:
@@ -1016,7 +1017,6 @@ def write_lock(priref):
         post_response = requests.post(
             CID_API,
             params={'database': 'items', 'command': 'lockrecord', 'priref': f'{priref}', 'output': 'json'})
-        print(post_response.text)
         return True
     except Exception as err:
         LOGGER.warning("write_lock(): Lock record wasn't applied to record %s\n%s", priref, err)
@@ -1030,7 +1030,6 @@ def write_payload(priref, payload):
         CID_API,
         params={'database': 'items', 'command': 'updaterecord', 'xmltype': 'grouped', 'output': 'json'},
         data={'data': payload})
-    print(post_response.text)
     if "<error><info>" in str(post_response.text):
         LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
         return False
@@ -1050,6 +1049,21 @@ def unlock_record(priref):
         return True
     except Exception as err:
         LOGGER.warning("unlock_record(): Post to unlock record failed. Check Media record %s is unlocked manually\n%s", priref, err)
+
+
+def oversize_log(message):
+    '''
+    Logs for oversize_files_error.log
+    '''
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    if not os.path.isfile(OVERSIZE_LOG):
+        with open(OVERSIZE_LOG, 'x') as log:
+            log.close()
+
+    with open(OVERSIZE_LOG, 'a') as log:
+        log.write(f"{ts}\t{message}\n")
+        log.close()
 
 
 if __name__ == '__main__':
