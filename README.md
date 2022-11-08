@@ -34,8 +34,7 @@ To run the concurrent processes the scripts use GNU Parallel which will require 
     available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb
     available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb
 
-The TAR wrapping script uses p7zip-full programme available for download (Ubuntu 18.04+) using:  
-`sudo apt install p7zip-full`  
+The TAR wrapping script uses Python standard library tarfile programme.  
 
 
 ## Environmental variable storage  
@@ -292,7 +291,7 @@ Search for log files that have not been modified in over 24 hours (1440 minutes)
 Requires use of rawcooked_mkv_policy.xml.
 
 
-### taw_wrapping_launch.sh / tar_wrapping_checksum.py
+### tar_wrapping_launch.sh / tar_wrapping_checksum.py
 
 Descriptions to follow.
 
