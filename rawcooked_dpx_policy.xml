@@ -27,10 +27,6 @@
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
     </policy>
-    <policy type="or" name="Pixel Aspect Ratio is 1.000">
-      <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Image" occurrence="*" operator="=">1.000</rule>
-      <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
-    </policy>
     <policy type="or" name="Colorspace is NOT RGBA">    
       <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
       <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>

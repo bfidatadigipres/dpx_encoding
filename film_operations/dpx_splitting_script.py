@@ -490,16 +490,16 @@ def main():
         else:
             LOGGER.warning("CID record does not have File Type DPX - priref: %s", priref)
             LOGGER.warning("DPX sequence being moved to dpx_for_review/ folder for further inspection")
-            splitting_log("DPX not found in file_type of CID Item record for this sequence: %s", priref)
-            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            splitting_log(f"DPX not found in file_type of CID Item record for this sequence: {priref}")
+            splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
             sys.exit()
         # Filename format correct
         split_name = dpx_sequence.split('_')
         if not len(split_name[-1]) == 6:
             LOGGER.warning("Part whole has incorrect formatting, moving folder to dpx_to_review for further inspection")
-            splitting_log("DPX sequence number's part whole is incorrectly formatted: %s", dpx_sequence)
-            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            splitting_log(f"DPX sequence number's part whole is incorrectly formatted: {dpx_sequence}")
+            splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
             sys.exit()
         # Check folder depths accurate for three/four depth folders
@@ -508,7 +508,7 @@ def main():
         if not check_depth:
             LOGGER.warning("Incorrect internal folder structure. Cannot split. Moving to dpx_for_review/")
             splitting_log("WARNING! Incorrect internal folder structures. Cannot split this folder")
-            splitting_log("Moving DPX sequence %s to 'dpx_for_review/' folder", dpx_sequence)
+            splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
             sys.exit()
 
@@ -528,7 +528,7 @@ def main():
                     LOGGER.info("Folder %s successfully renamed %s from CSV", dpx_sequence, new_num)
                     LOGGER.info("DPX sequence path %s will be reconfigured to %s", dpx_path, new_path)
                     splitting_log("\n*** DPX sequence found in CSV and needs renumbering")
-                    splitting_log("DPX sequence path {} being renamed to {}".format(dpx_path, new_path))
+                    splitting_log(f"DPX sequence path {dpx_path} being renamed to {new_path}")
                     dpx_path = new_path
                     dpx_sequence = new_num
                 except Exception as err:
