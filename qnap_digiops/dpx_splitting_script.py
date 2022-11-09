@@ -159,11 +159,16 @@ def read_csv(dpx_sequence):
 def folder_depth(fullpath):
     '''
     Check if folder is three depth of four depth
+    across total scan folder contents
     '''
+    scan_folders = [x for x in os.listdir(fullpath) if 'DS_Store' not in str(x)]
+    scan_num = len(scan_folders)
     folders = 0
+
     for _, dirnames, _ in os.walk(fullpath):
         folders += len(dirnames)
-    if folders == 2 or folders == 3:
+
+    if (folders / scan_num) == 2 or (folders / scan_num) == 3:
         return True
     else:
         return False
