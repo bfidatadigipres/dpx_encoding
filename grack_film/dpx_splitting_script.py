@@ -161,7 +161,7 @@ def folder_depth(fullpath):
     Check if folder is three depth of four depth
     across total scan folder contents
     '''
-    scan_folders = [x for x in os.listdir(fullpath) if 'DS_Store' not in str(x)]
+    scan_folders = [x for x in os.listdir(fullpath) if os.path.isdir(os.path.join(fullpath, x))]
     scan_num = len(scan_folders)
     folders = 0
 

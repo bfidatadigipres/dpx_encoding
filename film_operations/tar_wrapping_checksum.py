@@ -34,18 +34,18 @@ import hashlib
 import datetime
 
 # Global paths
-LOCAL_PATH = os.environ['IS_DIGITAL']
-AUTO_TAR = os.path.join(LOCAL_PATH, os.environ['DPX_WRAP'])
+LOCAL_PATH = os.environ['FILM_OPS']
+AUTO_TAR = os.path.join(LOCAL_PATH, os.environ['TAR_PRES'])
 DELETE_TAR = os.path.join(LOCAL_PATH, os.environ['TO_DELETE'])
 TAR_FAIL = os.path.join(LOCAL_PATH, os.environ['TAR_FAIL'])
 CHECKSUM = os.path.join(LOCAL_PATH, os.environ['TAR_CHECKSUM'])
 OVERSIZE = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversized_sequences/')
 ERROR_LOG = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversize_files_error.log')
-AUTOINGEST = os.path.join(LOCAL_PATH, 'Finished', os.environ['AUTOINGEST_STORE'])
+AUTOINGEST = os.path.join(LOCAL_PATH, 'Finished/', os.environ['AUTOINGEST_STORE'])
 LOG = os.path.join(LOCAL_PATH, os.environ['DPX_SCRIPT_LOG'], 'tar_wrapping_checksum.log')
 
 # Logging config
-LOGGER = logging.getLogger('tar_wrapping_filmops')
+LOGGER = logging.getLogger('tar_wrapping_film_ops')
 hdlr = logging.FileHandler(LOG)
 formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 hdlr.setFormatter(formatter)
@@ -175,13 +175,13 @@ def main():
     local_md5 = {}
     directory = False
     if os.path.isdir(fullpath):
+        log.append("Supplied path for TAR wrap is directory")
+        LOGGER.info("Supplied path for TAR wrap is directory")
         directory = True
 
     if directory:
         files = [ x for x in os.listdir(fullpath) if os.path.isfile(os.path.join(fullpath, x)) ]
         for root, _, files in os.walk(fullpath):
-            LOGGER.info("Path is directory.")
-            log.append("Path is directory.")
             for file in files:
                 dct = get_checksum(os.path.join(root, file))
                 local_md5.update(dct)
@@ -190,12 +190,13 @@ def main():
         local_md5 = get_checksum(fullpath)
         log.append("Path is not a directory and will be wrapped alone")
 
-    LOGGER.info("Checksums for local files:")
-    log.append("Checksums for local files:")
+    LOGGER.info("Checksums for local files (excluding DPX, TIF):")
+    log.append("Checksums for local files (excluding DPX, TIF):")
     for key, val in local_md5.items():
-        data = f"{val} -- {key}"
-        LOGGER.info("\t%s", data)
-        log.append(f"\t{data}")
+        if not key.endswith(('.dpx', '.DPX', '.tif', '.TIF')):
+            data = f"{val} -- {key}"
+            LOGGER.info("\t%s", data)
+            log.append(f"\t{data}")
 
     # Tar folder
     log.append("Beginning TAR wrap now...")
@@ -213,12 +214,13 @@ def main():
     else:
         tar_content_md5 = get_tar_checksums(tar_path, '')
 
-    log.append("Checksums from TAR wrapped contents:")
-    LOGGER.info("Checksums for TAR wrapped contents:")
+    log.append("Checksums from TAR wrapped contents (excluding DPX, TIF):")
+    LOGGER.info("Checksums for TAR wrapped contents (excluding DPX, TIF):")
     for key, val in tar_content_md5.items():
-        data = f"{val} -- {key}"
-        LOGGER.info("\t%s", data)
-        log.append(f"\t{data}")
+        if not key.endswith(('.dpx', '.DPX', '.tif', '.TIF')):
+            data = f"{val} -- {key}"
+            LOGGER.info("\t%s", data)
+            log.append(f"\t{data}")
 
     # Compare manifests
     if local_md5 == tar_content_md5:
@@ -246,27 +248,40 @@ def main():
             sys.exit("Failed to add MD5 manifest To TAR file. Script exiting")
 
         LOGGER.info("TAR MD5 manifest added to TAR file. Getting wholefile TAR checksum for logs")
+        whole_md5 = md5_hash(tar_path)
+        if whole_md5:
+            log.append(f"Whole TAR MD5 checksum for TAR file: {whole_md5}")
+            LOGGER.info("Whole TAR MD5 checksum for TAR file: %s", whole_md5)
+        else:
+            LOGGER.warning("Failed to retrieve whole TAR MD5 sum")
 
-        # Get complete TAR wholefile Checksums for logs
-        tar_md5 = get_tar_checksums(tar_path, '')
-        log.append(f"TAR checksum: {tar_md5} for TAR file: {tar_path}")
-        LOGGER.info("TAR checksum: %s", tar_md5)
         # Get complete size of file following TAR wrap
         file_stats = os.stat(tar_path)
-        log.append(f"File size is {file_stats.st_size} bytes")
-        LOGGER.info("File size is %s bytes.", file_stats.st_size)
-        if file_stats.st_size > 1099511627770:
+        file_size = file_stats.st_size
+        log.append(f"File size is {file_size} bytes")
+        LOGGER.info("File size is %s bytes.", file_size)
+        if int(file_size) > 1099511627770:
             log.append("FILE IS TOO LARGE FOR INGEST TO BLACK PEARL. Moving to oversized folder path")
-            LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI")
+            LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI: %s", os.path.join(OVERSIZE, f'{tar_source}.tar'))
             shutil.move(tar_path, os.path.join(OVERSIZE, f'{tar_source}.tar'))
             oversize_log(f"{tar_path}\tTAR file too large for ingest to DPI - size {file_stats.st_size} bytes")
 
         log.append("Moving TAR file to Autoingest, and moving source file to deletions path.")
-        shutil.move(tar_path, AUTOINGEST)
-        LOGGER.info("Moving original file to deletions folder: %s", fullpath)
-        shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
-        LOGGER.info("Moving MD5 manigest to checksum_manifest folder")
-        shutil.move(md5_manifest, CHECKSUM)
+        try:
+            LOGGER.info("Moving %s to %s", tar_path, AUTOINGEST)
+            shutil.move(tar_path, AUTOINGEST)
+        except Exception as err:
+            LOGGER.warning("File move to autoingest failed:\n%s", err)
+        try:
+            LOGGER.info("Moving original file %s to %s", fullpath, os.path.join(DELETE_TAR, tar_source))
+            shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
+        except Exception as err:
+            LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
+        try:
+            LOGGER.info("Moving MD5 manifest to checksum_manifest folder %s", CHECKSUM)
+            shutil.move(md5_manifest, CHECKSUM)
+        except Exception as err:
+            LOGGER.warning("MD5 manifest move failed:\n%s", err)
 
     else:
         LOGGER.warning("Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5)
@@ -279,7 +294,23 @@ def main():
     for item in log:
         local_logs(AUTO_TAR, item)
 
-    LOGGER.info("==== TAR Wrapping Check script END =================================\n")
+    LOGGER.info("==== TAR Wrapping Check script END =================================")
+
+
+def md5_hash(tar_file):
+    '''
+    Make whole file TAR MD5 checksum
+    '''
+    try:
+        hash_md5 = hashlib.md5()
+        with open(tar_file, "rb") as fname:
+            for chunk in iter(lambda: fname.read(65536), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
+    except Exception as err:
+        print(err)
+        return None
 
 
 def local_logs(fullpath, data):

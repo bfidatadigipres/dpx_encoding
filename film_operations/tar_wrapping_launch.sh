@@ -7,18 +7,18 @@
 date_FULL=$(date +'%Y-%m-%d - %T')
 
 # Path to folder
-FPATH="${IS_DIGITAL}${DPX_WRAP}"
-LOGS="${IS_DIGITAL}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
-FLIST="${IS_DIGITAL}${TAR_PRES}temp_file_list.txt"
+FPATH="${FILM_OPS}${DPX_WRAP}"
+LOGS="${FILM_OPS}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
+FLIST="${FILM_OPS}${TAR_PRES}temp_file_list.txt"
 
 if [ -z "$(ls -A ${FPATH})" ]
   then
     echo "Folder empty, for_tar_wrap, script exiting."
     exit 1
   else
-    echo " =========== TAR WRAPPING CHECKSUM SCRIPT START =========== $date_FULL" >> "$LOGS"
-    echo " Looking for files or folders in $FPATH " >> "$LOGS"
-    echo " Writing any files/folders found to $FLIST: " >> "$LOGS"
+    echo "=========== TAR WRAPPING CHECKSUM SCRIPT START =========== $date_FULL" >> "$LOGS"
+    echo "Looking for files or folders in $FPATH" >> "$LOGS"
+    echo "Writing any files/folders found to $FLIST:" >> "$LOGS"
 fi
 
 # Refresh list / add items to list
@@ -35,4 +35,5 @@ cat "$FLIST" >> "$LOGS"
 # Launching Python script using parallel
 echo " Launching Python script to TAR wrap files/folders " >> "$LOGS"
 grep "/mnt/" "$FLIST" | parallel --jobs 1 "${PY3_ENV} ${DPX_SCRIPTS}film_operations/tar_wrapping_checksum.py {}"
-echo " =========== TAR WRAPPING CHECKSUM SCRIPT END =========== $date_FULL\n" >> "$LOGS"
+echo " =========== TAR WRAPPING CHECKSUM SCRIPT END =========== $date_FULL" >> "$LOGS"
+echo "" >> "$LOGS"
