@@ -67,7 +67,7 @@ def tar_file(fpath):
 
     try:
         tarring = tarfile.open(tar_path, 'w:')
-        tarring.add(fpath)
+        tarring.add(fpath, arcname=f"{split_path[1]}")
         tarring.close()
         return tar_path
 
@@ -236,8 +236,9 @@ def main():
 
         LOGGER.info("TAR checksum manifest created. Adding to TAR file %s", tar_path)
         try:
+            arc_path = os.path.split(md5_manifest)
             tar = tarfile.open(tar_path, 'a:')
-            tar.add(md5_manifest)
+            tar.add(md5_manifest, arcname=f"{arc_path[1]}")
             tar.close()
         except Exception as exc:
             LOGGER.warning("Unable to add MD5 manifest to TAR file. Moving TAR file to errors folder.\n%s", exc)
