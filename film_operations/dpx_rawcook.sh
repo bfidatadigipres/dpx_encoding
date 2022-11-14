@@ -20,7 +20,11 @@ ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 touch "${MKV_DEST}temporary_rawcook_list.txt"
 touch "${MKV_DEST}temporary_retry_list.txt"
 touch "${MKV_DEST}retry_list.txt"
+touch "${MKV_DEST}retry_list_no_flip.txt"
+touch "${MKV_DEST}retry_list_image_flip.txt"
 touch "${MKV_DEST}rawcook_list.txt"
+touch "${MKV_DEST}rawcook_list_no_flip.txt"
+touch "${MKV_DEST}rawcook_list_image_flip.txt"
 
 # Write a START note to the logfile if files for encoding, else exit
 if [ -s "${MKV_DEST}reversibility_list.txt" ]
@@ -59,8 +63,20 @@ cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
 log "DPX folder will be cooked using --output-version 2:"
 log "${cook_retry}"
 
+# Check here for RAWcooked_notes.txt, if found add framemd5 output commands
+grep '/mnt/' "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
+  if [ -f "${DPX_PATH}${dpx_seq}RAWcooked_notes.txt" ]
+    then
+      echo "${dpx_seq}" >> "${MKV_DEST}retry_list_image_flip.txt"
+  else
+    then
+      echo "${dpx_seq}" >> "${MKV_DEST}retry_list_no_flip.txt"
+  fi
+done
+
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -89,12 +105,28 @@ cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
 log "DPX folder will be cooked:"
 log "${cook_list}"
 
+# Check here for RAWcooked_notes.txt, if found add framemd5 output commands
+grep '/mnt/' "${MKV_DEST}rawcook_list.txt" | while IFS= read -r dpx_seq; do
+  if [ -f "${DPX_PATH}${dpx_seq}RAWcooked_notes.txt" ]
+    then
+      echo "${dpx_seq}" >> "${MKV_DEST}rawcook_list_image_flip.txt"
+  else
+    then
+      echo "${dpx_seq}" >> "${MKV_DEST}rawcook_list_no_flip.txt"
+  fi
+done
+
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --jobs 4 "rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="
 
 rm "${MKV_DEST}temporary_rawcook_list.txt"
 rm "${MKV_DEST}temporary_retry_list.txt"
 rm "${MKV_DEST}retry_list.txt"
+rm "${MKV_DEST}retry_list_no_flip.txt"
+rm "${MKV_DEST}retry_list_image_flip.txt"
 rm "${MKV_DEST}rawcook_list.txt"
+rm "${MKV_DEST}rawcook_list_no_flip.txt"
+rm "${MKV_DEST}rawcook_list_image_flip.txt"

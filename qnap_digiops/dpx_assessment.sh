@@ -8,6 +8,7 @@
 DPX_LOG="${QNAP_DIGIOPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${QNAP_DIGIOPS}${DPX_ASSESS}"
 POLICY_PATH="${POLICY_DPX}"
+POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
 SPLITTING="${SPLITTING_SCRIPT_QNAP_DIGIOPS}"
 
@@ -66,6 +67,20 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
             byte_size=$(du -s -b "${DPX_PATH}${filename}")
             echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
+
+            # Check for Image orientation 'Bottom to top' and manage with temporary file additions
+            orientation_check=$(mediaconch --force -p "{POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
+            if [ -z "$orientation_check" ]
+                then
+                    log "Skipping: File does not have 'Bottom to top' orientation issues."
+                else
+                    log "File has 'Bottom to top' Image orientation! Adding RAWcooked warning note to folder"
+                    touch "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+                    echo "This sequence has been exported with imagen orientation reading 'Bottom to top'." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+                    echo "This RAWcooked transcode has flipped the image using FFmpeg '-vf vflip'." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+                    echo "As a result it may fail future '--check' tests, so a framemd5 manifest" >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+                    echo "will be included to allow for manual reversibility tests after decoding." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+            fi
 
             # Start comparison of first dpx file against mediaconch policy
             check=$(mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")

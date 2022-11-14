@@ -274,8 +274,9 @@ def main():
         except Exception as err:
             LOGGER.warning("File move to autoingest failed:\n%s", err)
         try:
-            LOGGER.info("Moving original file %s to %s", fullpath, os.path.join(DELETE_TAR, tar_source))
+            LOGGER.info("Moving and deleting DPX sequence: %s", os.path.join(DELETE_TAR, tar_source))
             shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
+#            os.remove(os.path.join(DELETE_TAR, tar_source))
         except Exception as err:
             LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
         try:
