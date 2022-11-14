@@ -1,0 +1,6 @@
+<policy type="and" name="Image Orientation check" license="MIT">
+  <description>Checks for image orientation that is 'Left to right, Bottom to top' (2) as is output by Nucoda software</description>
+  <policy type="and" name="Image Orientation">
+    <rule name="DPX Image orientation" value="Generic section header/Image information/Image orientation" occurrence="*" operator="=" scope="mmt">2</rule>
+  </policy>
+</policy>
