@@ -14,11 +14,15 @@ Steps:
 5. Compare to ensure identical:
    Yes. Output MD5 to manifest and add into TAR file
         Move original folder to 'delete' folder
-        Move completed closed() TAR to autoingest.
         Update details to local log.
    No. Delete faulty TAR.
        Output warning to Local log and leave file
        for retry at later date.
+6. Check if file is over 1TB in size:
+   Yes. Move to oversize folder, update oversize log
+        and all local logs then exit.
+   No. Continue to move source to 'to_delete' folder
+       and TAR file to autoingest. Update all logs.
 
 Joanna White
 2022
@@ -262,10 +266,18 @@ def main():
         log.append(f"File size is {file_size} bytes")
         LOGGER.info("File size is %s bytes.", file_size)
         if int(file_size) > 1099511627770:
-            log.append("FILE IS TOO LARGE FOR INGEST TO BLACK PEARL. Moving to oversized folder path")
+            log.append("FILE IS TOO LARGE FOR INGEST TO BLACK PEARL. Moving TAR and source folder to oversized folder path")
             LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI: %s", os.path.join(OVERSIZE, f'{tar_source}.tar'))
             shutil.move(tar_path, os.path.join(OVERSIZE, f'{tar_source}.tar'))
             oversize_log(f"{tar_path}\tTAR file too large for ingest to DPI - size {file_stats.st_size} bytes")
+            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source))
+            shutil.move(fullpath, os.path.join(OVERSIZE, tar_source))
+            log.append(f"==== Log actions complete: {fullpath} ====")
+            LOGGER.info("==== TAR Wrapping Check script END =================================")
+            # Write all log items in block
+            for item in log:
+                local_logs(AUTO_TAR, item)
+            sys.exit()
 
         log.append("Moving TAR file to Autoingest, and moving source file to deletions path.")
         try:
