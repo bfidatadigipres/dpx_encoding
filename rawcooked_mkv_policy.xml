@@ -33,8 +33,9 @@
       <rule name="Colour space is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
       <rule name="Colour space is Y Luma" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
     </policy>
-    <policy type="or" name="BitDepth is 10 of 16">
+    <policy type="or" name="BitDepth is 10,12 or 16">
       <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+      <rule name="BitDepth is 12" value="BitDepth" tracktype="Video" occurrence="*" operator="=">12</rule>
       <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
     </policy>
   </policy>

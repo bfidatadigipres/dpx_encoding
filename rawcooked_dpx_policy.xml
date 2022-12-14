@@ -47,8 +47,10 @@
     </policy>
     <policy type="or" name="BitDepth is 10 or 16 in Video or Image tracktype">
       <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
+      <rule name="BitDepth is 12" value="BitDepth" tracktype="Image" occurrence="*" operator="=">12</rule>
       <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
       <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
+      <rule name="BitDepth is 12" value="BitDepth" tracktype="Video" occurrence="*" operator="=">12</rule>
       <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
     </policy>
   </policy>
