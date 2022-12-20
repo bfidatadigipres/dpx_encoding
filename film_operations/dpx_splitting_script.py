@@ -69,7 +69,7 @@ PART_RAWCOOK = os.path.join(DPX_PATH, os.environ['PART_RAWCOOK'])
 PART_TAR = os.path.join(DPX_PATH, os.environ['PART_TAR'])
 CONTROL_JSON = os.path.join(os.environ['LOG_PATH'], 'downtime_control.json')
 TODAY = str(datetime.datetime.now())[:10]
-CID_API = os.environ['CID_API']
+CID_API = os.environ['CID_API3']
 
 # Setup logging
 LOGGER = logging.getLogger('dpx_splitting_script.log')
