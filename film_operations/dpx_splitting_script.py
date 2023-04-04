@@ -939,7 +939,7 @@ def make_dirs(new_path):
     called multiple times to create directory
     '''
     try:
-        os.makedirs(new_path, exist_ok=True)
+        os.makedirs(new_path, mode=0o777, exist_ok=True)
         LOGGER.info("make_dirs(): New path mkdir: %s", new_path)
         return True
     except Exception as error:
@@ -1029,17 +1029,19 @@ def write_lock(priref):
 
 def write_payload(priref, payload):
     '''
-    Receive header, parser data and priref and write to CID media record
+    Receive header, parser data and priref and write to CID items record
     '''
     post_response = requests.post(
         CID_API,
         params={'database': 'items', 'command': 'updaterecord', 'xmltype': 'grouped', 'output': 'json'},
         data={'data': payload})
+
+    LOGGER.info(str(post_response.text))
     if "<error><info>" in str(post_response.text):
         LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
         return False
     else:
-        LOGGER.info("No error warning in post_response. Payload successfully written")
+        LOGGER.info("No error warning in post_response. Assuming payload successfully written")
         return True
 
 

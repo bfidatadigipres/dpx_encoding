@@ -93,7 +93,7 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 # ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
-  success_check=$(grep 'Reversability was checked, no issue detected.' "$fname")
+  success_check=$(grep 'Reversibility was checked, no issue detected.' "$fname")
   mkv_filename=$(basename "$fname" | rev | cut -c 5- | rev )
   dpx_success_path=$(echo "$fname" | rev | cut -c 9- | rev )
   if [ -z "$success_check" ];
@@ -175,7 +175,7 @@ fi
 # ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fail_logs; do
-  error_check=$(grep 'Reversability was checked, issues detected, see below.\|Error:\|Conversion failed!\|Please contact info@mediaarea.net if you want support of such content.' "$fail_logs")
+  error_check=$(grep 'Reversibility was checked, issues detected, see below.\|Error:\|Conversion failed!\|Please contact info@mediaarea.net if you want support of such content.' "$fail_logs")
   mkv_fname=$(basename "$fail_logs" | rev | cut -c 5- | rev )
   dpx_folder=$(basename "$fail_logs" | rev | cut -c 9- | rev )
   if [ -z "$error_check" ];

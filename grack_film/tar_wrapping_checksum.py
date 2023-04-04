@@ -270,7 +270,7 @@ def main():
             LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI: %s", os.path.join(OVERSIZE, f'{tar_source}.tar'))
             shutil.move(tar_path, os.path.join(OVERSIZE, f'{tar_source}.tar'))
             oversize_log(f"{tar_path}\tTAR file too large for ingest to DPI - size {file_stats.st_size} bytes")
-            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source))
+            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source)
             shutil.move(fullpath, os.path.join(OVERSIZE, tar_source))
             log.append(f"==== Log actions complete: {fullpath} ====")
             LOGGER.info("==== TAR Wrapping Check script END =================================")
