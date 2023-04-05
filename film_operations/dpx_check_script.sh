@@ -60,7 +60,7 @@ grep ^N "${MKV_PATH}mkv_list.txt" | parallel --jobs 5 "rawcooked --check ${MKV_P
 
 # Search for .txt files for success message
 grep '/mnt/' "${MKV_PATH}temp_mkv_list.txt" | while IFS= read -r log_list; do
-  success_check=$(grep 'Reversability was checked, no issue detected.' "${log_list}.txt")
+  success_check=$(grep 'Reversibility was checked, no issue detected.' "${log_list}.txt")
   mkv_file=$(basename "$log_list")
   dpx_seq=$(echo "$mkv_file" | rev | cut -c 5- | rev )
   if [ -z "$success_check" ];
