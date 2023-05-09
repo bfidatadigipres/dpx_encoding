@@ -15,9 +15,11 @@ Script functions:
    untarred file.
 9. If no MD5 checksum manifest in tar return statement
    to log alongside untarred file.
+10.Move TAR files to completed/ failed/ folders depending
+   on successful/unsuccessful results
 
 Joanna White
-2022
+2023
 '''
 
 #Global import
@@ -26,6 +28,7 @@ import sys
 import time
 import json
 import shutil
+import tarfile
 import hashlib
 import logging
 import datetime
@@ -33,6 +36,7 @@ import subprocess
 
 # Global variables
 DPX_PATH = os.environ['IS_DIGITAL']
+ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 UNTAR_PATH = os.path.join(DPX_PATH, os.environ['UNWRAP_TAR'])
 COMPLETED = os.path.join(UNTAR_PATH, 'completed/')
@@ -49,25 +53,48 @@ LOGGER.addHandler(HDLR)
 LOGGER.setLevel(logging.INFO)
 
 
-def untar_file(fpath):
+def linux_untar_file(fpath):
     '''
     Subprocess action to unwrap a file
+    Change directory and place file into
+    folder if not folder already.
     '''
+    cwd = os.getcwd()
+    new_wd, fname = os.path.split(fpath)
+    os.chdir(new_wd)
+    file = fname.split('.tar')[0]
+    extract_path = os.path.join(new_wd, file)
+    os.makedirs(extract_path, exist_ok=True)
+
     cmd = [
-        'tar', '-xf',
-        fpath
+        "tar", "-xf",
+        fname, "-C",
+        extract_path
     ]
+    try:
+        stats = subprocess.call(cmd,stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        raise Exception from e
+    os.chdir(cwd)
 
-    status = subprocess.call(cmd,shell=True,stderr=subprocess.STDOUT)
-    if 'Exiting with failure status' not in status:
-        return True
+    if stats == 0:
+        return extract_path
 
 
-def python_tarfile(fpath):
+def python_tarfile(fpath, untar_fpath):
     '''
     If Linux TAR fails, try with python tarfile
+    extract to folder named after tar file
     '''
-    pass
+    if not os.path.exists(untar_fpath):
+        os.makedirs(untar_fpath)
+
+    tar_file = tarfile.open(fpath)
+    tar_file.extractall(untar_fpath)
+    tar_file.close()
+
+    if os.listdir(untar_fpath):
+        return True
 
 
 def main():
@@ -77,63 +104,114 @@ def main():
     '''
     log_list = []
     tar_files = [x for x in os.listdir(UNTAR_PATH) if os.path.isfile(os.path.join(UNTAR_PATH, x))]
-    if len(tar_file) == 0:
+    if len(tar_files) == 0:
         sys.exit(f"{UNTAR_PATH} EMPTY. SCRIPT EXITING.")
 
     LOGGER.info("========= UNWRAP TAR CHECKSUM SCRIPT START =====================")
 
     for fname in tar_files:
-        tarfile_retry = False
+        fname_log = fname.split(".")[0]
         if 'unwrapped_tar_checksum.log' in str(fname):
             continue
         if not fname.endswith(('.tar', '.TAR')):
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tSKIPPING - File is not a TAR file: {fname}.")
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tPlease remove non TAR files from 'unwrap_tar' folder.")
             LOGGER.info("Skipping file, not a TAR: %s", fname)
+            error_mssg1 = "File/folder placed in unwrap_tar/ folder is not a TAR file. Please remove this item from this path"
+            error_mssg2 = None
+            error_log(os.path.join(ERRORS, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
             build_log(log_list)
             continue
 
         fpath = os.path.join(UNTAR_PATH, fname)
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tNew file found: {fpath}")
         LOGGER.info("File found to process: %s", fname)
-        tic = time.start()
-        success = untar_file(fpath)
-        if not success:
-            LOGGER.warning("Unwrapping failed with Linux TAR. Adding to Python tarfile retry list.")
-            tarfile_retry = True
-        toc = time.stop()
+        log_list.append(f"{str(datetime.datetime.now())[:10]}\tAttempting extraction using Linux TAR programme...")
+        tic = time.perf_counter()
+        untar_fpath = linux_untar_file(fpath)
+        toc = time.perf_counter()
         minutes_taken = (toc - tic) // 60
 
-        # Folder/file location checks
-        untar_file = fname.split('.tar')[0]
-        untar_fpath = os.path.join(UNTAR_PATH, untar_file)
-
-        if not os.path.exists(untar_fpath):
+        if not untar_fpath:
+            LOGGER.warning("Unwrapping failed with Linux TAR. Adding to Python tarfile retry list.")
+            untar_file = fname.split('.tar')[0]
+            untar_fpath = os.path.join(UNTAR_PATH, untar_file)
+            if not os.path.exists(untar_fpath):
+                os.makedirs(untar_fpath, exist_ok=True)
+            log_list.append(f"{str(datetime.datetime.now())[:10]}\tLinux TAR extraction failed... trying with Python tarfile")
             LOGGER.warning("Unwrapped folder/file not found. Adding to Python tarfile retry list: %s", untar_file)
-            tarfile_retry = True
+            LOGGER.info("Attemping Python tarfile unwrap now...")
 
-        if tarfile_retry is True:
-            LOGGER.info("Untar has failed using Linux TAR. Attemping Python tarfile unwrap now")
-            tic = time.start()
-            py_success = python_tarfile(fpath)
-            toc = time.stop()
-        # UPTO HERE JOANNA
+            # Try with Python tarfile
+            tic = time.perf_counter()
+            py_success = python_tarfile(fpath, untar_fpath)
+            toc = time.perf_counter()
+            minutes_taken = (toc - tic) // 60
+            if not py_success:
+                LOGGER.warning("Python tarfile has failed to extract content of TAR. Script exiting, TAR needs manual assistance.")
+                shutil.move(fpath, FAILED)
+                error_mssg1 = f"Linux TAR and Python tarfile cannot extract data. Please try alternative software. File location: {fpath}"
+                error_mssg2 = None
+                error_log(os.path.join(ERRORS, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
+                if os.path.exists(untar_fpath) and not os.listdir(untar_fpath):
+                    LOGGER.info("Moved TAR to failed/ folder. Deleted empty folder: %s", untar_file)
+                    log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Deleted empty extraction folder: {untar_file}")
+                    os.remove(untar_fpath)
+                elif os.path.exist(untar_fpath) and os.listdir(untar_fpath):
+                    LOGGER.info("Moved TAR to failed/ folder. Folder %s has contents, moving to failed/ folder for review", untar_file)
+                    log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Folder {untar_file} has contents. Moving to failed/ folder for review")
+                    shutil.move(untar_fpath, FAILED)
+                log_list.append(f"{str(datetime.datetime.now())[:10]}\tSkipping further actions for {fname}. Manual assistance needed")
+                log_list.append(f"{str(datetime.datetime.now())[:10]}\t-------------------------------------------------------------------")
+                LOGGER.warning("Skipping futher actions for %s, TAR needs manual assistance.", fname)
+                build_log(log_list)
+                continue
+            LOGGER.info("Python tarfile extracted file to path: %s", untar_fpath)
+        else:
+            LOGGER.info("Linux TAR programme extracted file to path: %s", untar_fpath)
 
-        # File MD5 checks
+        log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtracted TAR file successful: {untar_fpath}")
+        log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtraction took {minutes_taken} minutes to complete")
+        LOGGER.info("It took %s minutes to perform this extraction.", minutes_taken)
+
         # Build checksum manifest of un_tarred file
         local_manifest = get_checksum(untar_fpath)
         local_manifest_path = dump_to_file(untar_fpath, local_manifest)
+        log_list.append(f"{str(datetime.datetime.now())[:10]}\tGenerating local MD5 manifest for extracted data: {local_manifest_path}")
+
         # Fetch enclosed MD5 manifest if present
-        md5_manifest = os.path.join(UNTAR_PATH, f"{fname}_manifest.md5")
-        if os.path.exist(md5_manifest):
-            LOGGER.info("MD5 manifest for untar item exists: %s", untar_file)
+        md5_manifest = os.path.join(untar_fpath, f"{fname}_manifest.md5")
+        if os.path.exists(md5_manifest):
+            match = True
+            LOGGER.info("MD5 manifest for untar item exists: %s", md5_manifest)
             manifest_contents = fetch_checksum_dict(md5_manifest)
+            log_list.append(f"{str(datetime.datetime.now())[:10]}\tMD5 manifest extracted from TAR file for comparison")
 
-        if manifest_contents == local_manifest:
-            LOGGER.info("MD5 manifest matches local MD5 manifest. Bit perfect restoration of TARRED file.")
-        elif manifest_contents != local_manifest:
-            LOGGER.info("MD5 manifest does not match. See manifest for details:")
+            for k, v in manifest_contents.items():
+                if local_manifest[k] == v:
+                    print(f"MD5 match: {k}")
+                else:
+                    print(f"MD5 does not match: {k}")
+                    match = False
 
+            if match:
+                log_list.append(f"{str(datetime.datetime.now())[:10]}\tLocal manifest matches extracted MD5 manifest. File identical to preservation original.")
+                LOGGER.info("MD5 manifest matches local MD5 manifest. Bit perfect restoration of TARRED file.")
+            else:
+                LOGGER.info("MD5 manifest does not match all items. See manifest for details: %s", local_manifest_path)
+                log_list.append(f"{str(datetime.datetime.now())[:10]}\tMD5 manifest cannot be fully matched to extracted MD5 manifest.")
+                error_mssg1 = f"MD5 manifests do not match from TAR file, and unwrapped TAR folder contents: {local_manifest_path}"
+                error_mssg2 = None
+                error_log(os.path.join(ERRORS, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
+        else:
+            LOGGER.info("MD5 manifest was not extracted from TAR file. No comparison possible.")
+            log_list.append(f"{str(datetime.datetime.now())[:10]}\tNo MD5 manifest extracted from TAR file. No comparison possible.")
+
+        shutil.move(fpath, COMPLETED)
+        LOGGER.info("%s file moved to COMPLETED path: %s", fname, COMPLETED)
+        log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to completed/ folder for manual deletion.")
+        log_list.append(f"{str(datetime.datetime.now())[:10]}\t-------------------------------------------------------------------")
+        build_log(log_list)
 
     LOGGER.info("========= UNWRAP TAR CHECKSUM SCRIPT END =======================")
 
@@ -158,11 +236,11 @@ def get_checksum(fpath):
     md5s = {}
     for root, _, files in os.walk(fpath):
         for file in files:
-            h = hashlib.md5()
-            with open(os.path.join(root, file), "rb") as f:
-                for chunk in iter(lambda: f.read(65536), b""):
-                    h.update(chunk)
-                md5s[file] = h.hexdigest()
+            hsh = hashlib.md5()
+            with open(os.path.join(root, file), "rb") as md5_file:
+                for chunk in iter(lambda: md5_file.read(65536), b""):
+                    hsh.update(chunk)
+                md5s[file] = hsh.hexdigest()
     return md5s
 
 
@@ -192,7 +270,24 @@ def build_log(message_list):
             file.close()
     with open(LOCAL_LOG, 'a') as file:
         for line in message_list:
-            file.write(f"{line}\n"}
+            file.write(f"{line}\n")
+
+
+def error_log(fpath, message, kandc):
+    '''
+    If needed, write error log
+    for incomplete sequences.
+    '''
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if not kandc:
+        with open(fpath, 'a+') as log:
+            log.write(f"splitting_script {ts}: {message}.")
+            log.close()
+    else:
+        with open(fpath, 'a+') as log:
+            log.write(f"splitting_script {ts}: {message}.")
+            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.")
+            log.close()
 
 
 if __name__ == '__main__':
