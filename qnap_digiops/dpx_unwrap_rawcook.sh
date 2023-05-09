@@ -5,9 +5,9 @@
 # ===============================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
-DPX_PATH="${FILM_OPS}${UNWRAP_RAWCOOK}"
-ERRORS="${FILM_OPS}${CURRENT_ERRORS}"
+SCRIPT_LOG="${QNAP_DIGIOPS}${DPX_SCRIPT_LOG}"
+DPX_PATH="${QNAP_DIGIOPS}${UNWRAP_RAWCOOK}"
+ERRORS="${QNAP_DIGIOPS}${CURRENT_ERRORS}"
 COMPLETED="${DPX_PATH}completed/"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.

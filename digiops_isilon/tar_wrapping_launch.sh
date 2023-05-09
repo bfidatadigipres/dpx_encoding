@@ -11,6 +11,10 @@ FPATH="${IS_DIGITAL}${DPX_WRAP}"
 LOGS="${IS_DIGITAL}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
 FLIST="${IS_DIGITAL}${TAR_PRES}temp_file_list.txt"
 
+# Refresh list / add items to list
+rm "$FLIST"
+touch "$FLIST"
+
 if [ -z "$(ls -A ${FPATH})" ]
   then
     echo "Folder empty, for_tar_wrap, script exiting."
@@ -20,9 +24,6 @@ if [ -z "$(ls -A ${FPATH})" ]
     echo "Looking for files or folders in $FPATH" >> "$LOGS"
     echo "Writing any files/folders found to $FLIST:" >> "$LOGS"
 fi
-
-# Refresh list / add items to list
-echo "" > "$FLIST"
 
 find "$FPATH" -maxdepth 1 -mindepth 1 -mmin +10 | while IFS= read -r items; do
   item=$(basename "$items")

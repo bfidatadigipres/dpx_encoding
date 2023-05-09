@@ -5,13 +5,13 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-DPX_LOG="${QNAP_DIGIOPS}${DPX_SCRIPT_LOG}"
-DPX_PATH="${QNAP_DIGIOPS}${DPX_ASSESS_FOUR}"
-ERRORS="${QNAP_DIGIOPS}${CURRENT_ERRORS}"
+DPX_LOG="${GRACK_FILM}${DPX_SCRIPT_LOG}"
+DPX_PATH="${GRACK_FILM}${DPX_ASSESS_FOUR}"
+ERRORS="${GRACK_FILM}${CURRENT_ERRORS}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT_QNAP_DIGIOPS}"
+SPLITTING="${SPLITTING_SCRIPT_GRACK_FILM}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
@@ -162,7 +162,7 @@ fi
 # Take python_list.txt and iterate through entries, passing to Python script one of each instance
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
-  grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "sudo $PY3_LAUNCH $SPLITTING {}"
+  grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING {}"
   log "===================== DPX assessment workflows ENDED ====================="
 fi
 

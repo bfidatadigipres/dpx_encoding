@@ -269,10 +269,15 @@ def fname_split(fname):
     '''
     fname = fname.rstrip('/')
     name_split = fname.split('_')
-    part_whole = name_split[2]
-    part, whole = part_whole.split('of')
-
-    return (name_split[0] + '_' + name_split[1] + '_', part, whole)
+    part_whole = name_split[-1:]
+    if 'of' in str(part_whole):
+        part, whole = part_whole.split('of')
+    else:
+        return None
+    if len(name_split) == 3:
+        return (f"{name_split[0]}_{name_split[1]}_", part, whole)
+    if len(name_split) == 4"
+        return (f"{name_split[0]}_{name_split[1]}_{name_split[2]}_", part, whole)
 
 
 def workout_division(arg, kb_size):
@@ -1029,7 +1034,7 @@ def write_lock(priref):
 
 def write_payload(priref, payload):
     '''
-    Receive header, parser data and priref and write to CID media record
+    Receive header, parser data and priref and write to CID items record
     '''
     post_response = requests.post(
         CID_API,

@@ -48,6 +48,7 @@ touch "${MKV_DESTINATION}reversibility_list.txt"
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r fname; do
     filename=$(basename "$fname")
+    fname_log=$(echo "$filename" | rev | cut -c 5- | rev)
     object=$(echo "$filename" | rev | cut -c 12- | rev)
     size=$(du -m "$fname" | cut -f1 )
     if [ "${size}" -gt 1048560 ]
@@ -56,7 +57,9 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -
             mv "${fname}" "${MKV_DESTINATION}killed/Oversize_${filename}"
             log "Moving failed ${filename}.log to ${MKV_DESTINATION}logs/"
             mv "${fname}.log" "${MKV_DESTINATION}logs/failed_oversize_${filename}.log"
-            echo "MATROSKA ${filename} is over 1TB. All DPX part wholes will need reviewing" >> "${ERRORS}oversize_files_error.log"
+            echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${filename} is over 1TB." >> "${ERRORS}${fname_log}_errors.log"
+            echo "    Matroska moved to Killed folder. All multipart DPX part wholes may need reviewing." >> "${ERRORS}${fname_log}_errors.log"
+            echo "    Please contact the Knowledge and Collections Developer about this repeated encoding failure." >> "${ERRORS}${fname_log}_errors.log"
             echo "${object}" >> "${ERRORS}part_whole_search.log"
             log "**** WARNING! ${filename} TOO LARGE TO INGEST TO DPI ****"
             log "**** REMOVE ALL PART OF WHOLE FILES FOR ${filename} SPLITTING ****"
@@ -72,12 +75,16 @@ done
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r files; do
   check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass! ${files}")
   filename=$(basename "$files")
+  fname_log=$(echo "$filename" | rev | cut -c 5- | rev)
   if [ -z "$check" ];
     then
       log "FAIL: RAWcooked MKV $filename has failed the mediaconch policy"
       log "Moving $filename to killed directory, and amending log fail_$filename.txt"
       log "$check"
       echo "$filename" >> "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
+      echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${filename} failed the FFV1 MKV Mediaconch policy." >> "${ERRORS}${fname_log}_errors.log"
+      echo "    Matroska moved to Killed folder, DPX sequence will retry RAWcooked encoding." >> "${ERRORS}${fname_log}_errors.log"
+      echo "    Please contact the Knowledge and Collections Developer about this Mediaconch policy failure." >> "${ERRORS}${fname_log}_errors.log"
     else
       log "PASS: RAWcooked MKV file $filename has passed the Mediaconch policy. Whoopee"
   fi
@@ -89,7 +96,7 @@ grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progr
 grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progress --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/fail_{}.txt"
 
 # ===================================================================================
-# Log check passes move to MKV check folder and logs folders, and DPX folder move ===
+# Log check passes move to MKV Check folder and logs folders, and DPX folder move ===
 # ===================================================================================
 
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
@@ -142,8 +149,10 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
           mv "${large_logs}" "${MKV_DESTINATION}logs/retry_${mkv_fname1}.txt"
         else
           log "REPEAT ENCODING ERROR: ${mkv_fname1} encountered repeated reversibility data error"
-          echo "${mkv_fname1} REPEAT REVERSIBILITY DATA ERROR FOR SEQUENCE:" >> "${ERRORS}dpx_encoding_errors.log"
-          echo "${DPX_PATH}dpx_to_cook/${dpx_folder1}" >> "${ERRORS}dpx_encoding_errors.log"
+          echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): ${mkv_fname1} Repeated reversibility data error for sequence:" >> "${ERRORS}${dpx_folder1}_errors.log"
+          echo "    ${DPX_PATH}dpx_to_cook/${dpx_folder1}" >> "${ERRORS}${dpx_folder1}_errors.log"
+          echo "    The FFV1 Matroska will be deleted." >> "${ERRORS}${dpx_folder1}_errors.log"
+          echo "    Please contact the Knowledge and Collections Developer about this repeated reversibility failure." >> "${ERRORS}${dpx_folder1}_errors.log"
           echo "${mkv_fname1}" >> "${MKV_DESTINATION}matroska_deletion.txt"
           mv "${large_logs}" "${MKV_DESTINATION}logs/fail_${mkv_fname1}.txt"
       fi
@@ -184,8 +193,10 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= re
     else
       log "UNKNOWN ENCODING ERROR: ${mkv_fname} encountered error"
       echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${MKV_DESTINATION}error_list.txt"
-      echo "${mkv_fname} REPEAT ENCODING ERROR RAISED FOR SEQUENCE:" >> "${ERRORS}dpx_encoding_errors.log"
-      echo "${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${ERRORS}dpx_encoding_errors.log"
+      echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): ${mkv_fname} Repeat encoding error raised for sequence:" >> "${ERRORS}${dpx_folder}_errors.log"
+      echo "    ${DPX_PATH}dpx_to_cook/${dpx_folder}" >> "${ERRORS}${dpx_folder}_errors.log"
+      echo "    The Matroska file will be deleted." >> "${ERRORS}${dpx_folder}_errors.log"
+      echo "    Please contact the Knowledge and Collections Developer about this repeated encoding failure." >> "${ERRORS}${dpx_folder}_errors.log"
       echo "${mkv_fname}" >> "${MKV_DESTINATION}matroska_deletion_list.txt"
       mv "${fail_logs}" "${MKV_DESTINATION}logs/fail_${mkv_fname}.txt"
   fi
@@ -208,10 +219,14 @@ fi
 
 # This block manages the remaining INCOMPLETE cooks that have been killed or stalled mid-encoding
 find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +2880 -size +10k | while IFS= read -r stale_logs; do
-  stale_fname=$("$stale_logs" | rev | cut -c 5- | rev )
+  stale_fname=$(echo "$stale_logs" | rev | cut -c 5- | rev )
   stale_basename=$(basename "$stale_logs")
+  fname_log=$(echo "$stale_basename" | rev | cut -c 9- | rev )
   log "Stalled/killed encoding: ${stale_basename}. Adding to stalled list and deleting log file and Matroska"
   echo "${stale_fname}" >> "${MKV_DESTINATION}stale_encodings.txt"
+  echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${stale_fname} encoding stalled mid-process." >> "${ERRORS}${fname_log}_errors.log"
+  echo "    Matroska and failed log deleted. DPX sequence will retry RAWcooked encoding." >> "${ERRORS}${fname_log}_errors.log"
+  echo "    Please contact the Knowledge and Collections Developer if this item repeatedly stalls." >> "${ERRORS}${fname_log}_errors.log"
 done
 
 # Add list of stalled logs to post_rawcooked.log
