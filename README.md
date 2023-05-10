@@ -109,8 +109,7 @@ dpx_assessment.sh / dpx_assessment_fourdepth.sh - Every four hours one or other 
 dpx_rawcook.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
 dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8am, 4pm, and 12am  
 dpx_tar_script.sh - Runs once a day at 10pm  
-dpx_check_script.sh - Runs once a day at 5am
-dpx_clean_up.sh - Runs once a day at 5am [ deprecated ] 
+dpx_check_script.sh - Runs once a day at 5am  
 
 DPX Encoding script crontab entries:  
 
@@ -126,7 +125,8 @@ DPX Encoding script crontab entries:
 
 ## THE SCRIPTS
 
-### dpx_assessment.sh / dpx_assessment_fourdepth.sh [Launches Python splitting script]
+### dpx_assessment.sh / dpx_assessment_fourdepth.sh
+(Launches Python splitting script)
 
 These scripts assess a DPX sequence's suitability to be RAWcooked encoded, based on criteria met within the metadata of the fourth DPX file. The metadata is checked against a Mediaconch policy, if it fails, the folder is passed to the tar_preservation/ folder path.
 dpx_assessment.sh script need the DPX sequences to be formatted identically:  N_123456_01of01/scan01/2048x1556/<dpx_files>
@@ -300,7 +300,18 @@ Requires use of rawcooked_mkv_policy.xml.
 
 ### dpx_unwrap_rawcook.sh
 
-Coming soon
+A shell script which manages the demuxing of FFV1 Matroska files using the latest version of RAWcooked installed to the server.
+
+Script functions:
+1. Compiles a list of all files found in the unwrap_rawcook_mkv/ folder, ignoring any that have been modified in the last 10 minutes.
+2. If files are found the logs are written to with a list of files to be targeted.
+3. The current server RAWcooked version used for demuxing the DPX sequence is written to the logs.
+4. A check is made that a folder doesn't exist for this file already, such as a file that has been recently unwrapped - named RAWcooked_unwrap_N_123456_01of01/.
+5. If no folder found the file name is written to a 'confirmed_unwrap_list.txt'.
+6. Each item on the 'confirmed_unwrap_list.txt' is passed to GNU parallel where one at a time, RAWcooked is used to unwrap the FFV1 MKV to DPX, and placed in the 'RAWcooked_unwrap...' folder.
+7. A log is created for each demux, and this is checked for the message 'Reversibility was checkd, no issue detected.'
+   - If this message is found the file FFV1 MKV is moved to the completed/ folder.
+   - If this message is not found the problem is written to the logs, but the MKV and folder is left in place for manual review.
 
 ### tar_wrapping_launch.sh / tar_wrapping_checksum.py
 
@@ -326,7 +337,20 @@ Script functions:
 
 ### unwrap_tar_checksum.py
 
-Coming soon.
+This python script manages the unwrapping of TAR files downloaded from DPI, and is able to unwrap Python tarfile TARs where 7zip and other software fail.
+
+Script functions:
+1. This script checks in the 'unwrap_tar' folder for any files ending '.tar'.
+2. Where a file is found it launches the Linux TAR software using Python subprocess to unwrap the file, placing the items into a folder alongside the TAR file named the same as the TAR file, minus the '.tar' extension.
+3. The subprocess error messages is checked for a zero exit code that equals 0 (completed successfully).
+   - If fails to return exit code 0, the script attempt to unwrap the TAR file using Python tarfile module.
+   - If succeeds, the script looks for the presence of TAR checksum manifest.
+4. Where checksum manifest found, this is loaded into the scripts memory as dictionary.
+5. The script creates a new local unpacked TAR file checksum manifest.
+6. The two manifest are compared to ensure that no data has been lost/corrupted in the TAR file retrieved from DPI.
+   - If matched the result is written to the logs.
+   - If not matched, or the TAR manifest is not present, then the logs are updated that the MD5 checks cannot be completed.
+7. TAR files are moved to completed/ folder for manual deletion and untarred items are left in place in their folder.
 
 ### dpx_check_script.sh
 
