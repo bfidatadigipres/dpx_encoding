@@ -8,6 +8,7 @@ Compare TAR contents to original using MD5 hash.
 
 Steps:
 1. Assess if item supplied is folder or file
+   Ensure the filename matches CID item record
 2. Initiate TAR wrapping with zero compression
 3. Generate MD5 dict for original folder
 4. Generate MD5 dict for internals of TAR
@@ -36,6 +37,7 @@ import tarfile
 import logging
 import hashlib
 import datetime
+import requests
 
 # Global paths
 LOCAL_PATH = os.environ['QNAP_FILMOPS2']
@@ -44,9 +46,10 @@ DELETE_TAR = os.path.join(LOCAL_PATH, os.environ['TO_DELETE'])
 TAR_FAIL = os.path.join(LOCAL_PATH, os.environ['TAR_FAIL'])
 CHECKSUM = os.path.join(LOCAL_PATH, os.environ['TAR_CHECKSUM'])
 OVERSIZE = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversized_sequences/')
-ERROR_LOG = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversize_files_error.log')
+ERRORS = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'])
 AUTOINGEST = os.path.join(LOCAL_PATH, os.environ['AUTOINGEST_STORE'])
 LOG = os.path.join(LOCAL_PATH, os.environ['DPX_SCRIPT_LOG'], 'tar_wrapping_checksum.log')
+CID_API = os.environ['CID_API3']
 
 # Logging config
 LOGGER = logging.getLogger('tar_wrapping_qnap_filmops2')
@@ -57,7 +60,38 @@ LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
 
 
-def tar_file(fpath):
+def get_cid_data(fname):
+    '''
+    Use requests to retrieve priref for associated item object number
+    '''
+    ob_num_split = fname.split('_')
+    if len(ob_num_split) == 3:
+        ob_num = '-'.join(ob_num_split[0:2])
+    elif len(ob_num_split) == 4:
+        ob_num = '-'.join(ob_num_split[0:3])
+    else:
+        LOGGER.warning("Incorrect filename formatting. Script exiting.")
+        sys.exit(f"Incorrect filename formatting {fname}. Script exiting.")
+
+    search = f"object_number='{ob_num}'"
+    query = {'database': 'items',
+             'search': search,
+             'output': 'json'}
+    results = requests.get(CID_API, params=query)
+    results = results.json()
+    try:
+        priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
+    except (IndexError, KeyError):
+        priref = ''
+    try:
+        file_type = results['adlibJSON']['recordList']['record'][0]['file_type'][0]
+    except (IndexError, KeyError):
+        file_type = ''
+
+    return (priref, file_type)
+
+
+def tar_item(fpath):
     '''
     Make tar path from supplied filepath
     Use tarfile to create TAR
@@ -66,7 +100,7 @@ def tar_file(fpath):
     tfile = f"{split_path[1]}.tar"
     tar_path = os.path.join(split_path[0], tfile)
     if os.path.exists(tar_path):
-        LOGGER.warning("tar_file(): FILE ALREADY EXISTS %s", tar_path)
+        LOGGER.warning("tar_item(): FILE ALREADY EXISTS %s", tar_path)
         return None
 
     try:
@@ -76,7 +110,7 @@ def tar_file(fpath):
         return tar_path
 
     except Exception as exc:
-        LOGGER.warning("tar_file(): ERROR WITH TAR WRAP %s", exc)
+        LOGGER.warning("tar_item(): ERROR WITH TAR WRAP %s", exc)
         tarring.close()
         return None
 
@@ -175,6 +209,24 @@ def main():
     split_path = os.path.split(fullpath)
     tar_source = split_path[1]
 
+    # Validate filename and retrieve priref/file_type
+    fname_split = tar_source.split('_')
+    if 'of' not in str(fname_split[-1:]):
+        LOGGER.warning("Script exiting. Poorly formed partWhole for filename %s", tar_source)
+        error_mssg1 = f"Part whole for TAR file is poorly formed {tar_source}\n\tPlease correct the part whole for this DPX folder"
+        error_mssg2 = None
+        error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
+        sys.exit("Filename  not formed correctly, script exiting.")
+
+    priref, file_type = get_cid_data(tar_source)
+    if not priref:
+        LOGGER.warning("No CID item record found to match TAR source file. Script exitings")
+        error_mssg1 = f"No CID item record found to match {tar_source}\n\tPlease check the folder number is named after the CID item record for the DPX sequence"
+        error_mssg2 = None
+        error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
+        sys.exit(f"No CID item record found to match TAR file {tar_source}. Exiting.")
+    LOGGER.info("File for TAR wrapping %s has matching CID Item record: %s. File type: %s", tar_source, priref, file_type)
+
     # Calculate checksum manifest for supplied fullpath
     local_md5 = {}
     directory = False
@@ -197,19 +249,23 @@ def main():
     LOGGER.info("Checksums for local files (excluding DPX, TIF):")
     log.append("Checksums for local files (excluding DPX, TIF):")
     for key, val in local_md5.items():
-        if not key.endswith(('.dpx', '.DPX', '.tif', '.TIF')):
+        if not key.endswith(('.dpx', '.DPX', '.tif', '.TIF', '.TIFF', '.tiff', '.jp2', '.j2k', '.jpf', '.jpm', '.jpg2', '.j2c', '.jpc', '.jpx', '.mj2')):
             data = f"{val} -- {key}"
             LOGGER.info("\t%s", data)
             log.append(f"\t{data}")
 
     # Tar folder
     log.append("Beginning TAR wrap now...")
-    tar_path = tar_file(fullpath)
+    tar_path = tar_item(fullpath)
+    tar_file = os.path.split(tar_path)[1]
     if not tar_path:
         log.append("TAR WRAP FAILED. SCRIPT EXITING!")
         LOGGER.warning("TAR wrap failed for file: %s", fullpath)
         for item in log:
             local_logs(AUTO_TAR, item)
+        error_mssg1 = f"TAR wrap failed for folder {tar_source}. No TAR file found:\n\t{tar_path}"
+        error_mssg2 = "if the TAR wrap has failed for an inexplicable reason"
+        error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
         sys.exit(f"EXIT: TAR wrap failed for {fullpath}")
 
     # Calculate checksum manifest for TAR folder
@@ -218,10 +274,10 @@ def main():
     else:
         tar_content_md5 = get_tar_checksums(tar_path, '')
 
-    log.append("Checksums from TAR wrapped contents (excluding DPX, TIF):")
-    LOGGER.info("Checksums for TAR wrapped contents (excluding DPX, TIF):")
+    log.append("Checksums from TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
+    LOGGER.info("Checksums for TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
     for key, val in tar_content_md5.items():
-        if not key.endswith(('.dpx', '.DPX', '.tif', '.TIF')):
+        if not key.endswith(('.dpx', '.DPX', '.tif', '.TIF', '.tiff', '.TIFF', '.jp2', '.j2k', '.jpf', '.jpm', '.jpg2', '.j2c', '.jpc', '.jpx', '.mj2')):
             data = f"{val} -- {key}"
             LOGGER.info("\t%s", data)
             log.append(f"\t{data}")
@@ -236,6 +292,9 @@ def main():
             shutil.move(tar_path, os.path.join(TAR_FAIL, f'{tar_source}.tar'))
             for item in log:
                 local_logs(AUTO_TAR, item)
+            error_mssg1 = f"TAR checksum manifest was not created for new TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
+            error_mssg2 = "if no explicable reason for this failure (ie, file was moved mid way through processing)"
+            error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
             sys.exit("Script exit: TAR file MD5 Manifest failed to create")
 
         LOGGER.info("TAR checksum manifest created. Adding to TAR file %s", tar_path)
@@ -245,11 +304,14 @@ def main():
             tar.add(md5_manifest, arcname=f"{arc_path[1]}")
             tar.close()
         except Exception as exc:
-            LOGGER.warning("Unable to add MD5 manifest to TAR file. Moving TAR file to errors folder.\n%s", exc)
+            LOGGER.warning("Unable to add MD5 manifest to TAR file. Moving TAR file to failures folder.\n%s", exc)
             shutil.move(tar_path, os.path.join(TAR_FAIL, f'{tar_source}.tar'))
             # Write all log items in block
             for item in log:
                 local_logs(AUTO_TAR, item)
+            error_mssg1 = f"TAR checksum manifest could not be added to TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
+            error_mssg2 = "if no explicable reason for this failure (ie, file was moved mid way through processing)"
+            error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
             sys.exit("Failed to add MD5 manifest To TAR file. Script exiting")
 
         LOGGER.info("TAR MD5 manifest added to TAR file. Getting wholefile TAR checksum for logs")
@@ -269,8 +331,10 @@ def main():
             log.append("FILE IS TOO LARGE FOR INGEST TO BLACK PEARL. Moving TAR and source folder to oversized folder path")
             LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI: %s", os.path.join(OVERSIZE, f'{tar_source}.tar'))
             shutil.move(tar_path, os.path.join(OVERSIZE, f'{tar_source}.tar'))
-            oversize_log(f"{tar_path}\tTAR file too large for ingest to DPI - size {file_stats.st_size} bytes")
-            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source))
+            error_mssg1 = f"TAR file too large for ingest to DPI - size {file_stats.st_size} bytes\n\t{tar_path}\n\tDPX sequence moved to oversized_sequences/ folder."
+            error_mssg2 = "as this file is too large for ingest and will need repeat splitting"
+            error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
+            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source)
             shutil.move(fullpath, os.path.join(OVERSIZE, tar_source))
             log.append(f"==== Log actions complete: {fullpath} ====")
             LOGGER.info("==== TAR Wrapping Check script END =================================")
@@ -297,11 +361,18 @@ def main():
         except Exception as err:
             LOGGER.warning("MD5 manifest move failed:\n%s", err)
 
+        # Write note to CID Item record that file has been wrapped using Python tarfile module.
+        locked = write_lock(priref)
+        if locked:
+            success = write_to_cid(priref, tar_file)
     else:
         LOGGER.warning("Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5)
         LOGGER.warning("Moving TAR file to failures, leaving file/folder for retry.")
         log.append("MD5 manifests do not match. Moving TAR file to failures folder for retry")
         shutil.move(tar_path, os.path.join(TAR_FAIL, f'{tar_source}.tar'))
+        error_mssg1 = f"MD5 checksum manifests do not match for source folder and TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
+        error_mssg2 = "if this checksum comparison fails multiple times"
+        error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
 
     log.append(f"==== Log actions complete: {fullpath} ====")
     # Write all log items in block
@@ -344,19 +415,87 @@ def local_logs(fullpath, data):
         log.close()
 
 
-def oversize_log(message):
+def error_log(fpath, message, kandc):
     '''
-    Logs for oversize_files_error.log
+    If needed, write error log
+    for incomplete sequences.
     '''
     ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    if not os.path.isfile(ERROR_LOG):
-        with open(ERROR_LOG, 'x') as log:
+    if not kandc:
+        with open(fpath, 'a+') as log:
+            log.write(f"tar_wrapping {ts}: {message}.")
+            log.close()
+    else:
+        with open(fpath, 'a+') as log:
+            log.write(f"tar_wrapping {ts}: {message}.")
+            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.")
             log.close()
 
-    with open(ERROR_LOG, 'a') as log:
-        log.write(f"{ts}\t{message}\n")
-        log.close()
+
+def write_lock(priref):
+    '''
+    Apply a writing lock to the record before updating metadata to Headers
+    '''
+    try:
+        post_response = requests.post(
+            CID_API,
+            params={'database': 'items', 'command': 'lockrecord', 'priref': f'{priref}', 'output': 'json'})
+        return True
+    except Exception as err:
+        LOGGER.warning("write_lock(): Lock record wasn't applied to record %s\n%s", priref, err)
+
+
+def write_to_cid(priref, fname):
+    '''
+    Make payload and write to CID
+    '''
+    name = 'datadigipres'
+    method = "TAR wrapping method:"
+    text = f"For preservation to DPI the item {fname} was wrapped using Python tarfile module, and the TAR includes checksum manifests of all contents."
+    date = str(datetime.datetime.now())[:10]
+    time = str(datetime.datetime.now())[11:19]
+    notes = 'Automated TAR wrapping script.'
+    payload_head = f"<adlibXML><recordList><record priref='{priref}'>"
+    payload_addition = f"<utb.fieldname>{method}</utb.fieldname><utb.content>{text}</utb.content>"
+    payload_edit = f"<edit.name>{name}</edit.name><edit.date>{date}</edit.date><edit.time>{time}</edit.time><edit.notes>{notes}</edit.notes>"
+    payload_end = "</record></recordList></adlibXML>"
+    payload = payload_head + payload_addition + payload_edit + payload_end
+
+    success = write_payload(priref, payload)
+    if not success:
+        unlock_record(priref)
+        return False
+    return True
+
+
+def write_payload(priref, payload):
+    '''
+    Receive header, parser data and priref and write to CID media record
+    '''
+    post_response = requests.post(
+        CID_API,
+        params={'database': 'items', 'command': 'updaterecord', 'xmltype': 'grouped', 'output': 'json'},
+        data={'data': payload})
+
+    if "<error><info>" in str(post_response.text):
+        LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
+        return False
+    else:
+        LOGGER.info("No error warning in post_response. Assuming payload successfully written")
+        return True
+
+
+def unlock_record(priref):
+    '''
+    Only used if write fails and lock was successful, to guard against file remaining locked
+    '''
+    try:
+        post_response = requests.post(
+            CID_API,
+            params={'database': 'items', 'command': 'unlockrecord', 'priref': f'{priref}', 'output': 'json'})
+        return True
+    except Exception as err:
+        LOGGER.warning("unlock_record(): Post to unlock record failed. Check Media record %s is unlocked manually\n%s", priref, err)
 
 
 if __name__ == '__main__':

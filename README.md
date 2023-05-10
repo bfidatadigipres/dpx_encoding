@@ -1,6 +1,6 @@
 ## DPX preservation scripts
 
-The BFI National Archive recently developed workflows using open source software RAWcooked to convert 2K and 4K DPX film scans into FFv1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these DPX automation workflows.  The aim of these scripts is to turn large DPX image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX sequences to FFV1 can reduce the overall file size by half (2K RGB files), and allow the DPX image sequence to be played in VLC or similar software for instant review.
+The BFI National Archive recently developed workflows using open source software RAWcooked to convert 2K and 4K DPX film scans into FFV1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these DPX automation workflows.  The aim of these scripts is to turn large DPX image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX sequences to FFV1 can reduce the overall file size by half (2K RGB files), and allow the DPX image sequence to be played in VLC or similar software for instant review.
 
 These scripts are available under the MIT licence. They have been recently redeveloped and may contain some untested features within the code. If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
 
@@ -9,11 +9,11 @@ These scripts are available under the MIT licence. They have been recently redev
 
 These bash shell scripts and Python scripts are not designed to be run from the command line, but via cron scheduling. As a result there is no built in help command, so please refer to this README and the script comments for information about script functionality.
 
-These scripts handle the complete encoding process from start to finish, including assessment of the DPX sequences suitability for RAWcooked encoding, splitting of sequences too large for ingest into our DPI, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path.
+These scripts handle the complete encoding process from start to finish, including assessment of the DPX sequences suitability for RAWcooked encoding, splitting of sequences too large for ingest into our DPI, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of DPX sequences. If a DPX sequence does not meet the basic DPX Mediaconch policy requirements for RAWcooked encoding then the sequence is failed and passed to a TAR wrap preservation path. These scripts also manage the demuxing of RAWcooked FFV1 Matroska files back to a DPX sequence, and the unpacking to Python tarfile wrapped TAR DPX sequences.
 
 RAWcooked encoding functions with two scripts, the first encodes all items found in the RAWcooked encoding path and the second assesses the results of these encoding attempts. If an encoding fails, dpx_post_rawcook.sh will assess the error type moving failed files to a seprate folder, and create a new list which allows the RAWcooked first encoding script to try again with a different encoding formula, using '--output-version 2'. If it fails again an error is issued to an current errors log, flagging the folder in need of human intervention.
 
-The Python TAR scripts generates checksums for all items in the DPX folder, TAR wraps the folder using Python tarfile then creates checksums of all the tarfile contents and compares the original with the new MD5 checksum manifest. This MD5 manifest is then added into the TAR file, and all processes are output to logs. Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder.  Here the final script assesses the DPX sequences in dpx_completed/ folder by checking the DPI ingest logs for evidence of successful MKV/TAR ingest before deleting the DPX sequence.
+The Python TAR scripts generates checksums for all items in the DPX folder, TAR wraps the folder using Python tarfile then creates checksums of all the tarfile contents and compares the original with the new MD5 checksum manifest. This MD5 manifest is then added into the TAR file, and all processes are output to logs as well as being written to the Collections and Information Database (CID). Both encoding scripts move successful encodings to the BFI's Digital Preservation Infrastructure (DPI) ingest path, and associated DPX sequence folders into a dpx_completed/ folder, the TAR wrapped files have their DPX sequences deleted immediately following checksum verification. The final script assesses the FFV1 Matroska in the check/ folder by checking the FFV1 Matroska with the RAWcooked '--check' function using the hashes stored in the reversibility data. The DPX sequence is then deleted the FFV1 Matroska is moved to DPI ingest workflows.
 
 
 ## Dependencies
@@ -21,10 +21,10 @@ The Python TAR scripts generates checksums for all items in the DPX folder, TAR 
 These scripts are run from Ubuntu 20.04LTS installed server and rely upon various Linux command line programmes. These include: flock, md5sum, tree, grep, cat, echo, ls, head, rm, touch, basename, dirname, find, du, rev, cut, mv, cp, date, sort and uniq. You can find out more about these by running the manual (man md5sum) or by calling the help page (md5sum --help).  
 
 Several open source softwares are used from Media Area. Please follow the links below to find out more:  
-RAWcooked version 21.09 - https://mediaarea.net/rawcooked (dpx_rawcook.sh is not compatible with any earlier versions of RAWcooked)  
+RAWcooked version 21.01+ - https://mediaarea.net/rawcooked (dpx_rawcook.sh is not compatible with any earlier versions of RAWcooked)  
 FFmpeg Version 4+ - https://ffmpeg.org/  
 MediaConch V18.03.2+ - https://mediaarea.net/mediaconch  
-MediaInfo V19.09 - https://mediaarea.net/mediainfo (dpx_assessment.sh is not currently compatible with later versions if 4K scans in use)  
+MediaInfo V19.09 - https://mediaarea.net/mediainfo (dpx_assessment.sh is not currently compatible with some later version if 4K scans in use)  
 
 To run the concurrent processes the scripts use GNU Parallel which will require installation (with dependencies of it's own that may include the following):  
 
@@ -34,7 +34,7 @@ To run the concurrent processes the scripts use GNU Parallel which will require 
     available here http://archive.ubuntu.com/ubuntu/pool/main/s/sysstat/sysstat_12.2.0-2_amd64.deb
     available here http://archive.ubuntu.com/ubuntu/pool/universe/p/parallel/parallel_20161222-1.1_all.deb
 
-The TAR wrapping script uses Python standard library tarfile programme.  
+The TAR wrapping script uses Python standard library 'tarfile'.  
 
 
 ## Environmental variable storage  
@@ -50,7 +50,11 @@ The scripts operate within a defined folder structure. These automation_dpx fold
 ```bash
 automation_dpx  
 ├── current_errors  
-│   └── oversized_sequences
+│   ├── oversized_sequences
+│   ├── completed
+│   │   └── N_3623230_04of04_errors.log
+│   ├── N_489447_01of01_errors.log
+│   └── N_294553_01of03_errors.log
 ├── encoding  
 │   ├── dpx_completed  
 │   │   ├── N_3623230_04of04  
@@ -85,9 +89,14 @@ automation_dpx
 │   │   ├── logs  
 │   │   └── checksum_manifests  
 │   └── to_delete  
-├── QC_files
 ├── unwrap_tar
+│   ├── completed
+│   ├── failed
+│   └── N_4702557_01of01.tar
 └── unwrap_rawcook_mkv
+    ├── completed       
+    └── N_4723317_01of01.mkv
+
 ```
 
 ## Supporting crontab actions
@@ -97,7 +106,7 @@ To prevent the scripts from running multiple versions at once and overburdening 
 
 The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:  
 dpx_assessment.sh / dpx_assessment_fourdepth.sh - Every four hours one or other of the scripts using shared lock (launches dpx_splitting_script.py processing one job at a time).    
-dpx_rawcooked.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
+dpx_rawcook.sh - Runs continually, with crontab attempts made (but blocked by Flock when active) every 15 minutes to ensure continual encoding activity  
 dpx_post_rawcook.sh - Runs three times a day every 8 hours, at 8am, 4pm, and 12am  
 dpx_tar_script.sh - Runs once a day at 10pm  
 dpx_check_script.sh - Runs once a day at 5am
@@ -114,10 +123,6 @@ DPX Encoding script crontab entries:
     15    */4   *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log  
     */55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
     
-## global.log
-
-Global.log is created by DPI ingest scripts to map processing of files as they are successfully ingested. When an ingest process completes the final message reads "successfully deleted file". This message is necessary for clean up of the DPX sequences, and so global.log must be accessed daily by dpx_clean_up.sh. The global.log is copied every day at 3AM to the a central Logs folder.
-
 
 ## THE SCRIPTS
 
@@ -137,6 +142,7 @@ Script functions:
 - Takes the first DPX within this folder and stores in a 'dpx' variable, creates further variables using the basename and dirname of path
 - Creates documents for preservation in sequence. These include first dpx metadata, directory tree, whole byte size of directory.
 - Greps for the 'filename' within script_logs/rawcooked_dpx_success.log and script_logs/tar_dpx_failures.log. If appears in either then the file is skipped. If not:
+  - Checks 'dpx' to Mediaconch policy rawcooked_dpx_orientation.xml to check for DPX files that require vertical flipping of image. Creates RAWcooked_notes.txt to warn of potential '--check' failures.
   - Compares 'dpx' to Mediaconch policy rawcooked_dpx_policy.xml (policy specifically written to pass/fail RAWcooked encodings)
   - If pass, looks for metadata indicating if the DPX are 4K, have RGB or Luma (Y) colourspace, before writing 'filename' to rawcooked_dpx_list.txt or luma_4k_dpx_list.txt
   - If fail writes 'filename' to tar_dpx_list.txt and outputs reason for failure to script_logs/dpx_assessment.log
@@ -144,7 +150,7 @@ Script functions:
 - The contents of python_list.txt are passed one at a time to the Python splitting script for size assessment and potential splitting. From here they are moved to their encoding paths if 01of01, or into the part_whole_split folder if multiple parts exist.
 - Appends the luma, 4K, rawcooked and tar failure lists to rawcooked_dpx_success.log and tar_dpx_failures.log
 
-Requires use of rawcooked_dpx_policy.xml.
+Requires use of rawcooked_dpx_policy.xml and rawcooked_dpx_orientation.xml.
 
 
 ### dpx_splitting_script.py
@@ -224,7 +230,8 @@ PASS ONE:
   - If DPX sequence not on either lists the folder name is written to temporary_retry_list.txt
 - Takes the temporary_retry_list.txt and performs filter of all names by part whole extension
 - Sorts into a unique list and passes to retry_list.txt and outputs this list to the log, with details about encoding using --output-version 2
-- Passes retry_list.txt DPX sequences to GNU parallel to start RAWcooked encoding multiple jobs at a time
+- Checks if any items have RAWcooked_notes.txt file in folder, indicating vertically flipped images and adds filename to separate list to tell RAWcooked to include a framemd5 manifest in the MKV file to allow for manual reversibility testing where the '--check' function may fail.
+- Passes text lists of DPX sequences to GNU parallel to start RAWcooked encoding multiple jobs at a time
   Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
 
 - Refreshes temp_queued_list.txt again
@@ -232,7 +239,8 @@ PASS ONE:
 PASS TWO:
 - Feeds list of DPX sequences in dpx_to_cook/ into loop and compares against rawcooked_success.log and temp_queued_list.txt
   - If a DPX sequence is not on either lists the folder name is written to temporary_rawcook_list.txt
-- Takes the temporary_rawcook_list.txt and performs filter of all names by part whole extension
+- Checks if any items have RAWcooked_notes.txt file in folder, indicating vertically flipped images and adds filename to separate list to tell RAWcooked to include a framemd5 manifest in the MKV file to allow for manual reversibility testing where the '--check' function may fail.
+- Takes the text lists and performs filter of all names by part whole extension
 - Trims first twenty from this filtered list and passes to rawcook_list.txt and outputs this list to the log, allowing for analysis later
 - Passes these DPX sequence names to GNU parallel to start RAWcooked encoding multiple jobs at a time
   Script generates FFV1 Matroska file and log file of RAWcooked console outputted logging data, used in dpx_post_rawcook.sh
@@ -248,13 +256,13 @@ Script functions:
 
 MKV file size check:
 - Obtains total size of encoded Matroska. If it's larger that 1TB (1048560MB) moves to killed/ folder and appends current_errors files with failure
-- Outputs loud warning to logs that this file needs all part wholes removing for splitting scripts to enact file size reductions.
+- Outputs warning to logs that this file needs all part wholes removing for splitting scripts to enact file size reductions.
 - If undersize, skips but reports filename is under 1TB to log.
 
 Mediaconch check:
 - Looks for Matroska files in mkv_cooked/ path not modified in the last ten minutes, checks each one against the basic RAWcooked mkv Mediaconch Policy
 - If pass: script continues and information passed to post_rawcook.log
-- If fail: script writes filename to temp_mediaconch_policy_fails.txt, and writes failure to post_rawcook.log. Matroska items listed on temp_mediaconch_policy_fails.txt are moved to Killed/ folder and logs are prepended fail_ and move to logs fodler
+- If fail: script writes filename to temp_mediaconch_policy_fails.txt, and writes failure to post_rawcook.log. Matroska items listed on temp_mediaconch_policy_fails.txt are moved to Killed/ folder and logs are prepended fail_ and move to logs folder
 
 Grep logs for pass statement of Mediaconch passed files:
 - Script looks through all logs for 'Reversablity was checked, no issue detected' where found:
@@ -280,8 +288,8 @@ Greps remaining logs for any generic Error messages:
    - Logs are prepended 'fail_' and moved to Logs/ folder
    - The associated Matroska is deleted where present
 
-Search for log files that have not been modified in over 24 hours (1440 minutes):
-- For all mkv.txt files older than 1440 minutes since last modified (ie stale encodings):
+Search for log files that have not been modified in over 48 hours (2880 minutes):
+- For all mkv.txt files older than 2880 minutes since last modified (ie stale encodings):
   - Generates list and outputs to post_rawcook.log
   - Deletes logs files
   - While loop checks if Matroska exists too, if yes deletes.
@@ -290,11 +298,35 @@ Search for log files that have not been modified in over 24 hours (1440 minutes)
 
 Requires use of rawcooked_mkv_policy.xml.
 
+### dpx_unwrap_rawcook.sh
+
+Coming soon
 
 ### tar_wrapping_launch.sh / tar_wrapping_checksum.py
 
-Descriptions to follow.
+#### tar_wrapping_launch.sh
 
+The shell launch script regularly checks for files/folders in the tar_preservation/for_tar_wrap folder, ensuring the files have not been modified in the last 10 minutes (aren't still copying to location). It passes each item found one job at a time to GNU Parallel which launches the following Python script.
+
+#### tar_wrapping_checksum.py
+
+The python script receives the supplied path from the launch script and generates local checksum manifests, TAR wraps the file, then creates a TAR manifest and checks that they match.
+
+Script functions:
+1. Receives the fullpath as a sys.argv[1]. Checks if path exists and if filename is formatted correctly with part whole. Then looks to retrieve a CID item record reference number by using the filename as the search query in the CID database.
+2. Checks if the supplied path is a file or directory. Creates an MD5 checksum if a single file and outputs to MD5 manifest. If a folder, iterates through all contents of folder generating MD5 checksums for all items and adds to an MD5 checksum manifest.
+3. Loads the MD5 manifest as a dictionary, and prints them all to the local log but not including any image sequence files such as DPX, TIF or JPEG files.
+4. Commences TAR wrapping of the file/folder using the Python tarfile module. Then generates a new TAR MD5 manifest of all TAR contents, and compares the TAR manifest with the original manifest.
+   - If manifests do not match, the TAR file is moved to failures folder, and warning output to logs. The source file/folder is left in place for a repeat TAR wrap attempt. Script exits.
+   - If manifests match, the TAR manifest is added into the TAR archive, and a whole file MD5 checksum is created of the TAR file and added to the local logs.
+5. The size is taken and checked to be under 1TB.
+   - If over 1TB the file is moved to the oversize folder and errors written to the logs.
+   - If under 1TB the TAR file is moved to DPI ingest paths, the source file/folder is moved to 'to_delete' folder and deleted. The MD5 manifest is moved to the checksum_manifests/ folder for storage.
+6. A note is written to the CID item record for the file, noting that the file was TAR wrapped using Python tarfile and that a checksum manifest has been added to the TAR file.
+
+### unwrap_tar_checksum.py
+
+Coming soon.
 
 ### dpx_check_script.sh
 

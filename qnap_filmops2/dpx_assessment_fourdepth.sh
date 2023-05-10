@@ -7,6 +7,7 @@
 # Global variables call environmental variables
 DPX_LOG="${QNAP_FILMOPS2}${DPX_SCRIPT_LOG}"
 DPX_PATH="${QNAP_FILMOPS2}${DPX_ASSESS_FOUR}"
+ERRORS="${QNAP_FILMOPS2}${CURRENT_ERRORS}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
@@ -63,7 +64,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
         then
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
-            log "- ${file_scan_name}/${dimensions}/${dpx}"
+            log "- ${file_scan_name}/${dimensions}/${scans}/${reel}/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
             byte_size=$(du -s -b "${DPX_PATH}${filename}")
@@ -81,6 +82,9 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
                     echo "This RAWcooked transcode has flipped the image using FFmpeg '-vf vflip'." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
                     echo "As a result it may fail future '--check' tests, so a framemd5 manifest" >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
                     echo "will be included to allow for manual reversibility tests after decoding." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+                    echo "dpx_assessment_fourdepth $(date "+%Y-%m-%d - %H.%M.%S"): DPX in ${filename} have image orientation bottom to top." >> "${ERRORS}${filename}_errors.log"
+                    echo "    As a result the RAWcooked MKV file may fail the '--check' tests, but may be a good FFV1 Matroska file." >> "${ERRORS}${filename}_errors.log"
+                    echo "    Please contant the Knowledge and Collections Developer if the file fails 'check' tests." >> "${ERRORS}${filename}_errors.log"
             fi
 
             # Start comparison of first dpx file against mediaconch policy
@@ -90,6 +94,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
                     log "FAIL: $file_scan_name DOES NOT CONFORM TO MEDIACONCH POLICY. Adding to tar_dpx_failures_list.txt"
                     log "$check"
                     echo "${DPX_PATH}$filename" >> "${DPX_PATH}tar_dpx_list.txt"
+                    echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): DPX ${filename} failed DPX Mediaconch policy and will be TAR wrapped." >> "${ERRORS}${filename}_errors.log"
                 else
                     width_find=$(mediainfo --Details=1 "${files}/$dpx" | grep -i 'Pixels per line:')
                     read -a array <<< "$width_find"
@@ -171,4 +176,3 @@ rm "${DPX_PATH}rawcooked_dpx_list.txt"
 rm "${DPX_PATH}tar_dpx_list.txt"
 rm "${DPX_PATH}luma_4k_dpx_list.txt"
 rm "${DPX_PATH}python_list.txt"
-

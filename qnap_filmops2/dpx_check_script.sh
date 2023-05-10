@@ -14,6 +14,7 @@ DPX_TO_COOK="${QNAP_FILMOPS2}${DPX_COOK}"
 FOR_DELETION="${QNAP_FILMOPS2}${TO_DELETE}"
 DPX_LOG="${QNAP_FILMOPS2}${DPX_SCRIPT_LOG}"
 ERRORS="${QNAP_FILMOPS2}${CURRENT_ERRORS}"
+ERRORS_DONE="${QNAP_FILMOPS2}${CURRENT_ERRORS}completed/"
 
 # Function to write output to log
 function log {
@@ -67,10 +68,15 @@ grep '/mnt/' "${MKV_PATH}temp_mkv_list.txt" | while IFS= read -r log_list; do
     then
       log "FAILED: Matroska $mkv_file has errors detected."
       echo "$mkv_file" >> "${MKV_PATH}failure_mkv_list.txt"
+      echo "dpx_check_script $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${mkv_file} has failed the '--check' test." >> "${ERRORS}${dpx_seq}_errors.log"
+      echo "    As a result the MKV file will be moved to the Killed folder." >> "${ERRORS}${dpx_seq}_errors.log"
+      echo "    Please contant the Knowledge and Collections Developer if this is a repeated check test failure, or result of 'bottom to top' image orientation." >> "${ERRORS}${dpx_seq}_errors.log"
     else
       log "PASSED: RAWcooked MKV $mkv_file passed --check successfully and will be moved to DPI ingest"
+      log "Moving current_errors/${dpx_seq}_errors.log to completed folder, if present"
       echo "$dpx_seq" >> "${DPX_PATH}dpx_deletion_list.txt"
       echo "$mkv_file" >> "${MKV_PATH}successful_mkv_list.txt"
+      mv "${ERRORS}${dpx_seq}_errors.log" "${ERRORS_DONE}${dpx_seq}_errors.log"
   fi
 done
 
@@ -89,11 +95,6 @@ if [ -z "$fail_list" ]
         log "$fail_list"
         log "Writing failures to dpx_encoding_errors.log"
         log "MKV files moved to killed/ folder. Associated DPX sequences moved back to dpx_to_cook/ folder"
-        {
-           echo "MKV files failed to pass --check tests:"
-           "$fail_list"
-           echo "MKV files moved to killed/ folder. Associated DPX sequences moved back to dpx_to_cook/ folder"
-        } >> "${ERRORS}dpx_encoding_errors.log"
 fi
 
 # Move failed --check MKV files to killed folder
