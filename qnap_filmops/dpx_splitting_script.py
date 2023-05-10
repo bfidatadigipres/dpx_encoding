@@ -57,7 +57,6 @@ import requests
 DPX_PATH = os.environ['QNAP_FILMOPS']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
-OVERSIZE_LOG = os.path.join(ERRORS, 'oversize_files_error.log')
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 PART_WHOLE_LOG = os.path.join(ERRORS, 'part_whole_search.log')
@@ -269,10 +268,15 @@ def fname_split(fname):
     '''
     fname = fname.rstrip('/')
     name_split = fname.split('_')
-    part_whole = name_split[2]
-    part, whole = part_whole.split('of')
-
-    return (name_split[0] + '_' + name_split[1] + '_', part, whole)
+    part_whole = name_split[-1:]
+    if 'of' in str(part_whole):
+        part, whole = part_whole.split('of')
+    else:
+        return None
+    if len(name_split) == 3:
+        return (f"{name_split[0]}_{name_split[1]}_", part, whole)
+    if len(name_split) == 4:
+        return (f"{name_split[0]}_{name_split[1]}_{name_split[2]}_", part, whole)
 
 
 def workout_division(arg, kb_size):
@@ -498,14 +502,20 @@ def main():
             splitting_log(f"DPX not found in file_type of CID Item record for this sequence: {priref}")
             splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            error_mssg1 = "DPX not matched to file_type of CID item record. Moving DPX sequence to dpx_for_review/ folder."
+            error_mssg2 = "if you are unable to update the file_type to 'DPX' in the CID item record"
+            error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
             sys.exit()
         # Filename format correct
         split_name = dpx_sequence.split('_')
-        if not len(split_name[-1]) == 6:
+        if len(split_name[-1]) != 6 or 'of' not in str(split_name[-1]):
             LOGGER.warning("Part whole has incorrect formatting, moving folder to dpx_to_review for further inspection")
             splitting_log(f"DPX sequence number's part whole is incorrectly formatted: {dpx_sequence}")
             splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            error_mssg1 = "DPX sequence part whole is incorrectly formatted. Moving DPX sequence to dpx_for_review/ folder."
+            error_mssg2 = None
+            error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
             sys.exit()
         # Check folder depths accurate for three/four depth folders
         # This only works for single scan folders, needs alternative that checks from second folder
@@ -515,6 +525,9 @@ def main():
             splitting_log("WARNING! Incorrect internal folder structures. Cannot split this folder")
             splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
             shutil.move(dpx_path, os.path.join(DPX_REVIEW, dpx_sequence))
+            error_mssg1 = "DPX internal folder structure is incorrect and cannot be split safely. Moving DPX sequence to dpx_for_review/ folder."
+            error_mssg2 = "if you are unable to adjust the internal folder structure to meet BFI policy"
+            error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
             sys.exit()
 
         # Separate singleton files from part wholes
@@ -539,6 +552,9 @@ def main():
                 except Exception as err:
                     LOGGER.warning("Renumbering failed, exiting script to avoid processing incorrect files\n%s", err)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
+                    error_mssg1 = "DPX folder renumbering failed. Script exited to avoid incorrect actions against file."
+                    error_mssg2 = "to inform of this renumbering error"
+                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                     sys.exit()
 
         # Does this sequence need splitting?
@@ -561,6 +577,9 @@ def main():
                 except Exception as err:
                     LOGGER.warning("Unable to move folder to RAWcooked path: %s\n%s", dpx_path, err)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
+                    error_mssg1 = f"DPX could not be moved to RAWcooked path: {RAWCOOKED_PATH}."
+                    error_mssg2 = "and inform of this failure to move the folder"
+                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                     sys.exit()
             elif 'tar' in encoding:
                 LOGGER.info("Folder %s is not oversized.\nMoving sequence to TAR path", dpx_path)
@@ -573,6 +592,9 @@ def main():
                 except Exception as err:
                     LOGGER.warning("Unable to move folder to TAR path: %s\n%s", dpx_path, err)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
+                    error_mssg1 = f"DPX could not be moved to TAR path: {TAR_PATH}."
+                    error_mssg2 = "and inform of this failure to move the folder"
+                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                     sys.exit()
 
         # No splitting, but item is part whole and needs processing by part_whole_move.py
@@ -589,6 +611,9 @@ def main():
                 except Exception as err:
                     LOGGER.warning("Unable to move folder to part_whole_split path: %s\n%s", dpx_path, err)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
+                    error_mssg1 = f"DPX could not be moved to part_whole_split RAWcooked path: {PART_RAWCOOK}."
+                    error_mssg2 = "and inform of this failure to move the folder"
+                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                     sys.exit()
             elif 'tar' in encoding:
                 LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to part_whole_split path", dpx_path)
@@ -601,6 +626,9 @@ def main():
                 except Exception as err:
                     LOGGER.warning("Unable to move folder to part_whole_split path: %s\n%s", dpx_path, err)
                     LOGGER.info("==================== END Python3 DPX splitting script END ====================")
+                    error_mssg1 = f"DPX could not be moved to part_whole_split TAR path: {PART_TAR}."
+                    error_mssg2 = "and inform of this failure to move the folder"
+                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                     sys.exit()
 
         # Folder is larger than 6TB (TAR/Luma/4K) / 6.5TB (RAWcooked) script exit
@@ -611,7 +639,9 @@ def main():
             LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
             part_whole_log(dpx_sequence)
             oversize_path = os.path.join(OVERSIZED_SEQ, dpx_sequence)
-            oversize_log(f"{dpx_path}\tRAWcooked DPX too large for ingest to DPI - size {file_stats.st_size} bytes")
+            error_mssg1 = f"RAWcooked DPX too large for ingest to DPI - size {file_stats.st_size} bytes\n\t{dpx_path}\n\tDPX sequence moved to oversized_sequences folder."
+            error_mssg2 = "as this file is too large for ingest and will need repeat splitting"
+            error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
             try:
                 shutil.move(dpx_path, oversize_path)
             except Exception as err:
@@ -805,15 +835,21 @@ def main():
                                     missing_list = move_check(val, root)
                                     if len(missing_list) > 0:
                                         LOGGER.warning("DPX missing from original sequence %s", missing_list)
+                                        error_mssg1 = "DPX items are missing from original sequence following move."
+                                        error_mssg2 = "and inform of this failure with the DPX movements"
+                                        error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                                     else:
                                         splitting_log(f"All DPX files checked and remain in place in original folder {dpx_sequence}")
                                     # Check correct total of files in first sequence, no stragglers
                                     length_check = len([f for f in os.listdir(root) if f.endswith(('.dpx', '.DPX'))])
                                     if int(length_check) == int(block_list[1]):
-                                        LOGGER.info("Correct number of DPX remain in original sequence %s", os.path.join(root))
+                                        LOGGER.info("Correct number of DPX remain in original sequence %s", root)
                                     else:
-                                        LOGGER.warning("Incorrect number of DPX files remain in original sequence: %s", os.path.join(root))
+                                        LOGGER.warning("Incorrect number of DPX files remain in original sequence: %s", root)
                                         LOGGER.warning("There are %s files in folder, when there should be %s DPX files", int(block_list[1]), length_check)
+                                        error_mssg1 = f"Incorrect number of DPX files remain in original sequence folder: {root}."
+                                        error_mssg2 = "and inform of this failure with the DPX movements"
+                                        error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
                         cid_data.append(f"\n------ {dpx_sequence}{folder_paths[1]} SPLIT COMPLETE ------\n")
                         break
 
@@ -841,6 +877,9 @@ def main():
             else:
                 LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
                 splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
+                error_mssg1 = f"Failed to write splitting data to CID item record: {priref}"
+                error_mssg2 = "and inform of this failure to write the splitting data to CID item record"
+                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
             splitting_log(f"\n------ SPLIT END {dpx_sequence} ------ {str(datetime.datetime.now())}")
             LOGGER.info("Splitting completed for path: %s", root)
 
@@ -1029,7 +1068,7 @@ def write_lock(priref):
 
 def write_payload(priref, payload):
     '''
-    Receive header, parser data and priref and write to CID media record
+    Receive header, parser data and priref and write to CID items record
     '''
     post_response = requests.post(
         CID_API,
@@ -1058,19 +1097,20 @@ def unlock_record(priref):
         LOGGER.warning("unlock_record(): Post to unlock record failed. Check Media record %s is unlocked manually\n%s", priref, err)
 
 
-def oversize_log(message):
+def error_log(fpath, message, kandc):
     '''
-    Logs for oversize_files_error.log
+    Logs for outputting to error file
     '''
     ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    if not os.path.isfile(OVERSIZE_LOG):
-        with open(OVERSIZE_LOG, 'x') as log:
+    if not kandc:
+        with open(fpath, 'a+') as log:
+            log.write(f"splitting_script {ts}: {message}.")
             log.close()
-
-    with open(OVERSIZE_LOG, 'a') as log:
-        log.write(f"{ts}\t{message}\n")
-        log.close()
+    else:
+        with open(fpath, 'a+') as log:
+            log.write(f"splitting_script {ts}: {message}.")
+            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.")
+            log.close()
 
 
 if __name__ == '__main__':
