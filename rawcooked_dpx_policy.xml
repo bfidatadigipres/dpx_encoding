@@ -2,9 +2,9 @@
 <policy type="or" name="BFI DPX metadata conformance checker" license="MIT">
   <description>Tests if a DPX file in a sequence conforms to BFI RAWcooked license.  
 - Checks DPX file is correct format and correct extension.
-- Checks for and fails two image elements, not currently supported by RAWcooked.
-- Checks for RGB or Y, 10/16-bit, minimum 2K width, image is Raw and lossless.
-- Handles variance with DPX image metadata being piped to either Image or Video tracktype.
+- Checks for and fails two image elements, not currently supported by FFmpeg.
+- Checks for RGB or Y, 10/12/16-bit, minimum 2K width, image is Raw and lossless.
+- Handles DPX image metadata being piped to either Image or Video tracktype.
 - Maintainer BFI</description>
   <policy type="and" name="DPX conformance check">
     <rule name="Format is DPX" value="Format" tracktype="General" occurrence="*" operator="=">DPX</rule>

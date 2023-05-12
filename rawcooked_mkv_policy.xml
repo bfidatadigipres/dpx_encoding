@@ -29,6 +29,7 @@
     <rule name="Height is gt/et 1280" value="Height" tracktype="Video" occurrence="*" operator="&gt;=">900</rule>
     <rule name="Width is gt/et 2048" value="Width" tracktype="Video" occurrence="*" operator="&gt;=">1000</rule>
     <rule name="Compression mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
+    <rule name="Pixel aspect ratio is 1.0" value="PixelAspectRatio" tractype="Video" occurrence="*" operator="=">1.000</rule>
     <policy type="or" name="Colourspace check RGB or Y luma only">
       <rule name="Colour space is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
       <rule name="Colour space is Y Luma" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
