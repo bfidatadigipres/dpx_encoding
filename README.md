@@ -165,14 +165,14 @@ Script function:
 - Checks if DPX filename/part whole is properly formatted and if 'DPX' string is the file_type in associated DPX Item record
   - If yes, continue with splitting
   - If no, exit script with warning in logs and DPX sequence moved to 'dpx_to_review' folder
-- Checks if folder depth is correct for one of two accepted formats, no other folders present that shouldn't be
+- Checks if folder depth is correct for one of two accepted formats
   - If yes, continue with splitting
-  - If now, exit script with warning in logs and DPX sequence moved to 'dpx_to_review' folder
+  - If no, exit script with warning in logs and DPX sequence moved to 'dpx_to_review' folder
 - Checks if the DPX sequence name is listed in splitting_document.csv first column 'original' name
   - If yes, renumbers the folder and updates the dpx_sequence/dpx_path variables
   - If no, skips onto next stage
 - Divisions are calculated based upon the DPX sequence total KB size. The options returned include:
-  - No division needed because the folder is under the minimum encoding size for Imagen. The DPX folders are moved to their encoding paths if the have the part whole 01of01. If not they are moved straight to part_whole_split folder to await their remaining parts.  
+  - No division needed because the folder is under the minimum encoding size for DPI ingest. The DPX folders are moved to their encoding paths if the have the part whole 01of01. If not they are moved straight to part_whole_split folder to await their remaining parts.  
      Script exits, completed.
   - Oversized folder. The folder is too large to be divided by this script and needs human intervention (over 6TB/6.5TB). The folder is moved to current_errors/oversized_sequences/ folder and the error log is appended.
      Script exits, completed.
@@ -201,7 +201,7 @@ Table 1
 | 5.2TB to 6.5TB | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
 |                | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 6 Divisions     |
 
-NOTES: We've only recently started RAWcooked encoding Y (Luma) and 4K DPX sequences, and on average the first Matroska files have approximate size reductions of 27% (Luma Y) and 30% (RGB 4K). This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
+NOTE: We've only recently started RAWcooked encoding Y (Luma) and 4K DPX sequences, and on average the first Matroska files have approximate size reductions of 27% (Luma Y) and 30% (RGB 4K). This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
 
 
 ### dpx_part_whole_move.py
