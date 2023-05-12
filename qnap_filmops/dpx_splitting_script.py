@@ -54,7 +54,7 @@ import datetime
 import requests
 
 # Global variables
-DPX_PATH = os.environ['QNAP_FILMOPS2']
+DPX_PATH = os.environ['QNAP_FILMOPS']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
