@@ -361,10 +361,18 @@ def main():
         except Exception as err:
             LOGGER.warning("MD5 manifest move failed:\n%s", err)
 
+        # Tidy away error_log following successful creation
+        if os.path.isfile(os.path.join(ERRORS, f"{tar_source}_errors.log")):
+            shutil.move(os.path.join(ERRORS, f"{tar_source}_errors.log"), os.path.join(ERRORS, "completed", f"{tar_source}_errors.log"))
+
         # Write note to CID Item record that file has been wrapped using Python tarfile module.
         locked = write_lock(priref)
         if locked:
             success = write_to_cid(priref, tar_file)
+        if not success:
+            error_mssg1 = f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually."
+            error_mssg2 = None
+            error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
     else:
         LOGGER.warning("Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5)
         LOGGER.warning("Moving TAR file to failures, leaving file/folder for retry.")
