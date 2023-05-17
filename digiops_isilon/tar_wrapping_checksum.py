@@ -9,6 +9,7 @@ Compare TAR contents to original using MD5 hash.
 Steps:
 1. Assess if item supplied is folder or file
    Ensure the filename matches CID item record
+   and download priref/file_type
 2. Initiate TAR wrapping with zero compression
 3. Generate MD5 dict for original folder
 4. Generate MD5 dict for internals of TAR
@@ -24,6 +25,7 @@ Steps:
         and all local logs then exit.
    No. Continue to move source to 'to_delete' folder
        and TAR file to autoingest. Update all logs.
+7. Write 'Python tarfile' note to CID item record
 
 Joanna White
 2022
@@ -431,12 +433,12 @@ def error_log(fpath, message, kandc):
     ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if not kandc:
         with open(fpath, 'a+') as log:
-            log.write(f"tar_wrapping {ts}: {message}.")
+            log.write(f"tar_wrapping {ts}: {message}.\n\n")
             log.close()
     else:
         with open(fpath, 'a+') as log:
-            log.write(f"tar_wrapping {ts}: {message}.")
-            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.")
+            log.write(f"tar_wrapping {ts}: {message}.\n")
+            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.\n\n")
             log.close()
 
 

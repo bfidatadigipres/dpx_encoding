@@ -268,7 +268,7 @@ def fname_split(fname):
     '''
     fname = fname.rstrip('/')
     name_split = fname.split('_')
-    part_whole = name_split[-1:]
+    part_whole = name_split[-1:][0]
     if 'of' in str(part_whole):
         part, whole = part_whole.split('of')
     else:
@@ -1104,12 +1104,12 @@ def error_log(fpath, message, kandc):
     ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if not kandc:
         with open(fpath, 'a+') as log:
-            log.write(f"splitting_script {ts}: {message}.")
+            log.write(f"splitting_script {ts}: {message}.\n\n")
             log.close()
     else:
         with open(fpath, 'a+') as log:
-            log.write(f"splitting_script {ts}: {message}.")
-            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.")
+            log.write(f"splitting_script {ts}: {message}.\n")
+            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.\n\n")
             log.close()
 
 
