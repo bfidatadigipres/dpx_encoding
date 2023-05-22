@@ -195,11 +195,11 @@ Requires supporting documentation: splitting_document.csv, DPX_splitting.log
 Table 1  
 | RAWcooked RGB  | RAWcooked Luma  | RAWcooked 4K    | TAR wrapping    | Total divisions |  
 | -------------- | --------------- | --------------- | --------------- | --------------- |  
-| 1.3TB to 2.6TB | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 2 Divisions     |  
-| 2.6TB to 3.9TB | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 3 Divisions     |  
-| 3.9TB to 5.2TB | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 4 Divisions     |  
-| 5.2TB to 6.5TB | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 5 Divisions     |  
-|                | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 6 Divisions     |
+| 1.3TB to 2.6TB | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | 1.0TB to 2.0TB  | Divided into 2  |  
+| 2.6TB to 3.9TB | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | 2.0TB to 3.0TB  | Divided into 3  |  
+| 3.9TB to 5.2TB | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | 3.0TB to 4.0TB  | Divided into 4  |  
+| 5.2TB to 6.5TB | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | 4.0TB to 5.0TB  | Divided into 5  |  
+|                | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | 5.0TB to 6.0TB  | Divided into 6  |
 
 NOTE: We've only recently started RAWcooked encoding Y (Luma) and 4K DPX sequences, and on average the first Matroska files have approximate size reductions of 27% (Luma Y) and 30% (RGB 4K). This has shown to be very variable depending on the DPX image sequence content, with the occassional file only 4-5% smaller than the DPX sequence. Because of this we're currently assuming that any of these files could have reduced size reductions and are therefore setting the divisions sizes the same as TAR wrapping which has no compression.
 
