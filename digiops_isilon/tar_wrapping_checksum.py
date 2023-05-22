@@ -229,6 +229,13 @@ def main():
         sys.exit(f"No CID item record found to match TAR file {tar_source}. Exiting.")
     LOGGER.info("File for TAR wrapping %s has matching CID Item record: %s. File type: %s", tar_source, priref, file_type)
 
+    if file_type.lower() not in ['dpx', 'dcp', 'dcdm', 'wav']:
+        LOGGER.warning("File type absent or doesn't match DPX, DCP, DCDM or WAV. Script exiting")
+        error_mssg1 = f"File type absent or doesn't match DPX, DCP, DCDM or WAV: {file_type}\n\tPlease check 'file_type' field for CID item record {priref}"
+        error_mssg2 = None
+        error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
+        sys.exit(f"File type absent or doesn't match those for TAR: {file_type}. Exiting.")
+
     # Calculate checksum manifest for supplied fullpath
     local_md5 = {}
     directory = False
