@@ -202,6 +202,9 @@ def main():
     if not os.path.exists(fullpath):
         sys.exit("Supplied path does not exists. Please try again.")
 
+    if fullpath.endswith('.md5'):
+        sys.exit("Supplied path is MD5. Skipping.")
+
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
     LOGGER.info("==== TAR Wrapping Check script start ===============================")
@@ -359,7 +362,7 @@ def main():
         try:
             LOGGER.info("Moving and deleting DPX sequence: %s", os.path.join(DELETE_TAR, tar_source))
             shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
-#            os.remove(os.path.join(DELETE_TAR, tar_source))
+            os.remove(os.path.join(DELETE_TAR, tar_source))
         except Exception as err:
             LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
         try:
