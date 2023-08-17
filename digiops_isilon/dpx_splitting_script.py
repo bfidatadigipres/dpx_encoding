@@ -94,14 +94,17 @@ def get_cid_data(dpx_sequence):
     '''
     Use requests to retrieve priref for associated item object number
     '''
+    print("get_cid_data()")
     ob_num_split = dpx_sequence.split('_')
-    ob_num = '-'.join(ob_num_split[0:2])
+    ob_num = '-'.join(ob_num_split[0:-1])
     search = f"object_number='{ob_num}'"
     query = {'database': 'items',
              'search': search,
              'output': 'json'}
+    print(query)
     results = requests.get(CID_API, params=query)
     results = results.json()
+    print(results)
     try:
         priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
     except (IndexError, KeyError):
@@ -478,20 +481,22 @@ def main():
     so each folder total file size is beneath 1TB/1.4TB.
     '''
     check_control()
-
     if len(sys.argv) < 2:
         LOGGER.warning("SCRIPT NOT STARTING: Error with shell script input:\n %s", sys.argv)
         sys.exit()
     else:
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         data = sys.argv[1]
-        data = data.split(', ')
-        kb_size = int(data[0])
-        dpx_path = str(data[1])
-        encoding = str(data[2])
+        print(data)
+        data_split = data.split(',\\ ')
+        print(data_split)
+        kb_size = int(data_split[0])
+        dpx_path = str(data_split[1])
+        encoding = str(data_split[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         priref, file_type = get_cid_data(dpx_sequence)
+        LOGGER.info("%s - Priref %s and file_type %s", dpx_sequence, priref, file_type)
 
         # Sequence CID Item record check
         if 'dpx' in file_type.lower():

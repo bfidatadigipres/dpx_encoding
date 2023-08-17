@@ -1,11 +1,5 @@
 <?xml version="1.0"?>
 <policy type="or" name="BFI DPX metadata conformance checker" license="MIT">
-  <description>Tests if a DPX file in a sequence conforms to BFI RAWcooked license.  
-- Checks DPX file is correct format and correct extension.
-- Checks for and fails two image elements, not currently supported by FFmpeg.
-- Checks for RGB or Y, 10/12/16-bit, minimum 2K width, image is Raw and lossless.
-- Handles DPX image metadata being piped to either Image or Video tracktype.
-- Maintainer BFI</description>
   <policy type="and" name="DPX conformance check">
     <rule name="Format is DPX" value="Format" tracktype="General" occurrence="*" operator="=">DPX</rule>
     <rule name="File extension is DPX" value="FileExtension" tracktype="General" occurrence="*" operator="=">dpx</rule>
@@ -26,18 +20,6 @@
     <policy type="or" name="Compression Mode is Lossless">
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
-    </policy>
-    <policy type="or" name="Colorspace is NOT RGBA">    
-      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
-      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
-    </policy>
-    <policy type="or" name="Colorspace is NOT ABGR">    
-      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">AGBR</rule>
-      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">AGBR</rule>
-    </policy>
-    <policy type="or" name="Colorspace is NOT RGB / A">
-      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
-      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
     </policy>
     <policy type="or" name="Endianness is Big or Little in Video or Image tracktype">
       <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>

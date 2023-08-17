@@ -5,10 +5,10 @@
 # ===================================================
 
 # Global variables extracted from environmental variables
-MKV_PATH="${IS_DITIGAL}${MKV_CHECK}"
+MKV_PATH="${IS_DIGITAL}${MKV_CHECK}"
 MKV_LOG="${IS_DIGITAL}${MKV_ENCODED}logs/"
 MKV_KILLED="${IS_DIGITAL}${MKV_ENCODED}killed/"
-MKV_AUTOINGEST="${IS_DIGITAL}${AUTOINGEST_VID}"
+MKV_AUTOINGEST="${IS_DIGITAL}Finished/${AUTOINGEST_VID}"
 DPX_PATH="${IS_DIGITAL}${DPX_COMPLETE}"
 DPX_TO_COOK="${IS_DIGITAL}${DPX_COOK}"
 FOR_DELETION="${IS_DIGITAL}${TO_DELETE}"
@@ -133,7 +133,7 @@ if [ -z "$dpx_list" ]
         grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
         log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-#        grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+        grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 rm "${MKV_PATH}mkv_list.txt"
