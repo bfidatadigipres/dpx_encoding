@@ -65,10 +65,10 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${dimensions}/${scans}/${reel}/${dpx}"
-            # mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
-            # tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
+            mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+            tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
             byte_size=$(du -s -b "${DPX_PATH}${filename}")
-            # echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
+            echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Check for Image orientation 'Bottom to top' and manage with temporary file additions
             orientation_check=$(mediaconch --force -p "${POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
