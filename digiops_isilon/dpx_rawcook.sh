@@ -51,9 +51,11 @@ grep '/mnt/' "${MKV_DEST}reversibility_list.txt" | while IFS= read -r retry; do
   count_cooked_2=$(grep -c "$folder_retry" "${MKV_DEST}rawcooked_success.log")
   count_queued_2=$(grep -c "$folder_retry" "${MKV_DEST}temp_queued_list.txt")
   # Those not already queued/active passed to list, else bypassed
-  if [ "$count_cooked_2" -eq 0 ] && [ "$count_queued_2" -eq 0 ];
-   then
-    echo "$folder_retry" >> "${MKV_DEST}temporary_retry_list.txt"
+  if [ "$count_cooked_2" -eq 0 ] && [ "$count_queued_2" -eq 0 ]
+    then
+      echo "$folder_retry" >> "${MKV_DEST}temporary_retry_list.txt"
+    else
+      echo "File already queued or encoding."
   fi
 done
 

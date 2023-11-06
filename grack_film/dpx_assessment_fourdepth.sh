@@ -8,6 +8,7 @@
 DPX_LOG="${GRACK_FILM}${DPX_SCRIPT_LOG}"
 DPX_PATH="${GRACK_FILM}${DPX_ASSESS_FOUR}"
 ERRORS="${GRACK_FILM}${CURRENT_ERRORS}"
+DPX_REVIEW="${GRACK_FILM}${DPX_REVIEW}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
@@ -47,6 +48,28 @@ touch "${DPX_PATH}python_list.txt"
 # Control check
 control
 
+# Loop to first identify sequences with gaps and exclude
+find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -mmin +30 | while IFS= read -r files; do
+    echo "" > "${DPX_PATH}assessment.txt"
+    filename=$(basename "$files")
+    rawcooked --check --no-encode "${files}" &>> "${DPX_PATH}assessment.txt"
+    count_coherency=$(grep -c "Warning: incoherent file names" "${DPX_PATH}assessment.txt")
+    if [[ "$count_coherency" -gt 0 ]]
+      then
+        # File has gaps and should not proceed, move to dpx_for_review
+        log "Sequence found with gaps, moving to dpx_for_review folder:"
+        log " - ${filename}"
+        echo "mv ${files} ${DPX_REVIEW}${filename}"
+        mv "${files} ${DPX_REVIEW}${filename}"
+        echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): ${filename} has gaps in sequence." > "${ERRORS}${filename}_errors.log"
+        cat "${DPX_PATH}assessment.txt" >> "${ERRORS}${filename}_errors.log"
+      else
+        # File has no gaps
+        log "Sequence has no gaps, passing to metadata assessment:"
+        log " - ${filename}"
+    fi
+done
+
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for four level folders: N_123456_01of01/dimensions/scan01/Reel/<dpx_seq>
 find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -r files; do
@@ -71,7 +94,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
             echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Check for Image orientation 'Bottom to top' and manage with temporary file additions
-            orientation_check=$(mediaconch --force -p "{POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
+            orientation_check=$(mediaconch --force -p "${POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
             if [ -z "$orientation_check" ]
                 then
                     log "Skipping: File does not have 'Bottom to top' orientation issues."

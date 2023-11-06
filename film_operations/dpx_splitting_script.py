@@ -485,7 +485,8 @@ def main():
     else:
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         data = sys.argv[1]
-        data = data.split(', ')
+        LOGGER.info("Received data: %s", data)
+        data = data.split(',\\ ')
         kb_size = int(data[0])
         dpx_path = str(data[1])
         encoding = str(data[2])

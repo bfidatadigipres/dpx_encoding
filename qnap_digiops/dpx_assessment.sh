@@ -1,4 +1,4 @@
-#!/bin/bash -x
+d#!/bin/bash -x
 
 # ==========================================================================
 # === DPX sequence conformance pass to RAWcook/TAR DPX splitting scripts ===
@@ -70,7 +70,7 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -
             echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Check for Image orientation 'Bottom to top' and manage with temporary file additions
-            orientation_check=$(mediaconch --force -p "{POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
+            orientation_check=$(mediaconch --force -p "${POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
             if [ -z "$orientation_check" ]
                 then
                     log "Skipping: File does not have 'Bottom to top' orientation issues."

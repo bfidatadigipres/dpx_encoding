@@ -5,14 +5,13 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-DPX_LOG="${QNAP_FILMOPS}${DPX_SCRIPT_LOG}"
-DPX_PATH="${QNAP_FILMOPS}${DPX_ASSESS_FOUR}"
-ERRORS="${QNAP_FILMOPS}${CURRENT_ERRORS}"
-DPX_REVIEW="${QNAP_FILMOPS}${DPX_REVIEW}"
+DPX_LOG="${QNAP_11_DIGIOPS}${DPX_SCRIPT_LOG}"
+DPX_PATH="${QNAP_11_DIGIOPS}${DPX_ASSESS_FOUR}"
+ERRORS="${QNAP_11_DIGIOPS}${CURRENT_ERRORS}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT_QNAP_FILMOPS}"
+SPLITTING="${SPLITTING_SCRIPT_QNAP_11_DIGIOPS}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
@@ -47,28 +46,6 @@ touch "${DPX_PATH}python_list.txt"
 
 # Control check
 control
-
-# Loop to first identify sequences with gaps and exclude
-find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -mmin +30 | while IFS= read -r files; do
-    echo "" > "${DPX_PATH}assessment.txt"
-    filename=$(basename "$files")
-    rawcooked --check --no-encode "${files}" &>> "${DPX_PATH}assessment.txt"
-    count_coherency=$(grep -c "Warning: incoherent file names" "${DPX_PATH}assessment.txt")
-    if [[ "$count_coherency" -gt 0 ]]
-      then
-        # File has gaps and should not proceed, move to dpx_for_review
-        log "Sequence found with gaps, moving to dpx_for_review folder:"
-        log " - ${filename}"
-        echo "mv ${files} ${DPX_REVIEW}${filename}"
-        mv "${files} ${DPX_REVIEW}${filename}"
-        echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): ${filename} has gaps in sequence." > "${ERRORS}${filename}_errors.log"
-        cat "${DPX_PATH}assessment.txt" >> "${ERRORS}${filename}_errors.log"
-      else
-        # File has no gaps
-        log "Sequence has no gaps, passing to metadata assessment:"
-        log " - ${filename}"
-    fi
-done
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for four level folders: N_123456_01of01/dimensions/scan01/Reel/<dpx_seq>
@@ -185,7 +162,7 @@ fi
 # Take python_list.txt and iterate through entries, passing to Python script one of each instance
 if [ -s "${DPX_PATH}python_list.txt" ]; then
   log "Launching python script to process DPX sequences. Please see dpx_splitting_script.log for more details"
-  grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "sudo $PY3_LAUNCH $SPLITTING '{}'"
+  grep '/mnt/' "${DPX_PATH}python_list.txt" | uniq | parallel --jobs 1 "$PY3_LAUNCH $SPLITTING '{}'"
   log "===================== DPX assessment workflows ENDED ====================="
 fi
 

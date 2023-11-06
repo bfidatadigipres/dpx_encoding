@@ -5,20 +5,19 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-DPX_LOG="${QNAP_FILMOPS}${DPX_SCRIPT_LOG}"
-DPX_PATH="${QNAP_FILMOPS}${DPX_ASSESS_FOUR}"
-ERRORS="${QNAP_FILMOPS}${CURRENT_ERRORS}"
-DPX_REVIEW="${QNAP_FILMOPS}${DPX_REVIEW}"
+DPX_LOG="${QNAP_11_DIGIOPS}${DPX_SCRIPT_LOG}"
+DPX_PATH="${QNAP_11_DIGIOPS}${DPX_ASSESS}"
+ERRORS="${QNAP_11_DIGIOPS}${CURRENT_ERRORS}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT_QNAP_FILMOPS}"
+SPLITTING="${SPLITTING_SCRIPT_QNAP_11_DIGIOPS}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
     timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
     echo "$1 - $timestamp"
-} >> "${DPX_LOG}dpx_assessment_fourdepth.log"
+} >> "${DPX_LOG}dpx_assessment.log"
 
 # Check for DPX sequences in path before script launch
 if [ -z "$(ls -A ${DPX_PATH})" ]
@@ -48,38 +47,15 @@ touch "${DPX_PATH}python_list.txt"
 # Control check
 control
 
-# Loop to first identify sequences with gaps and exclude
-find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -mmin +30 | while IFS= read -r files; do
-    echo "" > "${DPX_PATH}assessment.txt"
-    filename=$(basename "$files")
-    rawcooked --check --no-encode "${files}" &>> "${DPX_PATH}assessment.txt"
-    count_coherency=$(grep -c "Warning: incoherent file names" "${DPX_PATH}assessment.txt")
-    if [[ "$count_coherency" -gt 0 ]]
-      then
-        # File has gaps and should not proceed, move to dpx_for_review
-        log "Sequence found with gaps, moving to dpx_for_review folder:"
-        log " - ${filename}"
-        echo "mv ${files} ${DPX_REVIEW}${filename}"
-        mv "${files} ${DPX_REVIEW}${filename}"
-        echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): ${filename} has gaps in sequence." > "${ERRORS}${filename}_errors.log"
-        cat "${DPX_PATH}assessment.txt" >> "${ERRORS}${filename}_errors.log"
-      else
-        # File has no gaps
-        log "Sequence has no gaps, passing to metadata assessment:"
-        log " - ${filename}"
-    fi
-done
-
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
-# Configured for four level folders: N_123456_01of01/dimensions/scan01/Reel/<dpx_seq>
-find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -r files; do
+# Configured for three level folders: N_123456_01of01/scan01/dimensions/<dpx_seq>
+find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -r files; do
     # Find first DPX of sequence
     dpx=$(ls "$files" | head -1)
-    reel=$(basename "$files")
+    dimensions=$(basename "$files")
     scans=$(basename "$(dirname "$files")")
-    dimensions=$(basename "$(dirname "$(dirname "$files")")")
-    filename=$(basename "$(dirname "$(dirname "$(dirname "$files")")")")
-    file_scan_name="$filename/$dimensions/$scans"
+    filename=$(basename "$(dirname "$(dirname "$files")")")
+    file_scan_name="$filename/$scans"
     count_queued_pass=$(grep -c "$file_scan_name" "${DPX_PATH}rawcook_dpx_success.log")
     count_queued_fail=$(grep -c "$file_scan_name" "${DPX_PATH}tar_dpx_failures.log")
 
@@ -87,7 +63,7 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
         then
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
-            log "- ${file_scan_name}/${dimensions}/${scans}/${reel}/${dpx}"
+            log "- ${file_scan_name}/${dimensions}/${dpx}"
             mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
             byte_size=$(du -s -b "${DPX_PATH}${filename}")
@@ -101,11 +77,11 @@ find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -
                 else
                     log "File has 'Bottom to top' Image orientation! Adding RAWcooked warning note to folder"
                     touch "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
-                    echo "This sequence has been exported with imagen orientation reading 'Bottom to top'." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
+                    echo "This sequence has been exported with image orientation reading 'Bottom to top'." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
                     echo "This RAWcooked transcode has flipped the image using FFmpeg '-vf vflip'." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
                     echo "As a result it may fail future '--check' tests, so a framemd5 manifest" >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
                     echo "will be included to allow for manual reversibility tests after decoding." >> "${DPX_PATH}${file_scan_name}/RAWcooked_notes.txt"
-                    echo "dpx_assessment_fourdepth $(date "+%Y-%m-%d - %H.%M.%S"): DPX in ${filename} have image orientation bottom to top." >> "${ERRORS}${filename}_errors.log"
+                    echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): DPX in ${filename} have image orientation bottom to top." >> "${ERRORS}${filename}_errors.log"
                     echo "    As a result the RAWcooked MKV file may fail the '--check' tests, but may be a good FFV1 Matroska file." >> "${ERRORS}${filename}_errors.log"
                     echo "    Please contant the Knowledge and Collections Developer if the file fails 'check' tests." >> "${ERRORS}${filename}_errors.log"
             fi

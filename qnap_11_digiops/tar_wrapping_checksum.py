@@ -40,7 +40,7 @@ import datetime
 import requests
 
 # Global paths
-LOCAL_PATH = os.environ['GRACK_FILM']
+LOCAL_PATH = os.environ['QNAP_11_DIGIOPS']
 AUTO_TAR = os.path.join(LOCAL_PATH, os.environ['TAR_PRES'])
 DELETE_TAR = os.path.join(LOCAL_PATH, os.environ['TO_DELETE'])
 TAR_FAIL = os.path.join(LOCAL_PATH, os.environ['TAR_FAIL'])
@@ -49,28 +49,15 @@ OVERSIZE = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversized_seq
 ERRORS = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'])
 AUTOINGEST = os.path.join(LOCAL_PATH, os.environ['AUTOINGEST_STORE'])
 LOG = os.path.join(LOCAL_PATH, os.environ['DPX_SCRIPT_LOG'], 'tar_wrapping_checksum.log')
-LOG_PATH = os.environ['LOG_PATH']
-CONTROL_JSON = os.path.join(os.environ['LOG_PATH'], 'downtime_control.json')
 CID_API = os.environ['CID_API3']
 
 # Logging config
-LOGGER = logging.getLogger('tar_wrapping_grack_film')
+LOGGER = logging.getLogger('tar_wrapping_qnap_11_digiops')
 hdlr = logging.FileHandler(LOG)
 formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 hdlr.setFormatter(formatter)
 LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
-
-
-def check_control():
-    '''
-    Check control json for downtime requests
-    '''
-    with open(CONTROL_JSON) as control:
-        j = json.load(control)
-        if not j['rawcooked']:
-            LOGGER.info('Script run prevented by downtime_control.json. Script exiting.')
-            sys.exit('Script run prevented by downtime_control.json. Script exiting.')
 
 
 def get_cid_data(fname):
@@ -205,7 +192,6 @@ def main():
     Delete original file, move TAR to autoingest path.
     '''
 
-    check_control()
     if len(sys.argv) != 2:
         LOGGER.warning("SCRIPT EXIT: Error with shell script input:\n %s", sys.argv)
         sys.exit()
@@ -218,6 +204,7 @@ def main():
 
     if fullpath.endswith('.md5'):
         sys.exit("Supplied path is MD5. Skipping.")
+
 
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
@@ -244,7 +231,7 @@ def main():
         sys.exit(f"No CID item record found to match TAR file {tar_source}. Exiting.")
     LOGGER.info("File for TAR wrapping %s has matching CID Item record: %s. File type: %s", tar_source, priref, file_type)
 
-    if file_type.lower() not in ['dpx', 'dcp', 'dcdm', 'wav']:
+    if file_type.lower() not in ['dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         LOGGER.warning("File type absent or doesn't match DPX, DCP, DCDM or WAV. Script exiting")
         error_mssg1 = f"File type absent or doesn't match DPX, DCP, DCDM or WAV: {file_type}\n\tPlease check 'file_type' field for CID item record {priref}"
         error_mssg2 = None

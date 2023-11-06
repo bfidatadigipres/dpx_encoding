@@ -54,7 +54,7 @@ import datetime
 import requests
 
 # Global variables
-DPX_PATH = os.environ['GRACK_FILM']
+DPX_PATH = os.environ['QNAP_11_DIGIOPS']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
@@ -141,7 +141,6 @@ def read_csv(dpx_sequence):
     new_sequence = dpx_sequence
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
-
         while number_present is True:
             for row in readme:
                 orig_num = row['original']
@@ -486,16 +485,13 @@ def main():
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         data = sys.argv[1]
         LOGGER.info("Received data: %s", data)
-        data = data.split(',\ ')
-        if len(data) == 1:
-            data = data.split(', ')
+        data = data.split(',\\ ')
         kb_size = int(data[0])
         dpx_path = str(data[1])
         encoding = str(data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         priref, file_type = get_cid_data(dpx_sequence)
-
         # Sequence CID Item record check
         if 'dpx' in file_type.lower():
             LOGGER.info("Processing DPX sequence: %s", dpx_sequence)

@@ -5,13 +5,13 @@
 # ====================================================================
 
 # Global variables extracted from environmental vars
-ERRORS="${IS_DIGITAL}${CURRENT_ERRORS}"
-DPX_PATH="${IS_DIGITAL}${RAWCOOKED_PATH}"
-DPX_DEST="${IS_DIGITAL}${DPX_COMPLETE}"
-MKV_DESTINATION="${IS_DIGITAL}${MKV_ENCODED}"
-CHECK_FOLDER="${IS_DIGITAL}${MKV_CHECK}"
-MKV_POLICY="$POLICY_RAWCOOK"
-SCRIPT_LOG="${IS_DIGITAL}${DPX_SCRIPT_LOG}"
+ERRORS="${QNAP_11_DIGIOPS}${CURRENT_ERRORS}"
+DPX_PATH="${QNAP_11_DIGIOPS}${RAWCOOKED_PATH}"
+DPX_DEST="${QNAP_11_DIGIOPS}${DPX_COMPLETE}"
+MKV_DESTINATION="${QNAP_11_DIGIOPS}${MKV_ENCODED}"
+CHECK_FOLDER="${QNAP_11_DIGIOPS}${MKV_CHECK}"
+MKV_POLICY="${POLICY_RAWCOOK}"
+SCRIPT_LOG="${QNAP_11_DIGIOPS}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
@@ -46,7 +46,7 @@ touch "${MKV_DESTINATION}reversibility_list.txt"
 # Matroska size check remove files to Killed folder, and folders moved to check_size/ ===
 # =======================================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r fname; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r fname; do
     filename=$(basename "$fname")
     fname_log=$(echo "$filename" | rev | cut -c 5- | rev)
     object=$(echo "$filename" | rev | cut -c 12- | rev)
@@ -72,7 +72,7 @@ done
 # Matroska checks using MediaConch policy, remove fails to Killed folder ===
 # ==========================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -r files; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r files; do
   check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass! ${files}")
   filename=$(basename "$files")
   fname_log=$(echo "$filename" | rev | cut -c 5- | rev)
@@ -81,10 +81,10 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +30 | while IFS= read -
       log "FAIL: RAWcooked MKV $filename has failed the mediaconch policy"
       log "Moving $filename to killed directory, and amending log fail_$filename.txt"
       log "$check"
-      echo "$filename" >> "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
       echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${filename} failed the FFV1 MKV Mediaconch policy." >> "${ERRORS}${fname_log}_errors.log"
       echo "    Matroska moved to Killed folder, DPX sequence will retry RAWcooked encoding." >> "${ERRORS}${fname_log}_errors.log"
       echo "    Please contact the Knowledge and Collections Developer about this Mediaconch policy failure." >> "${ERRORS}${fname_log}_errors.log"
+      echo "$filename" >> "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
     else
       log "PASS: RAWcooked MKV file $filename has passed the Mediaconch policy. Whoopee"
   fi
