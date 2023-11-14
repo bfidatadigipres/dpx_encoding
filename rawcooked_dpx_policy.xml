@@ -22,17 +22,15 @@
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
     </policy>
-    <policy type="or" name="Colorspace is NOT RGBA">    
-      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
-      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
-    </policy>
-    <policy type="or" name="Colorspace is NOT ABGR">    
-      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">AGBR</rule>
-      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">AGBR</rule>
-    </policy>
-    <policy type="or" name="Colorspace is NOT RGB / A">
-      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
-      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
+    <policy type="or" name="DPX colorspace has no Alpha / AGBR">
+      <rule name="Colorspace is not RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
+      <rule name="Colorspace is not RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
+      <rule name="Colorspace is not RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
+      <rule name="Colorspace is not RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
+      <rule name="Colorspace is not RGB/A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB/A</rule>
+      <rule name="Colorspace is not RGB/A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB/A</rule>
+      <rule name="Colorspace is not ABGR" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">ABGR</rule>
+      <rule name="Colorspace is not ABGR" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">ABGR</rule>
     </policy>
     <policy type="or" name="Endianness is Big or Little in Video or Image tracktype">
       <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
