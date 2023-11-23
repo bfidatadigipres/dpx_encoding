@@ -8,12 +8,6 @@
       <rule name="Format_Version is 1.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">1.0</rule>
       <rule name="Format_Version is 2.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">2.0</rule>
     </policy>
-    <policy type="or" name="DPX colorspace is RGB or Y in tracktype Image or Video">
-      <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
-      <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
-      <rule name="Colorspace is Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">Y</rule>
-      <rule name="Colorspace is Y" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
-    </policy>
     <policy type="or" name="Format Compression is Raw">
       <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Image" occurrence="*" operator="=">Raw</rule>
       <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Video" occurrence="*" operator="=">Raw</rule>
@@ -22,29 +16,111 @@
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
       <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
     </policy>
-    <policy type="or" name="DPX colorspace has no Alpha / AGBR">
+    <policy type="or" name="BitDepth / colorspace / endianess match BFI licenses">
+      <policy type="or" name="10-bit RGB Big endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="10-bit RGB Little endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="8-bit RGB Little endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 8" value="BitDepth" tracktype="Image" occurrence="*" operator="=">8</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 8" value="BitDepth" tracktype="Video" occurrence="*" operator="=">8</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="12-bit RGB Big endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 12" value="BitDepth" tracktype="Image" occurrence="*" operator="=">12</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is bit" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 12" value="BitDepth" tracktype="Video" occurrence="*" operator="=">12</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="16-bit RGB Little endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="16-bit RGB Big endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="10-bit Y Big endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
+          <rule name="Colorspace is Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">Y</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
+          <rule name="Colorspace is Y" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        </policy>
+      </policy>
+      <policy type="or" name="16-bit Y Big endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is Y" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">Y</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is Y" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">Y</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        </policy>
+      </policy>
+    </policy>
+    <policy type="or" name="Ensure no Alpha present with RGB">
       <rule name="Colorspace is not RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
       <rule name="Colorspace is not RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
       <rule name="Colorspace is not RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
       <rule name="Colorspace is not RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
       <rule name="Colorspace is not RGB/A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB/A</rule>
       <rule name="Colorspace is not RGB/A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB/A</rule>
-      <rule name="Colorspace is not ABGR" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">ABGR</rule>
-      <rule name="Colorspace is not ABGR" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">ABGR</rule>
-    </policy>
-    <policy type="or" name="Endianness is Big or Little in Video or Image tracktype">
-      <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
-      <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
-      <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
-      <rule name="Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
-    </policy>
-    <policy type="or" name="BitDepth is 10 or 16 in Video or Image tracktype">
-      <rule name="BitDepth is 10" value="BitDepth" tracktype="Image" occurrence="*" operator="=">10</rule>
-      <rule name="BitDepth is 12" value="BitDepth" tracktype="Image" occurrence="*" operator="=">12</rule>
-      <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
-      <rule name="BitDepth is 10" value="BitDepth" tracktype="Video" occurrence="*" operator="=">10</rule>
-      <rule name="BitDepth is 12" value="BitDepth" tracktype="Video" occurrence="*" operator="=">12</rule>
-      <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
     </policy>
   </policy>
 </policy>

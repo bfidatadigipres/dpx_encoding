@@ -211,6 +211,8 @@ def main():
         LOGGER.info("%s file moved to COMPLETED path: %s", fname, COMPLETED)
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to completed/ folder for manual deletion.")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\t-------------------------------------------------------------------")
+        if os.path.exists(os.path.join(ERRORS, f"{fname_log}_errors.log")):
+            shutil.move(os.path.join(ERRORS, f"{fname_log}_errors.log"), os.path.join(ERRORS, f"completed/{fname_log}_errors.log"))
         build_log(log_list)
 
     LOGGER.info("========= UNWRAP TAR CHECKSUM SCRIPT END =======================")
@@ -281,11 +283,11 @@ def error_log(fpath, message, kandc):
     ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if not kandc:
         with open(fpath, 'a+') as log:
-            log.write(f"splitting_script {ts}: {message}.\n\n")
+            log.write(f"unwrap_tar {ts}: {message}.\n\n")
             log.close()
     else:
         with open(fpath, 'a+') as log:
-            log.write(f"splitting_script {ts}: {message}.\n")
+            log.write(f"unwrap_tar {ts}: {message}.\n")
             log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.\n\n")
             log.close()
 

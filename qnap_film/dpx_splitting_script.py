@@ -56,6 +56,7 @@ import requests
 # Global variables
 DPX_PATH = os.environ['QNAP_FILM']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
+ERRORS_COMPLETE = os.path.join(ERRORS, 'completed/')
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
@@ -664,6 +665,10 @@ def main():
             cid_data.append(f"DPX folder size: {kb_size} kb required {division} divisions\n")
             LOGGER.info("Adding %s sequence number to part_whole log in current_errors/ folder", dpx_sequence)
             part_whole_log(dpx_sequence)
+            LOGGER.info("Checking for error log using %s name, and moving to compeleted folder.", dpx_sequence)
+            if os.path.isfile(os.path.join(ERRORS, f"{dpx_sequence}_errors.log")):
+                shutil.move(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), os.path.join(ERRORS_COMPLETE, f"{dpx_sequence}_errors.log"))
+
             # Generate new folder names from dpx_sequence/division
             pre_foldername_list = []
             post_foldername_list = []
