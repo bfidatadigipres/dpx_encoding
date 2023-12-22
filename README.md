@@ -122,6 +122,24 @@ DPX Encoding script crontab entries:
     15    */4   *    *    *       username      /usr/bin/python3 /mnt/path/dpx_encoding/film_operations/dpx_part_whole_move.py > /tmp/python_cron.log  
     */55  *     *    *    *       username      /mnt/path/dpx_encoding/flock_rebuild.sh  
     
+ 
+### BFI server and storage configuration  
+
+The FFV1 codec was developed with SliceCRCs which compliment the multithreading feature of FFmpeg, enabling fast encoding by splitting encoding processes across the slices of each frame. Our server has 64 CPUs allowing better multithreading capability. The SliceCRCs also embed 64 CRC checksum across each frame, so if your file suffers any damage over time you can exactly pinpoint where in the sequence it is by running the MKV through FFmpeg.  
+
+BFI RAWcooked server (retrieved using Linux lsbcu):  
+Architecture X86-64  
+CPU op-mode 64-bit  
+CPU(s) 64  
+Model Intel(R) Xeon(R) Gold 5218 CPU @2.30GHz  
+RAM 252GB  
+Threads (per core) 2  
+Cores (per socket) 16  
+Sockets 2  
+The 64 CPUs are calculated Threads x Cores x Sockets.  
+
+In addition to plenty of CPUs it is good to have storage commuication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thorougly: https://github.com/MediaArea/RAWcooked/issues/375  
+
 
 ## THE SCRIPTS
 
