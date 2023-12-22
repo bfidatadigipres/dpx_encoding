@@ -398,9 +398,14 @@ def main():
             error_mssg2 = None
             error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
     else:
-        LOGGER.warning("Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5)
+        LOGGER.warning("Manifests do not match. Different checksums:")
+        log.append("WARNING: Manifests do match, differences:")
+        for key, value in local_md5.items():
+            if value != tar_content_md5[key]:
+                log.append(f"Different checksum for {key}: {value} and {two[key]}")
+                LOGGER.warning("Different checksums for %s: %s and %s", key, value, two[key])
         LOGGER.warning("Moving TAR file to failures, leaving file/folder for retry.")
-        log.append("MD5 manifests do not match. Moving TAR file to failures folder for retry")
+        log.append("Moving TAR file to failures folder for retry")
         shutil.move(tar_path, os.path.join(TAR_FAIL, f'{tar_source}.tar'))
         error_mssg1 = f"MD5 checksum manifests do not match for source folder and TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
         error_mssg2 = "if this checksum comparison fails multiple times"

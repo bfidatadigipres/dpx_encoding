@@ -132,8 +132,8 @@ if [ -z "$dpx_list" ]
         # Moves successfully ingested items in deleted list to 'to_delete/' folder
         grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
-#        log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-#        grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+        log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
+        grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 rm "${MKV_PATH}mkv_list.txt"
