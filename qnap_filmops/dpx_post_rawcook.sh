@@ -91,9 +91,9 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -
 done
 
 # Move failed MKV files to killed folder
-grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progress --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_DESTINATION}killed/{}"
+grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_DESTINATION}killed/{}"
 # Move the txt files to logs folder and prepend -fail- to filename
-grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --progress --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/fail_{}.txt"
+grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/fail_{}.txt"
 
 # ===================================================================================
 # Log check passes move to MKV Check folder and logs folders, and DPX folder move ===
