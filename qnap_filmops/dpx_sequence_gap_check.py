@@ -52,7 +52,7 @@ def count_folder_depth(fpath):
     for contents in folder_contents:
         if 'scan' in str(contents).lower():
             return '3'
-        return '4'
+    return '4'
 
 
 def retrieve_dpx(fpath):
@@ -78,21 +78,22 @@ def main():
     If identical, move folder to dpx_to_assess/ folder for folder type
     old folder formatting or new folder formatting
     '''
-
-    paths = [x for x in os.listdir(DPX_GAP_CHECK) if os.path.isdir(os.path.join(DPX_GAP_CHECK, x))]
+    log_list = []
+    paths = [ x for x in os.listdir(DPX_GAP_CHECK) if os.path.isdir(os.path.join(DPX_GAP_CHECK, x)) ]
     if not paths:
         sys.exit()
 
     LOGGER.info("==== DPX SEQUENCE GAP CHECK START ===================")
-    for fpath in paths:
-        local_logs(f"----- {fpath} -----")
+    for pth in paths:
+        fpath = os.path.join(DPX_GAP_CHECK, pth)
+        log_list.append(f"----- {fpath} -----")
         LOGGER.info("%s", fpath)
         depth = count_folder_depth(fpath)
-        local_logs(f"Folder assessed as {depth} depth folder.")
+        log_list.append(f"Folder assessed as {depth} depth folder.")
 
         # Fetch lists
         file_nums, filenames = retrieve_dpx(fpath)
-        local_logs(f" - {len(file_nums)} DPX files found in folder {fpath}")
+        log_list.append(f" - {len(file_nums)} DPX files found in folder {fpath}")
 
         # Calculate range from first/last
         file_range = [ x for x in range(min(file_nums), max(file_nums) + 1) ]
@@ -100,41 +101,38 @@ def main():
         # Retrieve equivalent DPX names for logs
         first_dpx = filenames[file_nums.index(min(file_nums))]
         last_dpx = filenames[file_nums.index(max(file_nums))]
-        local_logs(f"Total range of DPX is {len(file_range)}\nFirst: {first_dpx}\nLast: {last_dpx}")
+        log_list.append(f"Total range of DPX is {len(file_range)}\nFirst: {first_dpx}\nLast: {last_dpx}")
         LOGGER.info("First DPX: %s", first_dpx)
         LOGGER.info("Last DPX: %s", last_dpx)
 
         # Check for absent numbers in sequence
         missing = list(set(file_nums) ^ set(file_range))
-        missing = missing.sort()
         if len(missing) == 0:
             LOGGER.info("No missing items found in DPX range: %s", missing)
-            local_logs("No missing files in DPX sequence. Moving to assessment path.")
             success = move_folder(fpath, depth)
-            if not success:
-                local_logs(f"FAILED TO MOVE: {fpath}")
-                local_logs("Please move this file manually.\n")
-            else:
-                local_logs("File moved to dpx assessment path successfully.\n")
         else:
             LOGGER.warning("Missing DPX in sequence: %s", missing)
-            local_logs(f"Quantity of missing DPX files: {len(missing)}")
-            local_logs(f"Missing DPX numbers in sequence: {', '.join(missing)}")
+            log_list.append(f"Quantity of missing DPX files: {len(missing)}")
+            log_list.append(f"Missing DPX numbers in sequence: {', '.join(missing)}")
             for missed in missing:
                 idx = missed - 1
                 try:
                     prev_dpx = filenames[file_nums.index(idx)]
-                    local_logs(f"DPX number {missed} missing after: {prev_dpx}")
+                    log_list.append(f"DPX number {missed} missing after: {prev_dpx}")
                 except IndexError:
-                    local_logs(f"DPX number missing: {missed}")
+                    log_list.append(f"DPX number missing: {missed}")
 
             # Move to dpx_for_review
             success = move_folder(fpath, 'review')
             if not success:
-                local_logs(f"FAILED TO MOVE: {fpath}")
-                local_logs("Please move this file manually.\n")
+                log_list.append(f"FAILED TO MOVE: {fpath}")
+                log_list.append(f"Please move this file manually.\n")
             else:
-                local_logs("File moved to dpx_for_review/ path successfully.\n")
+                log_list.append(f"File moved to dpx_for_review/ path successfully.\n")
+
+            # Write just failed examples to log
+            for log in log_list:
+                local_logs(log)
 
     LOGGER.info("==== DPX SEQUENCE GAP CHECK END =====================")
 
@@ -167,10 +165,6 @@ def local_logs(data):
     to monitor TAR wrap process
     '''
     timestamp = str(datetime.datetime.now())
-
-    if not os.path.isfile(LOCAL_LOG):
-        with open(LOCAL_LOG, 'x') as log:
-            log.close()
 
     with open(LOCAL_LOG, 'a') as log:
         log.write(f"{timestamp[0:19]} - {data}\n")
