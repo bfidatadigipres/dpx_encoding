@@ -48,12 +48,11 @@ def count_folder_depth(fpath):
     '''
     Work out the depth of folders to the DPX sequence
     '''
-    dir = [ x for x in os.listdir(fpath) if os.path.isdir(os.path.join(fpath, x)) ]
-    for dr in dir:
-        if 'scan' in str(dr).lower():
+    folder_contents = [ x for x in os.listdir(fpath) if os.path.isdir(os.path.join(fpath, x)) ]
+    for contents in folder_contents:
+        if 'scan' in str(contents).lower():
             return '3'
-        else:
-            return '4'
+        return '4'
 
 
 def retrieve_dpx(fpath):
@@ -66,7 +65,7 @@ def retrieve_dpx(fpath):
         for file in files:
             if file.endswith(('.dpx', '.DPX')):
                 file_nums.append(int(re.search(r'\d+', file).group()))
-                filenames.append(os.path.join(root, file)) 
+                filenames.append(os.path.join(root, file))
 
     return file_nums, filenames
 
@@ -80,17 +79,17 @@ def main():
     old folder formatting or new folder formatting
     '''
 
-    paths = [ x for x in os.listdir(DPX_GAP_CHECK) if os.path.isdir(os.path.join(DPX_GAP_CHECK, x)) ]
+    paths = [x for x in os.listdir(DPX_GAP_CHECK) if os.path.isdir(os.path.join(DPX_GAP_CHECK, x))]
     if not paths:
         sys.exit()
 
     LOGGER.info("==== DPX SEQUENCE GAP CHECK START ===================")
     for fpath in paths:
         local_logs(f"----- {fpath} -----")
-        LOGGER.info("%", fpath)
+        LOGGER.info("%s", fpath)
         depth = count_folder_depth(fpath)
         local_logs(f"Folder assessed as {depth} depth folder.")
- 
+
         # Fetch lists
         file_nums, filenames = retrieve_dpx(fpath)
         local_logs(f" - {len(file_nums)} DPX files found in folder {fpath}")
@@ -114,15 +113,15 @@ def main():
             success = move_folder(fpath, depth)
             if not success:
                 local_logs(f"FAILED TO MOVE: {fpath}")
-                local_logs(f"Please move this file manually.\n")
+                local_logs("Please move this file manually.\n")
             else:
-                local_logs(f"File moved to dpx assessment path successfully.\n")
+                local_logs("File moved to dpx assessment path successfully.\n")
         else:
             LOGGER.warning("Missing DPX in sequence: %s", missing)
             local_logs(f"Quantity of missing DPX files: {len(missing)}")
             local_logs(f"Missing DPX numbers in sequence: {', '.join(missing)}")
             for missed in missing:
-                idx = missed - 1 
+                idx = missed - 1
                 try:
                     prev_dpx = filenames[file_nums.index(idx)]
                     local_logs(f"DPX number {missed} missing after: {prev_dpx}")
@@ -133,9 +132,9 @@ def main():
             success = move_folder(fpath, 'review')
             if not success:
                 local_logs(f"FAILED TO MOVE: {fpath}")
-                local_logs(f"Please move this file manually.\n")
+                local_logs("Please move this file manually.\n")
             else:
-                local_logs(f"File moved to dpx_for_review/ path successfully.\n")
+                local_logs("File moved to dpx_for_review/ path successfully.\n")
 
     LOGGER.info("==== DPX SEQUENCE GAP CHECK END =====================")
 
@@ -158,6 +157,7 @@ def move_folder(fpath, arg):
         return True
     except Exception as err:
         LOGGER.warning("Unable to move folder %s to %s", fpath, move_path)
+        print(err)
         return False
 
 
