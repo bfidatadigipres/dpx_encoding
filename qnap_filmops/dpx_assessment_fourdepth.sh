@@ -8,7 +8,6 @@
 DPX_LOG="${QNAP_FILMOPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${QNAP_FILMOPS}${DPX_ASSESS_FOUR}"
 ERRORS="${QNAP_FILMOPS}${CURRENT_ERRORS}"
-DPX_REVIEW="${QNAP_FILMOPS}${DPX_REVIEW}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
@@ -47,28 +46,6 @@ touch "${DPX_PATH}python_list.txt"
 
 # Control check
 control
-
-# Loop to first identify sequences with gaps and exclude
-find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -mmin +30 | while IFS= read -r files; do
-    echo "" > "${DPX_PATH}assessment.txt"
-    filename=$(basename "$files")
-    timeout 86400 rawcooked --check --no-encode "${files}" &>> "${DPX_PATH}assessment.txt"
-    count_coherency=$(grep -c "Warning: incoherent file names" "${DPX_PATH}assessment.txt")
-    if [[ "$count_coherency" -gt 0 ]]
-      then
-        # File has gaps and should not proceed, move to dpx_for_review
-        log "Sequence found with gaps, moving to dpx_for_review folder:"
-        log " - ${filename}"
-        echo "mv ${files} ${DPX_REVIEW}${filename}"
-        mv "${files} ${DPX_REVIEW}${filename}"
-        echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): ${filename} has gaps in sequence." > "${ERRORS}${filename}_errors.log"
-        cat "${DPX_PATH}assessment.txt" >> "${ERRORS}${filename}_errors.log"
-      else
-        # File has no gaps
-        log "Sequence has no gaps, passing to metadata assessment:"
-        log " - ${filename}"
-    fi
-done
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for four level folders: N_123456_01of01/dimensions/scan01/Reel/<dpx_seq>
