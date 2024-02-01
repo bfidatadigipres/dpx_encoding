@@ -87,13 +87,13 @@ def main():
     for pth in paths:
         fpath = os.path.join(DPX_GAP_CHECK, pth)
         log_list.append(f"----- {fpath} -----")
-        LOGGER.info("%s", fpath)
+        LOGGER.info("** --- %s ---", fpath)
         depth = count_folder_depth(fpath)
         log_list.append(f"Folder assessed as {depth} depth folder.")
 
         # Fetch lists
         file_nums, filenames = retrieve_dpx(fpath)
-        log_list.append(f" - {len(file_nums)} DPX files found in folder {fpath}")
+        log_list.append(f"{len(file_nums)} DPX files found in folder {fpath}")
 
         # Calculate range from first/last
         file_range = [ x for x in range(min(file_nums), max(file_nums) + 1) ]
@@ -101,7 +101,7 @@ def main():
         # Retrieve equivalent DPX names for logs
         first_dpx = filenames[file_nums.index(min(file_nums))]
         last_dpx = filenames[file_nums.index(max(file_nums))]
-        log_list.append(f"Total range of DPX is {len(file_range)}\nFirst: {first_dpx}\nLast: {last_dpx}")
+        LOGGER.info("Total DPX files in sequence: %s", len(file_range))
         LOGGER.info("First DPX: %s", first_dpx)
         LOGGER.info("Last DPX: %s", last_dpx)
 
@@ -113,7 +113,6 @@ def main():
         else:
             LOGGER.warning("Missing DPX in sequence: %s", missing)
             log_list.append(f"Quantity of missing DPX files: {len(missing)}")
-            log_list.append(f"Missing DPX numbers in sequence: {', '.join(missing)}")
             for missed in missing:
                 idx = missed - 1
                 try:
