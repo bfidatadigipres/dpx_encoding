@@ -127,7 +127,7 @@ DPX Encoding script crontab entries:
 
 The FFV1 codec was developed with SliceCRCs which compliment the multithreading feature of FFmpeg, enabling fast encoding by splitting encoding processes across the slices of each frame. Our server has 64 CPUs allowing better multithreading capability. The SliceCRCs also embed 64 CRC checksum across each frame, so if your file suffers any damage over time you can exactly pinpoint where in the sequence it is by running the MKV through FFmpeg.  
 
-BFI RAWcooked server (retrieved using Linux lsbcu):  
+BFI RAWcooked server (retrieved using Linux ```lscpu```):  
 Architecture X86-64  
 CPU op-mode 64-bit  
 CPU(s) 64  
