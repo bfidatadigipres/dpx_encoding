@@ -435,7 +435,7 @@ def main():
     Sets up different transcodes for image sequence or MOV/MKV. Transcode to Prores.
     No clean up actions set -- this is manual responsibility.
     '''
-
+    logger.info("========= START FILM OPS TRANSCODE TO PRORES =========================")
     folder_content = os.listdir(FPATH)
     logger.info("Contents found: %s", folder_content)
     for film_item in folder_content:
@@ -444,6 +444,7 @@ def main():
             continue
         if film_item in ('completed', 'failure'):
             continue
+        logger.info("** Processing found item: %s", fullpath)
         if os.path.isdir(fullpath):
             encode_rule = 'sequence'
         elif film_item.endswith(('.mkv', '.MKV')):
@@ -460,12 +461,11 @@ def main():
             logger.info("File already transcoded to Prores. Skipping.")
             continue
 
-        logger.info("------ Processing %s ---------", fullpath)
         if encode_rule == 'sequence':
             # Push to genering Prores transcode, then run again.
             output_fullpath = os.path.join(FPATH, f"{film_item}.mov")
             all_files = list(Path(fullpath).rglob("*.dpx"))
-            all_files.sort()
+            logger.info("** Sequence encoding: %s", film_item)
             first_dpx = os.path.abspath(all_files[0])
             dpx_folder = os.path.split(first_dpx)[0]
             framerate = get_framerate(first_dpx)
@@ -476,6 +476,12 @@ def main():
             exit_code = subprocess.call(command)
             if exit_code == 0:
                 logger.info("Subprocess call for FFmpeg command successful")
+            elif not os.path.isfile(output_fullpath):
+                logger.info("WARNING: FFmpeg has not created a MOV file %s", output_fullpath)
+                logger.info("Deleting failed MOV and leaving sequence in place for repeat encode attempt.")
+                if os.path.exists(output_fullpath):
+                    os.remove(output_fullpath)
+                continue
             else:
                 logger.info("WARNING: FFmpeg command failed: %s - Exit code %s", ffmpeg_neat, exit_code)
                 logger.info("Deleting failed MOV and leaving sequence in place for repeat encode attempt.")
@@ -485,7 +491,7 @@ def main():
             logger.info("Image sequence %s converted to MOV file, waiting for second pass %s", film_item, output_fullpath)
             logger.info("Moving sequence into completed/ path")
             try:
-                shutil.move(dpx_folder, COMPLETED)
+                shutil.move(fullpath, COMPLETED)
             except Exception as err:
                 logger.warning("Failed to move source file to completed path")
                 print(err)
@@ -501,8 +507,8 @@ def main():
             duration, vs = get_duration(fullpath)
             video_data = [vs, height, width]
 
-            logger.info("** File being processed: %s", fullpath)
-            logger.info("Metadata retrieved:\nDAR %s PAR %s Height %s Width %s Duration %s", dar, par, height, width, duration)
+            logger.info("** Matroska or MOV file: %s", film_item)
+            logger.info("DAR %s PAR %s Height %s Width %s Duration %s", dar, par, height, width, duration)
 
             # Execute FFmpeg subprocess call
             ffmpeg_call = create_ffmpeg_command(fullpath, output_fullpath, video_data)
@@ -517,8 +523,11 @@ def main():
                 logger.warning("WARNING: FFmpeg command failed: %s\n%s", ffmpeg_call_neat, err)
                 continue
 
-            if not os.path.exists(output_fullpath):
-                logger.warning("FFmpeg file was not found: %s", output_fullpath)
+            if not os.path.isfile(output_fullpath):
+                logger.info("WARNING: FFmpeg has not created a ProRes MOV file %s", output_fullpath)
+                logger.info("Deleting failed MOV and leaving source in place for repeat encode attempt.")
+                if os.path.exists(output_fullpath):
+                    os.remove(output_fullpath)
                 continue
 
             pass_policy = check_policy(output_fullpath)
@@ -544,6 +553,8 @@ def main():
                 except Exception as err:
                     logger.warning("Failed to move ProRes file to failures path")
                     print(err)
+
+    logger.info("========= END FILM OPS TRANSCODE TO PRORES ===========================")
 
 
 if __name__ == '__main__':
