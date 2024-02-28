@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+<policy type="and" name="BFI DPX metadata conformance checker" license="MIT">
+  <description>Test if DPX file in a sequence conforms to RAWcooked and BFI mandatory metadata requirements. Checks DPX file has correct formatting, correct extension and metadata fields populated. Checks for and fails two image elements, and any colorspace not RGB (Descriptor 50) or Y (Descriptor 6). Checks 10 or 16-bit, minimum 2K width, image is Raw and lossless, square pixel etc. Handles variation DPX image metadata displaying as either Image or Video tracktype.</description>
+  <policy type="and" name="DPX conformance check">
+    <rule name="General/ImageCount is 1" value="ImageCount" tracktype="General" occurrence="*" operator="=">1</rule>
+    <rule name="Format is DPX" value="Format" tracktype="General" occurrence="*" operator="=">DPX</rule>
+    <rule name="File extension is DPX" value="FileExtension" tracktype="General" occurrence="*" operator="=">dpx</rule>
+    <rule name="FileName value present" value="Generic section header/File information/FileName" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Creator value present" value="Generic section header/File information/Creator" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Project value present" value="Generic section header/File information/Project" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Data sign is signed (0)" value="Generic section header/Image information/image element/Data sign" occurrence="*" operator="=" scope="mmt">0</rule>
+    <rule name="Image orientation (0)" value="Generic section header/Image information/Image orientation" occurrence="*" operator="=" scope="mmt">0</rule>
+    <rule name="Packing is populated" value="Generic section header/Image information/image element/Packing" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Encoding is populated" value="Generic section header/Image information/image element/Encoding" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Offset to data populated" value="Generic section header/Image information/image element/Offset to data" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Input device name present" value="Generic section header/Image source information/Input device name" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Input device serial number" value="Generic section header/Image source information/Input device serial number" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Total image element file size" value="StreamSize" tracktype="Image" occurrence="*" operator="exists"/>
+    <rule name="Frame position in sequence" value="Industry specific header/Motion-picture film information/Frame position in sequence" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Sequence length" value="Industry specific header/Motion-picture film information/Sequence length (frames)" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="Pixels per line" value="Generic section header/Image information/Pixels per line" occurrence="*" operator="&gt;" scope="mmt">0</rule>
+    <rule name="Lines per image element" value="Generic section header/Image information/Lines per image element" occurrence="*" operator="&gt;" scope="mmt">0</rule>
+    <rule name="Description of Image element" value="Generic section header/Image information/image element/Description of image element" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="User identification is populated" value="User defined header/User identification" occurrence="*" operator="exists" scope="mmt"/>
+    <rule name="User defined is populated" value="User defined header/User defined" occurrence="*" operator="exists" scope="mmt"/>
+    <policy type="or" name="Colorspace has no Alphas">
+      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
+      <rule name="ColorSpace is NOT RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
+      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">AGBR</rule>
+      <rule name="ColorSpace is NOT ABGR" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">AGBR</rule>
+      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
+      <rule name="ColorSpace is NOT RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
+      <rule name="ColorSpace is NOT RGB/A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB/A</rule>
+      <rule name="ColorSpace is NOT RGB/A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB/A</rule>
+    </policy>
+    <policy type="or" name="DPX version is 1.0 or 2.0">
+      <rule name="DPX format is V1.0" value="Generic section header/File information/Version number of header format" occurrence="*" operator="=" scope="mmt">V1.0</rule>
+      <rule name="DPX format is V2.0" value="Generic section header/File information/Version number of header format" occurrence="*" operator="=" scope="mmt">V2.0</rule>
+      <rule name="DPX format is 1.0" value="Generic section header/File information/Version number of header format" occurrence="*" operator="=" scope="mmt">1.0</rule>
+      <rule name="DPX format is 2.0" value="Generic section header/File information/Version number of header format" occurrence="*" operator="=" scope="mmt">2.0</rule>
+    </policy>
+    <policy type="or" name="BitDepth / colorspace / endianess match BFI licenses">
+      <policy type="and" name="10-bit RGB (descriptor 50) Big endian">
+        <rule name="BitDepth is 10" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">10</rule>
+        <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+        <rule name="Magic number is SDPX (Big Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">SDPX</rule>
+      </policy>
+      <policy type="and" name="10-bit RGB Little endian">
+        <rule name="BitDepth is 10" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">10</rule>
+        <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+        <rule name="Magic number is XPDS (Little Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">XPDS</rule>
+      </policy>
+      <policy type="and" name="8-bit RGB Little endian">
+        <rule name="BitDepth is 8" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">8</rule>
+        <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+        <rule name="Magic number is XPDS (Little Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">XPDS</rule>
+      </policy>
+      <policy type="and" name="12-bit RGB Big endian">
+        <rule name="BitDepth is 12" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">12</rule>
+        <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+        <rule name="Magic number is SDPX (Big Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">SDPX</rule>
+      </policy>
+      <policy type="and" name="16-bit RGB Little endian">
+        <rule name="BitDepth is 16" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">16</rule>
+        <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+        <rule name="Magic number is XPDS (Little Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">XPDS</rule>
+      </policy>
+      <policy type="and" name="16-bit RGB Big endian">
+        <rule name="BitDepth is 16" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">16</rule>
+        <rule name="Descriptor (50)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">50</rule>
+        <rule name="Magic number is SDPX (Big Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">SDPX</rule>
+      </policy>
+      <policy type="and" name="10-bit Y (descriptor 6) Big endian">
+        <rule name="BitDepth is 10" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">10</rule>
+        <rule name="Descriptor (6)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">6</rule>
+        <rule name="Magic number is SDPX (Big Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">SDPX</rule>
+      </policy>
+      <policy type="and" name="12-bit Y Big endian">
+        <rule name="BitDepth is 12" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">12</rule>
+        <rule name="Descriptor (6)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">6</rule>
+        <rule name="Magic number is SDPX (Big Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">SDPX</rule>
+      </policy>
+      <policy type="and" name="16-bit Y Big endian">
+        <rule name="BitDepth is 16" value="Generic section header/Image information/image element/Bit depth" occurrence="*" operator="=" scope="mmt">16</rule>
+        <rule name="Descriptor (6)" value="Generic section header/Image information/image element/Descriptor" occurrence="*" operator="=" scope="mmt">6</rule>
+        <rule name="Magic number is SDPX (Big Endian)" value="Generic section header/File information/Magic number" occurrence="*" operator="=" scope="mmt">SDPX</rule>
+      </policy>
+    </policy>
+    <policy type="or" name="File creation time or Encoded data present">
+      <rule name="File creation time is present" value="File_Created_Date" tracktype="General" occurrence="*" operator="exists"/>
+      <rule name="File encoded date is present" value="Encoded_Date" tracktype="General" occurrence="*" operator="exists"/>
+    </policy>
+    <policy type="or" name="Format Version 1.0 or 2.0">
+      <rule name="Format_Version is 1.0" value="Format_Version" tracktype="General" occurrence="*" operator="=">1.0</rule>
+      <rule name="Format_Version is 2.0" value="Format_Version" tracktype="General" occurrence="*" operator="starts with">2</rule>
+    </policy>
+    <policy type="or" name="DPX width gt/et 2048">
+      <rule name="Width is gt/et 2048" value="Width" tracktype="Image" occurrence="*" operator="&gt;=">2048</rule>
+      <rule name="Width is gt/et 2048" value="Width" tracktype="Video" occurrence="*" operator="&gt;=">2048</rule>
+    </policy>
+    <policy type="or" name="DPX height gt/et 1280 OR 1536">
+      <policy type="or" name="DPX height gt/et 1280">
+        <rule name="Height is gt/et 1280" value="Height" tracktype="Image" occurrence="*" operator="&gt;=">1280</rule>
+        <rule name="Height is gt/et 1280" value="Height" tracktype="Video" occurrence="*" operator="&gt;=">1280</rule>
+      </policy>
+      <policy type="or" name="DPX height gt/et 1536">
+        <rule name="Height is gt/et 1536" value="Height" tracktype="Image" occurrence="*" operator="&gt;=">1536</rule>
+        <rule name="Height is gt/et 1536" value="Height" tracktype="Video" occurrence="*" operator="&gt;=">1536</rule>
+      </policy>
+    </policy>
+    <policy type="or" name="Format Compression is Raw">
+      <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Image" occurrence="*" operator="=">Raw</rule>
+      <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Video" occurrence="*" operator="=">Raw</rule>
+    </policy>
+    <policy type="or" name="Compression Mode is Lossless">
+      <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
+      <rule name="Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
+    </policy>
+    <policy type="or" name="Pixel Aspect Ratio is 1.000">
+      <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Image" occurrence="*" operator="=">1.000</rule>
+      <rule name="PixelAspectRatio is 1.000" value="PixelAspectRatio" tracktype="Video" occurrence="*" operator="=">1.000</rule>
+    </policy>
+    <policy type="or" name="Transfer Characteristics exist">
+      <rule name="Transfer Characteristics present" value="transfer_characteristics" tracktype="Image" occurrence="*" operator="exists"/>
+      <rule name="Transfer Characteristics present" value="transfer_characteristics" tracktype="Video" occurrence="*" operator="exists"/>
+      <rule name="Transfer Characteristics present" value="Generic section header/Image information/image element/Transfer characteristic" occurrence="*" operator="exists" scope="mmt"/>
+    </policy>
+    <policy type="or" name="Colour Primaries exist">
+      <rule name="Colour Primaries present" value="colour_primaries" tracktype="Image" occurrence="*" operator="exists"/>
+      <rule name="Colour Primaries present" value="colour_primaries" tracktype="Video" occurrence="*" operator="exists"/>
+      <rule name="Colour Primaries present" value="Generic section header/Image information/image element/Colorimetric specification" occurrence="*" operator="exists" scope="mmt"/>
+    </policy>
+    <policy type="or" name="Frame rate present">
+      <rule name="Frame rate of original" value="Industry specific header/Motion-picture film information/Frame rate of original (frames/s)" occurrence="*" operator="exists" scope="mmt"/>
+      <rule name="Temporal sampling rate or frame rate (Hz) present" value="Industry specific header/Television information/Temporal sampling rate or frame rate (Hz)" occurrence="*" operator="exists" scope="mmt"/>
+      <rule name="Image/extra[1]/FrameRate exists" value="extra[1]/FrameRate" tracktype="Image" occurrence="*" operator="exists"/>
+    </policy>
+    <policy type="or" name="Border validity present as '0' or '65535'">
+      <policy type="and" name="Border validity present as '0'">
+        <rule name="Border validity present: XL" value="Generic section header/Image source information/Border validity/XL border" occurrence="*" operator="=" scope="mmt">0</rule>
+        <rule name="Border validity present: XR" value="Generic section header/Image source information/Border validity/XR border" occurrence="*" operator="=" scope="mmt">0</rule>
+        <rule name="Border validity present: YT" value="Generic section header/Image source information/Border validity/YT border" occurrence="*" operator="=" scope="mmt">0</rule>
+        <rule name="Border validity present: YB" value="Generic section header/Image source information/Border validity/YB border" occurrence="*" operator="=" scope="mmt">0</rule>
+      </policy>
+      <policy type="and" name="Border validity present as '65535'">
+        <rule name="Border validity present: XL" value="Generic section header/Image source information/Border validity/XL border" occurrence="*" operator="=" scope="mmt">65535</rule>
+        <rule name="Border validity present: XR" value="Generic section header/Image source information/Border validity/XR border" occurrence="*" operator="=" scope="mmt">65535</rule>
+        <rule name="Border validity present: YT" value="Generic section header/Image source information/Border validity/YT border" occurrence="*" operator="=" scope="mmt">65535</rule>
+        <rule name="Border validity present: YB" value="Generic section header/Image source information/Border validity/YB border" occurrence="*" operator="=" scope="mmt">65535</rule>
+      </policy>
+    </policy>
+  </policy>
+</policy>
