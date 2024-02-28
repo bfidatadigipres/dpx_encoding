@@ -170,6 +170,7 @@ def main():
         else:
             LOGGER.info("Linux TAR programme extracted file to path: %s", untar_fpath)
 
+        os.chmod(untar_fpath, 0o777)
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtracted TAR file successful: {untar_fpath}")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtraction took {minutes_taken} minutes to complete")
         LOGGER.info("It took %s minutes to perform this extraction.", minutes_taken)
