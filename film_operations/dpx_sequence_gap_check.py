@@ -27,7 +27,7 @@ import shutil
 import logging
 import datetime
 
-DPX_PATH = os.environ['QNAP_11_DIGIOPS']
+DPX_PATH = os.environ['FILM_OPS']
 DPX_GAP_CHECK = os.path.join(DPX_PATH, 'automation_dpx/encoding/dpx_gap_check/')
 DPX_REVIEW = os.path.join(DPX_PATH, os.environ['DPX_REVIEW'])
 DPX_ASSESS = os.path.join(DPX_PATH, os.environ['DPX_ASSESS'])
@@ -36,7 +36,7 @@ LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'], 'dpx_sequence_gap_che
 LOCAL_LOG = os.path.join(DPX_REVIEW, 'dpx_gaps_found.log')
 
 # Logging config
-LOGGER = logging.getLogger('dpx_sequence_gap_check_qnap_11')
+LOGGER = logging.getLogger('dpx_sequence_gap_check_film_ops')
 hdlr = logging.FileHandler(LOG)
 formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 hdlr.setFormatter(formatter)
