@@ -156,22 +156,44 @@ def read_csv(dpx_sequence):
         return new_sequence
 
 
-def folder_depth(fullpath):
+def folder_depth(fpath):
     '''
     Check if folder is three depth of four depth
-    across total scan folder contents
+    across total scan folder contents and folders
+    ordered correctly
     '''
-    scan_folders = [x for x in os.listdir(fullpath) if os.path.isdir(os.path.join(fullpath, x))]
-    scan_num = len(scan_folders)
-    folders = 0
+    folder_contents = []
+    for root, dirs, _ in os.walk(fpath):
+        for directory in dirs:
+            folder_contents.append(os.path.join(root, directory))
 
-    for _, dirnames, _ in os.walk(fullpath):
-        folders += len(dirnames)
-
-    if (folders / scan_num) == 2 or (folders / scan_num) == 3:
-        return True
-    else:
+    if len(folder_contents) < 2:
         return False
+    if len(folder_contents) == 2:
+        if 'scan' in folder_contents[0].split('/')[-1].lower() and 'x' in folder_contents[1].split('/')[-1].lower():
+            return True
+    if len(folder_contents) == 3:
+        if 'x' in folder_contents[0].split('/')[-1].lower() and 'scan' in folder_contents[1].split('/')[-1].lower() and 'R' in folder_contents[2].split('/')[-1].upper():
+            return True
+
+    if len(folder_contents) > 3:
+        total_scans = []
+        for num in range(0, len(folder_contents)):
+            if 'scan' in folder_contents[num].split('/')[-1].lower():
+                total_scans.append(folder_contents[num].split('/')[-1])
+
+        scan_num = len(total_scans)
+        if len(folder_contents) / scan_num == 2:
+            if 'scan' not in folder_contents[0].split('/')[-1].lower():
+                return False
+            sorted(folder_contents, key=len)
+            return True
+        if (len(folder_contents) - 1) / scan_num == 2:
+            if 'scan' in folder_contents[0].split('/')[-1].lower() and 'R' not in folder_contents[len(folder_contents) - 1].split('/')[-1].upper():
+                return False
+            return True
+
+    return False
 
 
 def count_files(dirpath, division):
