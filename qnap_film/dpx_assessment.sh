@@ -65,13 +65,13 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -
             # Output metadata to filepath into second level folder
             log "Metadata file creation has started for:"
             log "- ${file_scan_name}/${dimensions}/${dpx}"
-            timeout 3600 mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
+            timeout 18000 mediainfo -f "${files}/${dpx}" > "${DPX_PATH}${file_scan_name}/${filename}_${dpx}_metadata.txt"
             tree "${files}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_contents.txt"
-            byte_size=$(timeout 3600 du -s -b "${DPX_PATH}${filename}")
+            byte_size=$(timeout 18000 du -s -b "${DPX_PATH}${filename}")
             echo "${filename} total folder size in bytes (du -s -b from BK-CI-DATA3): ${byte_size}" > "${DPX_PATH}${file_scan_name}/${filename}_directory_total_byte_size.txt"
 
             # Check for Image orientation 'Bottom to top' and manage with temporary file additions
-            orientation_check=$(timeout 3600 mediaconch --force -p "${POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
+            orientation_check=$(timeout 18000 mediaconch --force -p "${POLICY_PATH2}" "${files}/${dpx}" | grep "pass!")
             if [ -z "$orientation_check" ]
                 then
                     log "Skipping: File does not have 'Bottom to top' orientation issues."
@@ -88,7 +88,7 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -
             fi
 
             # Start comparison of first dpx file against mediaconch policy
-            check=$(timeout 3600 mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
+            check=$(timeout 18000 mediaconch --force -p "${POLICY_PATH}" "${files}/$dpx" | grep "pass!")
             if [ -z "$check" ]
                 then
                     log "FAIL: $file_scan_name DOES NOT CONFORM TO MEDIACONCH POLICY. Adding to tar_dpx_failures_list.txt"
@@ -96,14 +96,14 @@ find "${DPX_PATH}" -maxdepth 3 -mindepth 3 -type d -mmin +30 | while IFS= read -
                     echo "${DPX_PATH}$filename" >> "${DPX_PATH}tar_dpx_list.txt"
                     echo "dpx_assessment $(date "+%Y-%m-%d - %H.%M.%S"): DPX ${filename} failed DPX Mediaconch policy and will be TAR wrapped." >> "${ERRORS}${filename}_errors.log"
                 else
-                    width_find=$(timeout 3600 mediainfo --Details=1 "${files}/$dpx" | grep -i 'Pixels per line:')
+                    width_find=$(timeout 18000 mediainfo --Details=1 "${files}/$dpx" | grep -i 'Pixels per line:')
                     read -a array <<< "$width_find"
                     if [ "${array[4]}" -gt 3999 ]
                         then
                             log "PASS: 4K scan $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
                             echo "${DPX_PATH}$filename" >> "${DPX_PATH}luma_4k_dpx_list.txt"
                         else
-                            descriptor=$(timeout 3600 mediainfo --Details=1 "${files}/$dpx" | grep -i "Descriptor" | grep -i "Luma (Y)")
+                            descriptor=$(timeout 18000 mediainfo --Details=1 "${files}/$dpx" | grep -i "Descriptor" | grep -i "Luma (Y)")
                             if [ -z "$descriptor" ]
                                 then
                                     log "PASS: RGB $file_scan_name has passed the MediaConch policy and can progress to RAWcooked processing path"
