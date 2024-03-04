@@ -64,7 +64,7 @@ def linux_untar_file(fpath):
     os.chdir(new_wd)
     file = fname.split('.tar')[0]
     extract_path = os.path.join(new_wd, file)
-    os.makedirs(extract_path, exist_ok=True)
+    os.makedirs(extract_path, mode=0o777, exist_ok=True)
 
     cmd = [
         "tar", "-xf",
@@ -87,7 +87,7 @@ def python_tarfile(fpath, untar_fpath):
     extract to folder named after tar file
     '''
     if not os.path.exists(untar_fpath):
-        os.makedirs(untar_fpath)
+        os.makedirs(untar_fpath, mode=0o777)
 
     tar_file = tarfile.open(fpath)
     tar_file.extractall(untar_fpath)
@@ -137,7 +137,7 @@ def main():
             untar_file = fname.split('.tar')[0]
             untar_fpath = os.path.join(UNTAR_PATH, untar_file)
             if not os.path.exists(untar_fpath):
-                os.makedirs(untar_fpath, exist_ok=True)
+                os.makedirs(untar_fpath, mode=0o777, exist_ok=True)
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tLinux TAR extraction failed... trying with Python tarfile")
             LOGGER.warning("Unwrapped folder/file not found. Adding to Python tarfile retry list: %s", untar_file)
             LOGGER.info("Attemping Python tarfile unwrap now...")

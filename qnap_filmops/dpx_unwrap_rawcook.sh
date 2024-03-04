@@ -62,6 +62,11 @@ done
 # Begin RAWcooked processing with GNU Parallel
 log "Launching RAWcooked demux of folder now..."
 grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 1 "rawcooked -y --all ${DPX_PATH}{}.mkv -o ${DPX_PATH}RAWcooked_unwrap_{} &>> ${DPX_PATH}{}.mkv.txt"
+grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 5 "sudo chmod 777 -R ${DPX_PATH}RAWcooked_unwrap_{}"
+
+# Run permission modifications for unwrapped folders
+# grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 5 "sudo setfacl -m u:root:rwx ${DPX_PATH}RAWcooked_unwrap_{} && sudo setfacl -m u:nobody:rwx ${DPX_PATH}RAWcooked_unwrap_{} && sudo setfacl -m u:10001106:rwx ${DPX_PATH}RAWcooked_unwrap_{}"
+# grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 5 "sudo setfacl -m g:root:rwx ${DPX_PATH}RAWcooked_unwrap_{} && sudo setfacl -m g:users:rwx ${DPX_PATH}RAWcooked_unwrap_{} && sudo setfacl -m g:10001447:rwx ${DPX_PATH}RAWcooked_unwrap_{}"
 
 # Check for pass statement then mov MKV to 'completed' folder
 log "Demux complete. Checking for log success statements"

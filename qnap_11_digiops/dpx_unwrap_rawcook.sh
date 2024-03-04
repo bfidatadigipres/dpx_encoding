@@ -59,9 +59,10 @@ grep '/mnt/' "${DPX_PATH}unwrap_list.txt" | while IFS= read -r file; do
   fi
 done
 
-# Begin RAWcooked processing with GNU Parallel
+# Begin RAWcooked processing with GNU Parallel / CHMOD RAWcooked folder
 log "Launching RAWcooked demux of folder now..."
 grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 1 "rawcooked -y --all ${DPX_PATH}{}.mkv -o ${DPX_PATH}RAWcooked_unwrap_{} &>> ${DPX_PATH}{}.mkv.txt"
+grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 5 "sudo chmod 777 -R ${DPX_PATH}RAWcooked_unwrap_{}"
 
 # Check for pass statement then mov MKV to 'completed' folder
 log "Demux complete. Checking for log success statements"
