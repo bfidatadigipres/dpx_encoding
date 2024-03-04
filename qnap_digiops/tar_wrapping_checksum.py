@@ -363,7 +363,7 @@ def main():
         try:
             LOGGER.info("Moving and deleting DPX sequence: %s", os.path.join(DELETE_TAR, tar_source))
             shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
-            os.remove(os.path.join(DELETE_TAR, tar_source))
+            os.rmdir(os.path.join(DELETE_TAR, tar_source))
         except Exception as err:
             LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
         try:

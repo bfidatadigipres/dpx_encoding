@@ -156,7 +156,7 @@ def main():
                 if os.path.exists(untar_fpath) and not os.listdir(untar_fpath):
                     LOGGER.info("Moved TAR to failed/ folder. Deleted empty folder: %s", untar_file)
                     log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Deleted empty extraction folder: {untar_file}")
-                    os.remove(untar_fpath)
+                    os.rmdir(untar_fpath)
                 elif os.path.exist(untar_fpath) and os.listdir(untar_fpath):
                     LOGGER.info("Moved TAR to failed/ folder. Folder %s has contents, moving to failed/ folder for review", untar_file)
                     log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Folder {untar_file} has contents. Moving to failed/ folder for review")
