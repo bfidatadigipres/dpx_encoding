@@ -81,6 +81,25 @@ def linux_untar_file(fpath):
         return extract_path
 
 
+def setfacl_call(fpath):
+    '''
+    Setfacl command for unwrapped
+    folders to allow wider access
+    to files
+    '''
+
+    cmd = [
+        "setfacl", "-m",
+        "u:root:rwx,u:nobody:rwx,u:10001106:rwx,g:root:rwx,g:users:rwx,g:10001447:rwx",
+        fpath
+    ]
+
+    success = subprocess.run(cmd)
+    if success.returncode == 0:
+        return True
+    return False
+
+
 def python_tarfile(fpath, untar_fpath):
     '''
     If Linux TAR fails, try with python tarfile
@@ -171,6 +190,9 @@ def main():
             LOGGER.info("Linux TAR programme extracted file to path: %s", untar_fpath)
 
         os.chmod(untar_fpath, 0o777)
+        success = setfacl_call(untar_fpath)
+        if not success:
+            log_list.append(f"{str(datetime.datetime.now())[:10]}\tWARNING: Unable to setfacl with folder {untar_fpath}")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtracted TAR file successful: {untar_fpath}")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtraction took {minutes_taken} minutes to complete")
         LOGGER.info("It took %s minutes to perform this extraction.", minutes_taken)
