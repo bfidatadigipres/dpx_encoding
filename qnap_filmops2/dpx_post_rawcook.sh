@@ -218,7 +218,7 @@ fi
 # ===============================================================
 
 # This block manages the remaining INCOMPLETE cooks that have been killed or stalled mid-encoding
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +2880 -size +10k | while IFS= read -r stale_logs; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +14400 -size +10k | while IFS= read -r stale_logs; do
   stale_fname=$(echo "$stale_logs" | rev | cut -c 5- | rev )
   stale_basename=$(basename "$stale_logs")
   fname_log=$(echo "$stale_basename" | rev | cut -c 9- | rev )
