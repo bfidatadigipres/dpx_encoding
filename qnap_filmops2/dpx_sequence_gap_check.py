@@ -170,13 +170,13 @@ def main():
         if gaps is True:
             LOGGER.warning("Gaps in sequence. Moving file to dpx_for_review/ folder")
             success = move_folder(fpath, 'review')
-            if not success:
+            if success is not True:
                 log_list.append(f"FAILED TO MOVE: {fpath} to dpx_for_review path")
                 log_list.append(f"Please move this file manually.\n")
         else:
             LOGGER.info("No gaps in sequence. Moving to DPX assessment folder")
             success = move_folder(fpath, depth)
-            if not success:
+            if success is not True:
                 log_list.append(f"FAILED TO MOVE: {fpath} to DPX to assess path")
                 log_list.append(f"Please move this file manually.\n")
 

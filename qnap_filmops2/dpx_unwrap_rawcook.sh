@@ -16,8 +16,8 @@ function log {
     echo "$timestamp - $1"
 } >> "${SCRIPT_LOG}dpx_unwrap_rawcook.log"
 
-touch "${DPX_PATH}unwrap_list.txt"
-touch "${DPX_PATH}confirmed_unwrap_list.txt"
+echo "" > "${DPX_PATH}unwrap_list.txt"
+echo "" > "${DPX_PATH}confirmed_unwrap_list.txt"
 
 # Get list of MKV files in UNWRAP_MKV path
 find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -name '*.mkv' -mmin +10 >> "${DPX_PATH}unwrap_list.txt"
@@ -62,7 +62,9 @@ done
 # Begin RAWcooked processing with GNU Parallel
 log "Launching RAWcooked demux of folder now..."
 grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 1 "rawcooked -y --all ${DPX_PATH}{}.mkv -o ${DPX_PATH}RAWcooked_unwrap_{} &>> ${DPX_PATH}{}.mkv.txt"
+
 # Run permission modifications for unwrapped folders
+log "Applying permissions to unwrapped RAWcooked folders..."
 grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 5 "sudo chmod 777 -R ${DPX_PATH}RAWcooked_unwrap_{}"
 grep ^N_ "${DPX_PATH}confirmed_unwrap_list.txt" | parallel --jobs 5 "setfacl -m u:root:rwx,u:nobody:rwx,u:10001106:rwx,g:root:rwx,g:users:rwx,g:10001447:rwx ${DPX_PATH}RAWcooked_unwrap_{}"
 
@@ -90,6 +92,3 @@ find "$DPX_PATH" -maxdepth 1 -mindepth 1 -name "*.mkv.txt" | while IFS= read -r 
 done
 
 log "===================== DPX Unwrap RAWcook ENDED ====================="
-
-rm "${DPX_PATH}unwrap_list.txt"
-rm "${DPX_PATH}confirmed_unwrap_list.txt"
