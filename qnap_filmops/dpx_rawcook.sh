@@ -8,6 +8,7 @@
 SCRIPT_LOG="${QNAP_FILMOPS}${DPX_SCRIPT_LOG}"
 DPX_PATH="${QNAP_FILMOPS}${DPX_COOK}"
 MKV_DEST="${QNAP_FILMOPS}${MKV_ENCODED}"
+LOG_PATH="${LOG_PATH}rawcooked_encoding.log"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
@@ -74,8 +75,8 @@ grep ^N_ "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
 done
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 8 --timeout 259200 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 8 --timeout 259200 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 8 --timeout 259200 "SIZE=$(du -s -b ${DPX_PATH}${}) && SECONDS=0 && rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && duration=$SECONDS $$ echo '${DPX_PATH}{} - $((duration / 60)) minutes - ${SIZE} bytes' >> $LOG_PATH"
+cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 8 --timeout 259200 "SIZE=$(du -s -b ${DPX_PATH}${}) && SECONDS=0 && rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && duration=$SECONDS $$ echo '${DPX_PATH}{} - $((duration / 60)) minutes - ${SIZE} bytes' >> $LOG_PATH"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
