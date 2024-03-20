@@ -68,25 +68,35 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -
     fi
 done
 
-# ==========================================================================
-# Matroska checks using MediaConch policy, remove fails to Killed folder ===
-# ==========================================================================
+# ====================================================================================================
+# Log check/mediaconch check passes move to MKV Check folder and logs folders, and DPX folder move ===
+# ====================================================================================================
 
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -r files; do
-  check=$(mediaconch --force -p "$MKV_POLICY" "$files" | grep "pass! ${files}")
-  filename=$(basename "$files")
-  fname_log=$(echo "$filename" | rev | cut -c 5- | rev)
-  if [ -z "$check" ];
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
+  success_check=$(grep 'Reversibility was checked, no issue detected.' "$fname")
+  mkv_filename=$(basename "$fname" | rev | cut -c 5- | rev )
+  fname_log=$(echo "$mkv_filename" | rev | cut -c 5- | rev)
+  dpx_success_path=$(echo "$fname" | rev | cut -c 9- | rev )
+  if [ -z "$success_check" ];
     then
-      log "FAIL: RAWcooked MKV $filename has failed the mediaconch policy"
-      log "Moving $filename to killed directory, and amending log fail_$filename.txt"
-      log "$check"
-      echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${filename} failed the FFV1 MKV Mediaconch policy." >> "${ERRORS}${fname_log}_errors.log"
-      echo "    Matroska moved to Killed folder, DPX sequence will retry RAWcooked encoding." >> "${ERRORS}${fname_log}_errors.log"
-      echo "    Please contact the Knowledge and Collections Developer about this Mediaconch policy failure." >> "${ERRORS}${fname_log}_errors.log"
-      echo "$filename" >> "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
+      log "SKIP: Matroska $mkv_filename has not completed, or has errors detected"
     else
-      log "PASS: RAWcooked MKV file $filename has passed the Mediaconch policy. Whoopee"
+      check=$(mediaconch --force -p "$MKV_POLICY" "${MKV_DESTINATION}mkv_cooked/{$mkv_filename}" | grep "pass! ${MKV_DESTINATION}mkv_cooked/{$mkv_filename}")
+      if [ -z "$check" ];
+        then
+          log "FAIL: RAWcooked MKV $mkv_filename has failed the mediaconch policy"
+          log "Moving $mkv_filename to killed directory, and amending log fail_$mkv_filename.txt"
+          log "$check"
+          echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${mkv_filename} failed the FFV1 MKV Mediaconch policy." >> "${ERRORS}${fname_log}_errors.log"
+          echo "    Matroska moved to Killed folder, DPX sequence will retry RAWcooked encoding." >> "${ERRORS}${fname_log}_errors.log"
+          echo "    Please contact the Knowledge and Collections Developer about this Mediaconch policy failure." >> "${ERRORS}${fname_log}_errors.log"
+          echo "$mkv_filename" >> "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt"
+        else
+          log "PASS: RAWcooked MKV file $filename has passed the Mediaconch policy. Whoopee"
+          log "COMPLETED: RAWcooked MKV $mkv_filename has completed successfully and will be moved to check folder"
+          echo "$dpx_success_path" >> "${MKV_DESTINATION}rawcooked_success.log"
+          echo "$mkv_filename" >> "${MKV_DESTINATION}successful_mkv_list.txt"
+      fi
   fi
 done
 
@@ -94,24 +104,6 @@ done
 grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_DESTINATION}killed/{}"
 # Move the txt files to logs folder and prepend -fail- to filename
 grep ^N_ "${MKV_DESTINATION}temp_mediaconch_policy_fails.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/fail_{}.txt"
-
-# ===================================================================================
-# Log check passes move to MKV Check folder and logs folders, and DPX folder move ===
-# ===================================================================================
-
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +30 | while IFS= read -r fname; do
-  success_check=$(grep 'Reversibility was checked, no issue detected.' "$fname")
-  mkv_filename=$(basename "$fname" | rev | cut -c 5- | rev )
-  dpx_success_path=$(echo "$fname" | rev | cut -c 9- | rev )
-  if [ -z "$success_check" ];
-    then
-      log "SKIP: Matroska $mkv_filename has not completed, or has errors detected"
-    else
-      log "COMPLETED: RAWcooked MKV $mkv_filename has completed successfully and will be moved to check folder"
-      echo "$dpx_success_path" >> "${MKV_DESTINATION}rawcooked_success.log"
-      echo "$mkv_filename" >> "${MKV_DESTINATION}successful_mkv_list.txt"
-  fi
-done
 
 # Move successfully encoded MKV files to check folder
 grep ^N_ "${MKV_DESTINATION}successful_mkv_list.txt" | parallel --jobs 10 mv "${MKV_DESTINATION}mkv_cooked/{}" "${CHECK_FOLDER}{}"
