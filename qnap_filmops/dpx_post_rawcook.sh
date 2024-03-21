@@ -38,6 +38,7 @@ touch "${MKV_DESTINATION}matroska_deletion.txt"
 touch "${MKV_DESTINATION}matroska_deletion_list.txt"
 touch "${MKV_DESTINATION}stale_encodings.txt"
 touch "${MKV_DESTINATION}error_list.txt"
+touch "${MKV_DESTINATION}temp_fail_mkv_list.txt"
 # Deleted in dpx_rawcook.sh
 touch "${MKV_DESTINATION}reversibility_list.txt"
 
@@ -52,10 +53,9 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -
     size=$(du -m "$fname" | cut -f1 )
     if [ "${size}" -gt 1048560 ]
         then
+            echo "$filename" >> "${MKV_DESTINATION}temp_fail_mkv_list.txt"
             log "${filename} maybe larger than 1TB: ${size}mb. Moving to killed/ folder"
-            mv "${fname}" "${MKV_DESTINATION}killed/Oversize_${filename}"
             log "Moving failed ${filename}.log to ${MKV_DESTINATION}logs/"
-            mv "${fname}.log" "${MKV_DESTINATION}logs/failed_oversize_${filename}.log"
             echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${filename} is over 1TB." >> "${ERRORS}${fname_log}_errors.log"
             echo "    Matroska moved to Killed folder. All multipart DPX part wholes may need reviewing." >> "${ERRORS}${fname_log}_errors.log"
             echo "    Please contact the Knowledge and Collections Developer about this repeated encoding failure." >> "${ERRORS}${fname_log}_errors.log"
@@ -66,6 +66,10 @@ find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv" -mmin +80 | while IFS= read -
             log "File ${filename} is under 1TB in size. Looking for completed log check."
     fi
 done
+
+# Move files outside of while loop
+grep ^N_ "${MKV_DESTINATION}temp_fail_mkv_list.txt" | parallel --jobs 3 mv "${MKV_DESTINATION}mkv_cooked/{}" "${MKV_DESTINATION}killed/Oversize_{}.mkv"
+grep ^N_ "${MKV_DESTINATION}temp_fail_mkv_list.txt" | parallel --jobs 3 mv "${MKV_DESTINATION}mkv_cooked/{}.txt" "${MKV_DESTINATION}logs/failed_oversize_{}.txt"
 
 # ====================================================================================================
 # Log check/mediaconch check passes move to MKV Check folder and logs folders, and DPX folder move ===
@@ -87,7 +91,7 @@ done
 
 # Run Matroska policy validations
 touch "${MKV_DESTINATION}temp_success_mkv_list.txt"
-touch "${MKV_DESTINATION}temp_fail_mkv_list.txt"
+echo '' > "${MKV_DESTINATION}temp_fail_mkv_list.txt"
 
 while read mkvs; do
   log "Checking $mkvs against Matroska MediaConch policy"
@@ -96,9 +100,9 @@ while read mkvs; do
   if [ -z "$check" ];
     then
       log "FAIL: RAWcooked MKV $mkvs has failed the mediaconch policy"
-      log "Moving $filename to killed directory, and amending log fail_$mkvs.txt"
+      log "Moving $mkvs to killed directory, and amending log fail_$mkvs.txt"
       log "$check"
-      echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska ${mkvs} failed the FFV1 MKV Mediaconch policy." >> "${ERRORS}${fname}_errors.log"
+      echo "post_rawcooked $(date "+%Y-%m-%d - %H.%M.%S"): Matroska $mkvs failed the FFV1 MKV Mediaconch policy." >> "${ERRORS}${fname}_errors.log"
       echo "    Matroska moved to Killed folder, DPX sequence will retry RAWcooked encoding." >> "${ERRORS}${fname}_errors.log"
       echo "    Please contact the Knowledge and Collections Developer about this Mediaconch policy failure." >> "${ERRORS}${fname}_errors.log"
       echo "$mkvs" >> "${MKV_DESTINATION}temp_fail_mkv_list.txt"
@@ -219,7 +223,7 @@ fi
 # ===============================================================
 
 # This block manages the remaining INCOMPLETE cooks that have been killed or stalled mid-encoding
-find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +14400 -size +10k | while IFS= read -r stale_logs; do
+find "${MKV_DESTINATION}mkv_cooked/" -name "*.mkv.txt" -mmin +36000 -size +10k | while IFS= read -r stale_logs; do
   stale_fname=$(echo "$stale_logs" | rev | cut -c 5- | rev )
   stale_basename=$(basename "$stale_logs")
   fname_log=$(echo "$stale_basename" | rev | cut -c 9- | rev )
@@ -237,6 +241,7 @@ if [ -s "${MKV_DESTINATION}stale_encodings.txt" ];
     cat "${MKV_DESTINATION}stale_encodings.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
     # Delete broken log files
     grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | parallel --jobs 10 'rm {}.txt'
+    grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | parallel --jobs 10 'rm {}.rawcooked_reversibility_data'
   else
     echo "No stale encodings to process at this time. Skipping."
 fi
