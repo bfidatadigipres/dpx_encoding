@@ -73,10 +73,10 @@ grep ^N_ "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
       echo "${dpx_seq}" >> "${MKV_DEST}retry_list_no_flip.txt"
   fi
 done
-cat "${MKV_DEST}retry_list_no_flip.txt" 
+cat "${MKV_DEST}retry_list_no_flip.txt"
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-grep ^N_ "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 1 "SIZE=$(du -s -b ${DPX_PATH}{}) && SECONDS=0 && rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && duration=$SECONDS && echo '${DPX_PATH}{} - $((duration / 60)) minutes - $SIZE bytes' >> $LOG_PATH"
-grep ^N_ "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 1 "SIZE=$(du -s -b ${DPX_PATH}{}) && SECONDS=0 && rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && duration=$SECONDS && echo '${DPX_PATH}{} - $((duration / 60)) minutes - $SIZE bytes' >> $LOG_PATH"
+grep ^N_ "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 20 "time rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv >> ${MKV_DEST}mkv_cooked/{}.mkv.txt 2>&1"
+grep ^N_ "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 20 "time rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv >> ${MKV_DEST}mkv_cooked/{}.mkv.txt 2>&1"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -100,7 +100,7 @@ find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -name "N_*" | while IFS= read
 done
 
 # Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt and write items to log
-grep ^N_ "${MKV_DEST}temporary_rawcook_list.txt" | sort -n -k10.12 | uniq | head -20 > "${MKV_DEST}rawcook_list.txt"
+grep ^N_ "${MKV_DEST}temporary_rawcook_list.txt" | sort -n -k10.12 | uniq | head -40 > "${MKV_DEST}rawcook_list.txt"
 cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
 log "DPX folder will be cooked:"
 log "${cook_list}"
@@ -115,9 +115,9 @@ grep ^N_ "${MKV_DEST}rawcook_list.txt" | while IFS= read -r dpx_seq; do
   fi
 done
 cat "${MKV_DEST}rawcook_list_no_flip.txt"
-# Begin RAWcooked processing with GNU Parallel
-grep ^N_ "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --jobs 1 "SIZE=$(du -s -b ${DPX_PATH}{}) && SECONDS=0 && rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && duration=$SECONDS && echo '${DPX_PATH}{} - $((duration / 60)) minutes - $SIZE bytes' >> $LOG_PATH"
-grep ^N_ "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --jobs 1 "SIZE=$(du -s -b ${DPX_PATH}{}) && SECONDS=0 && rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && duration=$SECONDS && echo '${DPX_PATH}{} - $((duration / 60)) minutes - $SIZE bytes' >> $LOG_PATH"
+# Begin RAWcooked processing with GNU Parallele
+grep ^N_ "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --jobs 20 "time rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv >> ${MKV_DEST}mkv_cooked/{}.mkv.txt 2>&1"
+grep ^N_ "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --jobs 20 "time rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv >> ${MKV_DEST}mkv_cooked/{}.mkv.txt 2>&1"
 
 log "===================== DPX RAWcook ENDED ====================="
 
