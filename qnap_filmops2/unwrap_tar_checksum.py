@@ -132,6 +132,8 @@ def main():
         fname_log = fname.split(".")[0]
         if 'unwrapped_tar_checksum.log' in str(fname):
             continue
+        if fname.endswith('.md5'):
+            continue
         if not fname.endswith(('.tar', '.TAR')):
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tSKIPPING - File is not a TAR file: {fname}.")
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tPlease remove non TAR files from 'unwrap_tar' folder.")

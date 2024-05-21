@@ -24,7 +24,10 @@
     <rule name="FFV1 is lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
     <rule name="Frame Rate is Constant?" value="FrameRate_Mode" tracktype="Video" occurrence="*" operator="=">CFR</rule>
     <rule name="Video uses error detection" value="extra/ErrorDetectionType" tracktype="Video" occurrence="*" operator="=">Per slice</rule>
-    <rule name="Video minimum slice count" value="extra/MaxSlicesCount" tracktype="Video" occurrence="*" operator="&gt;=">16</rule>
+    <policy type="or" name="MaxSliceCount greater than 16">
+      <rule name="Video minimum slice count" value="extra/MaxSlicesCount" tracktype="Video" occurrence="*" operator="&gt;=">16</rule>
+      <rule name="Video minimum slice count" value="Format_Settings_SliceCount" tracktype="Video" occurrence="*" operator="&gt;=">16</rule>
+    </policy>
     <rule name="Duration field exists" value="Duration" tracktype="Video" occurrence="*"/>
     <rule name="Height is gt/et 1280" value="Height" tracktype="Video" occurrence="*" operator="&gt;=">900</rule>
     <rule name="Width is gt/et 2048" value="Width" tracktype="Video" occurrence="*" operator="&gt;=">1000</rule>
