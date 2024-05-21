@@ -247,7 +247,6 @@ def main():
         directory = True
 
     if directory:
-        files = [ x for x in os.listdir(fullpath) if os.path.isfile(os.path.join(fullpath, x)) ]
         for root, _, files in os.walk(fullpath):
             for file in files:
                 dct = get_checksum(os.path.join(root, file))
@@ -339,20 +338,8 @@ def main():
         log.append(f"File size is {file_size} bytes")
         LOGGER.info("File size is %s bytes.", file_size)
         if int(file_size) > 1099511627770:
-            log.append("FILE IS TOO LARGE FOR INGEST TO BLACK PEARL. Moving TAR and source folder to oversized folder path")
-            LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI: %s", os.path.join(OVERSIZE, f'{tar_source}.tar'))
-            shutil.move(tar_path, os.path.join(OVERSIZE, f'{tar_source}.tar'))
-            error_mssg1 = f"TAR file too large for ingest to DPI - size {file_stats.st_size} bytes\n\t{tar_path}\n\tDPX sequence moved to oversized_sequences/ folder."
-            error_mssg2 = "as this file is too large for ingest and will need repeat splitting"
-            error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
-            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source)
-            shutil.move(fullpath, os.path.join(OVERSIZE, tar_source))
-            log.append(f"==== Log actions complete: {fullpath} ====")
-            LOGGER.info("==== TAR Wrapping Check script END =================================")
-            # Write all log items in block
-            for item in log:
-                local_logs(AUTO_TAR, item)
-            sys.exit()
+            log.append("FILE IS OVER 1TB IN SIZE AND WILL USING BLOBBING TO BE PUT TO DPI")
+            LOGGER.warning("TAR file is over 1TB in size and will be PUT to DPI using blobbing: %s", tar_source)
 
         log.append("Moving TAR file to Autoingest, and moving source file to deletions path.")
         try:
@@ -363,7 +350,7 @@ def main():
         try:
             LOGGER.info("Moving and deleting DPX sequence: %s", os.path.join(DELETE_TAR, tar_source))
             shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
-            os.rmdir(os.path.join(DELETE_TAR, tar_source))
+            # os.rmdir(os.path.join(DELETE_TAR, tar_source))
         except Exception as err:
             LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
         try:

@@ -246,7 +246,6 @@ def main():
         directory = True
 
     if directory:
-        files = [ x for x in os.listdir(fullpath) if os.path.isfile(os.path.join(fullpath, x)) ]
         for root, _, files in os.walk(fullpath):
             for file in files:
                 dct = get_checksum(os.path.join(root, file))
