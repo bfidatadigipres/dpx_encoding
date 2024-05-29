@@ -18,16 +18,13 @@ import sys
 import json
 import shutil
 import sqlite3
-import datetime
-from ds3 import ds3, ds3Helpers
-from dagster import asset, DynamicOut, DynamicOutput
+from dagster import asset, DynamicOutput
 import dpx_assess
 import sqlite_funcs
 import dpx_seq_gap_check
 from .config import DOWNTIME, DATABASE, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW
 
-CLIENT = ds3.createClientFromEnv()
-HELPER = ds3Helpers.Helper(client=CLIENT)
+
 CONNECT = sqlite3.connect(DATABASE)
 CONNECT.execute(
     'CREATE TABLE IF NOT EXISTS PROCESSING (name TEXT, colourspace TEXT, size_dpx TEXT, bitdepth TEXT, start TEXT, splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, rawcook_version TEXT)'
