@@ -86,7 +86,18 @@ def assessment(context, dynamic_process_subfolders):
     context.log.info(f"Processing DPX sequence: {dpx_path}")
 
     part, whole = dpx_assess.get_partwhole(dpx_seq)
+    if not part:
+        sqlite_funcs.update_table(dpx_seq, f'DPX sequence named incorrectly.', DATABASE)
+        return {"status": "partWhole failure", "dpx_seq": dpx_path}        
     context.log.info(f"* Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
+
+    folder_depth = dpx_assess.check_folder_depth(dpx_path)
+    if folder_depth is None:
+        # Incorrect formatting of folders
+        sqlite_funcs.update_table(dpx_seq, f'Folders formatted incorrectly.', DATABASE)
+        return {"status": "folder failure", "dpx_seq": dpx_path}
+    context.log.info(f"Folder depth is {folder_depth}")
+
     gaps, missing = dpx_seq_gap_check.gaps(dpx_path)
     if gaps is True:
         context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
@@ -109,7 +120,11 @@ def assessment(context, dynamic_process_subfolders):
 
 @asset
 def handle_assessments(assessment):
-    ''' Move to splittig or to encoding'''
+    '''
+    Move to splittig or to encoding
+    by updating sqlite data and trigger
+    splitting.py (next asset scripts)
+    '''
     if assessment['status'] ==  'gaps':
         pass
     elif assessment['status'] == 'tar':
@@ -125,10 +140,3 @@ def handle_assessments(assessment):
         # Initiate splitting with rawcook argument
         pass
 
-@asset
-def splitting(context, dpx_path):
-    '''
-    Called by dpx_assessment module if file needs splittig
-    and references dpx_splitting module as needed
-    '''
-    pass

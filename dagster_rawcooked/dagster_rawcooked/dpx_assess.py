@@ -25,15 +25,15 @@ def count_folder_depth(fpath):
             folder_contents.append(os.path.join(root, directory))
 
     if len(folder_contents) < 2:
-        return None, None
+        return None
     if len(folder_contents) == 2:
         if 'scan' in folder_contents[0].split('/')[-1].lower() and 'x' in folder_contents[1].split('/')[-1].lower():
             sorted(folder_contents, key=len)
-            return '3', [folder_contents[-1]]
+            return '3'
     if len(folder_contents) == 3:
         if 'x' in folder_contents[0].split('/')[-1].lower() and 'scan' in folder_contents[1].split('/')[-1].lower() and 'R' in folder_contents[2].split('/')[-1].upper():
             sorted(folder_contents, key=len)
-            return '4', [folder_contents[-1]]
+            return '4'
     if len(folder_contents) > 3:
         total_scans = []
         for num in range(0, len(folder_contents)):
@@ -44,17 +44,17 @@ def count_folder_depth(fpath):
         if len(folder_contents) / scan_num == 2:
             # Ensure folder naming order is correct
             if 'scan' not in folder_contents[0].split('/')[-1].lower():
-                return None, None
+                return None
             sorted(folder_contents, key=len)
-            return '3', folder_contents[-scan_num:]
+            return '3'
         if (len(folder_contents) - 1) / scan_num == 2:
             # Ensure folder naming order is correct
             if 'scan' in folder_contents[0].split('/')[-1].lower() and 'R' not in folder_contents[len(folder_contents) - 1].split('/')[-1].upper():
-                return None, None
+                return None
             sorted(folder_contents, key=len)
-            return '4', folder_contents[-scan_num:]
+            return '4'
 
-    return None, None
+    return None
 
 
 def get_metadata(dpath):
