@@ -9,6 +9,7 @@ import adlib_v3 as adlib
 # Paths required
 CID_API = os.environ.get('CID_API4')
 LOG_PATH = os.environ.get('LOG_PATH')
+CSV_PATH = os.path.join(LOG_PATH, 'splitting_document.csv')
 SPLITTING_LOG = ''
 
 
@@ -57,8 +58,7 @@ def read_csv(dpx_sequence):
     '''
     number_present = True
     new_sequence = dpx_sequence
-    csv_path = os.path.join(LOG_PATH, 'splitting_document.csv')
-    with open(csv_path, newline='') as fname:
+    with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
 
         while number_present is True:
@@ -137,6 +137,7 @@ def count_files(dirpath, division):
     elif division == '3':
         cuts = int(file_count) // 3
         dpx_block1 = dpx_sequence[0]
+        start_block2 = cuts
         start_block3 = (cuts * 2)
         dpx_block2 = dpx_sequence[cuts]
         dpx_block3 = dpx_sequence[start_block3]
@@ -445,35 +446,25 @@ def launch_split(dpx_path, kb_size, encoding):
         splitting_log(f"Moving DPX sequence {dpx_sequence} to 'dpx_for_review/' folder")
         return {"status": "Folder structure failure", "dpx_seq": dpx_path}
 
-    # Separate singleton files from part wholes
-    if dpx_sequence.endswith('_01of01'):
-        singleton = True
-    else:
-        new_num = read_csv(dpx_sequence)
-        singleton = False
+    # Check if folder needs new number (previous part split already)
+    new_num = read_csv(dpx_sequence)
+    if len(new_num) > 0:
+        try:
+            new_path = renumber(dpx_path, new_num)
+            splitting_log("\n*** DPX sequence found in CSV and needs renumbering")
+            splitting_log(f"DPX sequence path {dpx_path} being renamed to {new_path}")
+            dpx_path = new_path
+            dpx_sequence = new_num
+        except Exception:
+            return {"status": "PartWhole renumbering failure", "dpx_seq": dpx_path}
 
-        # Renumber part whole folder, update dpx_path / dpx_sequence
-        if len(new_num) > 0:
-            try:
-                new_path = renumber(dpx_path, new_num)
-                splitting_log("\n*** DPX sequence found in CSV and needs renumbering")
-                splitting_log(f"DPX sequence path {dpx_path} being renamed to {new_path}")
-                dpx_path = new_path
-                dpx_sequence = new_num
-            except Exception:
-                return {"status": "PartWhole renumbering failure", "dpx_seq": dpx_path}
-
-    # Does this sequence need splitting?
+    # How many times does this sequence need splitting?
     division = workout_division(encoding, kb_size)
     if division == 'oversize':
-        return {"status": "DPX seq is oversize failure", "dpx_seq": dpx_path}
+        return {"status": "DPX oversize failure", "dpx_seq": dpx_path}
 
     # Name preparations for folder splitting
-    path_split = os.path.split(dpx_path)
-    root_path = path_split[0]
-
-    # JMW up to here (must return status, path and reels data at end)
-    # {"status": "DPX seq is oversize failure", "dpx_seq": dpx_path, "reels": [path1, path2, path3]}
+    root_path = os.path.split(dpx_path)[0]
 
     cid_data = []
     splitting_log(f"\n------ {dpx_sequence} SPLIT START ------ {str(datetime.datetime.now())}")
@@ -501,7 +492,8 @@ def launch_split(dpx_path, kb_size, encoding):
     if data[5]:
         folder5 = data[5]
     post_foldername_list = return_range_following(dpx_sequence, division)
-    # Append all new numbers to CSV
+
+    # Append all new numbers to CSV/logs
     splitting_log("New folder numbers:")
     cid_data.append("New folder numbers:")
     if len(pre_foldername_list) > 0:
@@ -518,7 +510,6 @@ def launch_split(dpx_path, kb_size, encoding):
                 new_path = renumber(dpx_path, new_dpx_sequence)
                 dpx_sequence = new_dpx_sequence
                 dpx_path = new_path
-
         for key, val in dic.items():
             write_csv(key, val)
             splitting_log(f"{key} will be renamed {val}")
@@ -532,7 +523,6 @@ def launch_split(dpx_path, kb_size, encoding):
 
     # Find path for all scan folders containing DPX files
     new_folder1 = new_folder2 = new_folder3 = new_folder4 = new_folder5 = ''
-    reels = []
     for root, _, files in os.walk(dpx_path):
         for file in files:
             if file.endswith((".dpx", ".DPX")):
@@ -566,23 +556,18 @@ def launch_split(dpx_path, kb_size, encoding):
                 splitting_log(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
                 cid_data.append(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
                 cid_data.append(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
-                reels.append(new_folder1)
                 if folder2:
                     splitting_log(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
                     cid_data.append(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
-                    reels.append(new_folder2)
                 if folder3:
                     splitting_log(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
                     cid_data.append(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
-                    reels.append(new_folder3)
                 if folder4:
                     splitting_log(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
                     cid_data.append(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
-                    reels.append(new_folder4)
                 if folder5:
                     splitting_log(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
                     cid_data.append(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
-                    reels.append(new_folder5)
 
                 dpx_list = block_data[1]
                 for dictionary in dpx_list:
@@ -673,17 +658,23 @@ def launch_split(dpx_path, kb_size, encoding):
                 break
 
         # Update splitting data in text file to each new folder for encoding
+        reels = []
         cid_data_string = '\n'.join(cid_data)
         make_text_file(cid_data_string, dpx_path)
         make_text_file(cid_data_string, folder1)
+        reels.append(folder1)
         if folder2:
             make_text_file(cid_data_string, folder2)
+            reels.append(folder2)
         if folder3:
             make_text_file(cid_data_string, folder3)
+            reels.append(folder3)
         if folder4:
             make_text_file(cid_data_string, folder4)
+            reels.append(folder4)
         if folder5:
             make_text_file(cid_data_string, folder5)
+            reels.append(folder5)
 
         # Update splitting data to CID item record UTB.content (temporary)
         utb_content = get_utb(priref)
@@ -761,9 +752,9 @@ def mass_move(dpx_path, new_path):
         try:
             shutil.move(dpx_path, new_path)
         except Exception as err:
-            LOGGER.warning("mass_move(): %s", err)
+            print(err)
     else:
-        LOGGER.warning("mass_move(): One of supplied paths does not exist:\n%s - %s", dpx_path, new_path)
+        print(f"mass_move(): One of supplied paths does not exist:\n{dpx_path} - {new_path}")
 
 
 def renumber(dpx_path, new_num):
@@ -776,10 +767,9 @@ def renumber(dpx_path, new_num):
     new_path = os.path.join(path[0], new_num)
     try:
         os.rename(dpx_path, new_path)
-        LOGGER.info("renumber(): Rename paths:\n%s changed to %s", dpx_path, new_path)
         return new_path
     except Exception as error:
-        LOGGER.warning("renumber(): Unable to rename paths:\n%s NOT CHANGED TO %s\n%s", dpx_path, new_path, error)
+        print(error)
         return False
 
 
@@ -791,10 +781,9 @@ def make_dirs(new_path):
     '''
     try:
         os.makedirs(new_path, mode=0o777, exist_ok=True)
-        LOGGER.info("make_dirs(): New path mkdir: %s", new_path)
         return True
     except Exception as error:
-        LOGGER.warning("make_dirs(): Unable to make new directory: %s\n%s", new_path, error)
+        print(error)
         return None
 
 

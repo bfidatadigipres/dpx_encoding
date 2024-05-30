@@ -22,7 +22,7 @@ from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_med
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
 from .dpx_splitting import launch_split
-from .config import DOWNTIME, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
+from .config import DOWNTIME, QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
 
 
 def check_control():
@@ -42,15 +42,7 @@ def get_dpx_folders():
     extract items partially processed
     '''
     dpx_folder = os.path.join(QNAP_FILM, ASSESS)
-    mkv_folder = os.path.join(QNAP_FILM, MKV_ENCODED, 'mkv_cooked')
-
     dpx_folders = [x for x in os.listdir(dpx_folder) if os.path.isdir(os.path.join(dpx_folder, x))]
-    mkv_processing = [x for x in os.listdir(mkv_folder) if x.endswith('.mkv.txt')]
-
-    for file in mkv_processing:
-        mkv = file.split('.')[0]
-        if mkv in dpx_folders:
-            dpx_folders.remove(mkv)
 
     return dpx_folders
 
