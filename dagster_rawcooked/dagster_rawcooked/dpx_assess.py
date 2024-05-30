@@ -57,11 +57,32 @@ def count_folder_depth(fpath):
     return None
 
 
-def get_metadata(dpath):
-    ''' Retrieve metadata with subprocess'''
-    pass
+def get_metadata(stream, arg, dpath):
+    ''' Retrieve metadata with subprocess '''
+
+    cmd = [
+        'mediainfo', '--Full',
+        '--Language=raw',
+        '--Output={stream};%{arg}%',
+        dpath
+    ]
+    
+    meta = subprocess.check_output(cmd)
+    return meta.decode('utf-8')
 
 
-def mediaconch(dpath):
-    ''' Check for pass! in mediaconch reponse'''
-    pass
+def mediaconch(dpath, policy):
+    ''' Check for pass! {path} in mediaconch reponse '''
+
+    cmd = [
+        'mediaconch', '--force',
+        '-p', policy,
+        dpath
+    ]
+    
+    meta = subprocess.check_output(cmd)
+    meta.decode('utf-8')
+    if meta.startswith(f'pass! {dpath}'):
+        return True, meta
+    
+    return False, meta
