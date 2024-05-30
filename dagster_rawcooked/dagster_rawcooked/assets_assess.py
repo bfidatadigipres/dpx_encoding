@@ -18,8 +18,8 @@ import sys
 import json
 import shutil
 from dagster import asset, DynamicOutput
-import dpx_assess
-import sqlite_funcs
+from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
+from .sqlite_funcs import create_first_entry, update_table
 import dpx_seq_gap_check
 from .config import DOWNTIME, DATABASE, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW
 
@@ -75,16 +75,20 @@ def assessment(context, dynamic_process_subfolders):
     dpx_seq = os.path.split(dpx_path)
     context.log.info(f"Processing DPX sequence: {dpx_path}")
 
-    part, whole = dpx_assess.get_partwhole(dpx_seq)
+    part, whole = get_partwhole(dpx_seq)
     if not part:
-        sqlite_funcs.update_table(dpx_seq, f'DPX sequence named incorrectly.', DATABASE)
+        row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.')
+        if not row_id:
+            context.log.warning("Failed to update status with 'DPX sequence named incorrectly'")
         return {"status": "partWhole failure", "dpx_seq": dpx_path}        
     context.log.info(f"* Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
 
-    folder_depth = dpx_assess.check_folder_depth(dpx_path)
+    folder_depth, first_dpx = count_folder_depth(dpx_path)
     if folder_depth is None:
         # Incorrect formatting of folders
-        sqlite_funcs.update_table(dpx_seq, f'Folders formatted incorrectly.', DATABASE)
+        row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.')
+        if not row_id:
+            context.log.warning("Failed to update status with 'Folders formatted incorrectly'")
         return {"status": "folder failure", "dpx_seq": dpx_path}
     context.log.info(f"Folder depth is {folder_depth}")
 
@@ -93,17 +97,38 @@ def assessment(context, dynamic_process_subfolders):
         context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
         review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
         shutil.move(dpx_path, review_path)
-        sqlite_funcs.update_table(dpx_seq, f'Gaps found in sequence: {missing}.', DATABASE)
+        row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.')
+        if not row_id:
+            context.log.warning(f"Failed to update status with 'Gaps found in sequence'\n{missing}")
         return {"status": "gaps", "dpx_seq": dpx_path}
 
-    size, cspace, bitdepth = dpx_assess.get_metadata(dpx_path)
-    context.log.info(f"* Size: {size} | Colourspace {cspace} | Bit-depth {bitdepth}")
-    policy_pass = dpx_assess.mediaconch(dpx_path, DPOLICY)
+    size = get_folder_size(dpx_path)
+    cspace = get_metadata('Video', 'ColorSpace', first_dpx)
+    bdepth = get_metadata('Video', 'BitDepth', first_dpx)
+    width = get_metadata('Video', 'Width', first_dpx)
+    if not cspace:
+        cspace = get_metadata('Image', 'ColorSpace', first_dpx)
+    if not bdepth:
+        bdepth = get_metadata('Image', 'BitDepth', first_dpx)
+    if not width:
+        width = get_metadata('Image', 'Width', first_dpx)
+
+    split = tar = fourk = luma = False
+    context.log.info(f"* Size: {size} | Colourspace {cspace} | Bit-depth {bdepth} | Pixel width {width}")
+    policy_pass, response = get_mediaconch(dpx_path, DPOLICY)
     context.log.info(f"* DPX policy status: {policy_pass}")
+    if size > 1395864370:
+        split = True
     if not policy_pass:
-        context.log.info(f"DPX sequence {dpx_seq} failed DPX policy: {dpx_path}")
-        # Move to tar wrap into splitting if needed
-        # Exit
+        tar = True
+        context.log.info(f"DPX sequence {dpx_seq} failed DPX policy:\n{response}")
+    if int(width) > 3999:
+        fourk = True
+    if 'Y' == cspace:
+        luma = True
+
+
+
     else:
         return {"status": "split rawcook", "dpx_seq": dpx_path, "size": size}
 

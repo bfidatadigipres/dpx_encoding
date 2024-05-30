@@ -21,7 +21,7 @@ def format_date_time():
     return now.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def create_frist_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpath):
+def create_first_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpath):
     '''
     Apply name and start time etc to dB
     '''
@@ -47,13 +47,20 @@ def create_frist_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpat
             connect.close()
 
 
-def update_table(fname, new_status):
+def update_table(arg, fname, new_status):
     '''
     Update specific row with new
     data, for fname match
     '''
     data = (new_status, fname)
-    sql_query = '''UPDATE PROCESSING SET status = ? WHERE name = ?'''
+    if arg == 'status':
+        sql_query = '''UPDATE PROCESSING SET status = ? WHERE name = ?'''
+    elif arg == 'size_mkv':
+        sql_query = '''UPDATE PROCESSING SET size_mkv = ? WHERE name = ?'''
+    elif arg == 'splitting':
+        sql_query = '''UPDATE PROCESSING SET splitting = ? WHERE name = ?'''
+    elif arg == 'complete':
+        sql_query = '''UPDATE PROCESSING SET complete = ? WHERE name = ?'''
     try:
         connect = sqlite3.connect(DATABASE)
         cur = connect.cursor()

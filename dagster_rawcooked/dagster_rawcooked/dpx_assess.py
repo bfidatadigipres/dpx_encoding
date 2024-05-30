@@ -71,7 +71,7 @@ def get_metadata(stream, arg, dpath):
     return meta.decode('utf-8')
 
 
-def mediaconch(dpath, policy):
+def get_mediaconch(dpath, policy):
     ''' Check for pass! {path} in mediaconch reponse '''
 
     cmd = [
@@ -86,3 +86,15 @@ def mediaconch(dpath, policy):
         return True, meta
     
     return False, meta
+
+
+def get_folder_size(dpath):
+    ''' Use Linux du for consistancy '''
+
+    cmd = [
+        'du', '-s', '-b',
+        dpath
+    ]
+    size = subprocess.check_output(cmd)
+    size = size.decode('utf-8')
+    return int(size)
