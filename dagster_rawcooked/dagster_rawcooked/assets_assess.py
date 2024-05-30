@@ -59,8 +59,6 @@ def get_dpx_folders():
     config_schema={"dpx_path": str},
     required_resource_keys={"dpx_path"}
 )
-
-
 @asset
 def dynamic_process_subfolders(get_dpx_folders):
     ''' Push get_dpx_folder list to multiple assets'''
