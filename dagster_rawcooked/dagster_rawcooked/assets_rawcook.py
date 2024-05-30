@@ -7,12 +7,10 @@ and with use of sqlite update on prgress
 
 # Imports
 import os
-import sys
-import json
-from dagster import asset, DynamicOut, DynamicOutput
+from dagster import asset, DynamicOutput
 from .sqlite_funcs import update_table
 from .dpx_rawcook import encoder
-from .config import DOWNTIME, QNAP_FILM, DPX_COOK, MKV_ENCODED
+from .config import QNAP_FILM, DPX_COOK, MKV_ENCODED
 
 
 @asset

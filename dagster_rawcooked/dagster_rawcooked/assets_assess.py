@@ -14,19 +14,17 @@ Joanna White
 
 # Imports
 import os
-import sys
-import json
 import shutil
-from dagster import asset, DynamicOut, DynamicOutput
+from dagster import asset, DynamicOutput
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
 from .dpx_splitting import launch_split
-from .config import DOWNTIME, QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
+from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
 
 
 @asset
-def get_dpx_folders():
+def get_assess_folders():
     '''
     Retrieve list of DPX subfolders
     extract items partially processed
@@ -38,9 +36,9 @@ def get_dpx_folders():
 
 
 @asset
-def dynamic_process_subfolders(get_dpx_folders):
+def dynamic_process_assess_folders(get_assess_folders):
     ''' Push get_dpx_folder list to multiple assets'''
-    for dpx_path in get_dpx_folders:
+    for dpx_path in get_assess_folders:
         dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_path)
         yield DynamicOutput(dpath, mapping_key=dpx_path)
 

@@ -4,6 +4,7 @@ from . import assets_assess, assets_rawcook
 
 all_assets = load_assets_from_modules(
     [
+        assets_assess,
         assets_rawcook
     ]
 )
