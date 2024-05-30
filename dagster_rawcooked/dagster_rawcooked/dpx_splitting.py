@@ -2,13 +2,14 @@ import os
 import sys
 import csv
 import shutil
-import logging
+import datetime
 sys.path.append(os.environ['CODE'])
 import adlib_v3 as adlib
 
-
+# Paths required
 CID_API = os.environ.get('CID_API4')
 LOG_PATH = os.environ.get('LOG_PATH')
+ERRORS = ''
 
 
 def get_cid_data(dpx_sequence):
@@ -464,285 +465,212 @@ def launch_splitting(dpx_path, kb_size, encoding):
 
     # Does this sequence need splitting?
     division = workout_division(encoding, kb_size)
+    if division == 'oversize':
+        return {"status": "DPX seq is oversize failure", "dpx_seq": dpx_path}
+
     # Name preparations for folder splitting
     path_split = os.path.split(dpx_path)
     root_path = path_split[0]
-    # JMW up to here
-    if 'tar' in encoding:
-        LOGGER.info("Folder %s is not oversized.\nMoving sequence to TAR path", dpx_path)
-        try:
-            shutil.move(dpx_path, TAR_PATH)
-            LOGGER.info("Move completed to TAR encoding path: %s", dpx_path)
-            LOGGER.info("Script exiting")
-            LOGGER.info("==================== END Python3 DPX splitting script END ====================")
-            sys.exit()
-        except Exception as err:
-            LOGGER.warning("Unable to move folder to TAR path: %s\n%s", dpx_path, err)
-            LOGGER.info("==================== END Python3 DPX splitting script END ====================")
-            error_mssg1 = f"DPX could not be moved to TAR path: {TAR_PATH}."
-            error_mssg2 = "and inform of this failure to move the folder"
-            error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
-            sys.exit()
 
-    # No splitting, but item is part whole and needs processing by part_whole_move.py
-    elif (division is None and not singleton):
-        LOGGER.info("No splitting necessary for: %s\nMoving to part_whole_split path", dpx_path)
-        if ('rawcooked' in encoding or 'luma_4k' in encoding):
-            LOGGER.info("Moving DPX sequence to part_whole_split/rawcooked path: %s", dpx_sequence)
-            try:
-                shutil.move(dpx_path, PART_RAWCOOK)
-                LOGGER.info("Move completed to part_whole_split/rawcooked path: %s", dpx_sequence)
-                LOGGER.info("Script exiting")
-                LOGGER.info("==================== END Python3 DPX splitting script END ====================")
-                sys.exit()
-            except Exception as err:
-                LOGGER.warning("Unable to move folder to part_whole_split path: %s\n%s", dpx_path, err)
-                LOGGER.info("==================== END Python3 DPX splitting script END ====================")
-                error_mssg1 = f"DPX could not be moved to part_whole_split RAWcooked path: {PART_RAWCOOK}."
-                error_mssg2 = "and inform of this failure to move the folder"
-                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
-                sys.exit()
-        elif 'tar' in encoding:
-            LOGGER.info("Folder %s is not oversized.\nMoving DPX sequence to part_whole_split path", dpx_path)
-            try:
-                shutil.move(dpx_path, PART_TAR)
-                LOGGER.info("Move completed to part_whole_split/tar encoding path: %s", dpx_path)
-                LOGGER.info("Script exiting")
-                LOGGER.info("==================== END Python3 DPX splitting script END ====================")
-                sys.exit()
-            except Exception as err:
-                LOGGER.warning("Unable to move folder to part_whole_split path: %s\n%s", dpx_path, err)
-                LOGGER.info("==================== END Python3 DPX splitting script END ====================")
-                error_mssg1 = f"DPX could not be moved to part_whole_split TAR path: {PART_TAR}."
-                error_mssg2 = "and inform of this failure to move the folder"
-                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
-                sys.exit()
+    # JMW up to here (must return status, path and reels data at end)
+    # {"status": "DPX seq is oversize failure", "dpx_seq": dpx_path, "reels": [path1, path2, path3]}
 
-    # Folder is larger than 6TB (TAR/Luma/4K) / 6.5TB (RAWcooked) script exit
-    elif 'oversize' in division:
-        LOGGER.warning("OVERSIZE FOLDER: Too large for splitting script %s", dpx_path)
-        splitting_log(f"OVERSIZE FOLDER: {dpx_sequence}. Moving to current_errors/oversized_sequence/ folder")
-        LOGGER.info("Moving oversized folder %s to current_errors/oversized_sequence folder")
-        LOGGER.info("Adding {} sequence number to part_whole log in current_errors/ folder")
-        part_whole_log(dpx_sequence)
-        oversize_path = os.path.join(OVERSIZED_SEQ, dpx_sequence)
-        error_mssg1 = f"RAWcooked DPX too large for ingest to DPI - size {file_stats.st_size} bytes\n\t{dpx_path}\n\tDPX sequence moved to oversized_sequences folder."
-        error_mssg2 = "as this file is too large for ingest and will need repeat splitting"
-        error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
-        try:
-            shutil.move(dpx_path, oversize_path)
-        except Exception as err:
-            LOGGER.warning("Unable to move %s to oversized_sequence/ folder\n%s", dpx_sequence, err)
-        LOGGER.warning("Script will exit, manual intervention needed for this file")
-        LOGGER.critical("========= SCRIPT EXIT - MANUAL ASSISTANCE NEEDED =========")
-        sys.exit()
+    cid_data = []
+    splitting_log(f"\n------ {dpx_sequence} SPLIT START ------ {str(datetime.datetime.now())}")
+    splitting_log(f"NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{dpx_path}")
+    splitting_log(f"DPX sequence encoding <{encoding}> is {kb_size} KB in size, requiring {division} divisions\n")
+    cid_data.append(f"DPX folder required splitting: {dpx_sequence}")
+    cid_data.append(f"DPX folder size: {kb_size} kb required {division} divisions\n")
 
-    # Folder requires splitting activities
-    else:
-        cid_data = []
-        LOGGER.info("Splitting folders with division %s necessary for: %s", division, dpx_path)
-        splitting_log(f"\n------ {dpx_sequence} SPLIT START ------ {str(datetime.datetime.now())}")
-        splitting_log(f"NEW FOLDER FOUND THAT REQUIRES SPLITTING:\n{dpx_path}")
-        splitting_log(f"DPX sequence encoding <{encoding}> is {kb_size} KB in size, requiring {division} divisions\n")
-        cid_data.append(f"DPX folder required splitting: {dpx_sequence}")
-        cid_data.append(f"DPX folder size: {kb_size} kb required {division} divisions\n")
-        LOGGER.info("Adding %s sequence number to part_whole log in current_errors/ folder", dpx_sequence)
-        part_whole_log(dpx_sequence)
-        LOGGER.info("Checking for error log using %s name, and moving to compeleted folder.", dpx_sequence)
-        if os.path.isfile(os.path.join(ERRORS, f"{dpx_sequence}_errors.log")):
-            shutil.move(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), os.path.join(ERRORS_COMPLETE, f"{dpx_sequence}_errors.log"))
-
-        # Generate new folder names from dpx_sequence/division
-        pre_foldername_list = []
-        post_foldername_list = []
-        foldername_list_new = []
-        data = []
-        folder1 = folder2 = folder3 = folder4 = folder5 = ''
-        pre_foldername_list = return_range_prior(dpx_sequence, division)
-        data = folder_update_creation(dpx_sequence, division, root_path)
-        foldername_list_new = data[0]
-        folder1 = data[1]
-        if data[2]:
-            folder2 = data[2]
-        if data[3]:
-            folder3 = data[3]
-        if data[4]:
-            folder4 = data[4]
-        if data[5]:
-            folder5 = data[5]
-        post_foldername_list = return_range_following(dpx_sequence, division)
-        # Append all new numbers to CSV
-        splitting_log("New folder numbers:")
-        cid_data.append("New folder numbers:")
-        if len(pre_foldername_list) > 0:
-            for dic in pre_foldername_list:
-                for key, val in dic.items():
-                    write_csv(key, val)
-                    splitting_log(f"{key} will be renamed {val}")
-                    cid_data.append(f"{key} has been renamed {val}")
-        for dic in foldername_list_new:
-            for key, val in dic.items():
-                if dpx_sequence in key:
-                    # Extract new sequence number and change dpx_path / dpx_sequence
-                    new_dpx_sequence = val
-                    new_path = renumber(dpx_path, new_dpx_sequence)
-                    dpx_sequence = new_dpx_sequence
-                    dpx_path = new_path
-                    LOGGER.info("New sequence number retrieved for this DPX sequence: %s", dpx_sequence)
-                    LOGGER.info("DPX path updated: %s", dpx_path)
+    # Generate new folder names from dpx_sequence/division
+    pre_foldername_list = []
+    post_foldername_list = []
+    foldername_list_new = []
+    data = []
+    folder1 = folder2 = folder3 = folder4 = folder5 = ''
+    pre_foldername_list = return_range_prior(dpx_sequence, division)
+    data = folder_update_creation(dpx_sequence, division, root_path)
+    foldername_list_new = data[0]
+    folder1 = data[1]
+    if data[2]:
+        folder2 = data[2]
+    if data[3]:
+        folder3 = data[3]
+    if data[4]:
+        folder4 = data[4]
+    if data[5]:
+        folder5 = data[5]
+    post_foldername_list = return_range_following(dpx_sequence, division)
+    # Append all new numbers to CSV
+    splitting_log("New folder numbers:")
+    cid_data.append("New folder numbers:")
+    if len(pre_foldername_list) > 0:
+        for dic in pre_foldername_list:
             for key, val in dic.items():
                 write_csv(key, val)
                 splitting_log(f"{key} will be renamed {val}")
                 cid_data.append(f"{key} has been renamed {val}")
-        if len(post_foldername_list) > 0:
-            for dic in post_foldername_list:
-                for key, val in dic.items():
-                    write_csv(key, val)
-                    splitting_log(f"{key} will be renamed {val}")
-                    cid_data.append(f"{key} has been renamed {val}")
+    for dic in foldername_list_new:
+        for key, val in dic.items():
+            if dpx_sequence in key:
+                # Extract new sequence number and change dpx_path / dpx_sequence
+                new_dpx_sequence = val
+                new_path = renumber(dpx_path, new_dpx_sequence)
+                dpx_sequence = new_dpx_sequence
+                dpx_path = new_path
 
-        # Find path for all scan folders containing DPX files
-        new_folder1 = new_folder2 = new_folder3 = new_folder4 = new_folder5 = ''
-        for root, dirs, files in os.walk(dpx_path):
-            for file in files:
-                if file.endswith((".dpx", ".DPX")):
-                    folder_paths = root.split(f"{dpx_sequence}")
-                    LOGGER.info("*** Folder path for splitting %s", root)
-                    splitting_log(f"\n*** Making new folders with new sequence names for path: {root}")
-                    cid_data.append(f"\nNew division folders created using: {dpx_sequence}{folder_paths[1]}")
-                    new_folder1 = os.path.join(folder1, os.path.relpath(root, dpx_path))
-                    make_dirs(new_folder1)
-                    if folder2:
-                        new_folder2 = os.path.join(folder2, os.path.relpath(root, dpx_path))
-                        make_dirs(new_folder2)
-                    if folder3:
-                        new_folder3 = os.path.join(folder3, os.path.relpath(root, dpx_path))
-                        make_dirs(new_folder3)
-                    if folder4:
-                        new_folder4 = os.path.join(folder4, os.path.relpath(root, dpx_path))
-                        make_dirs(new_folder4)
-                    if folder5:
-                        new_folder5 = os.path.join(folder5, os.path.relpath(root, dpx_path))
-                        make_dirs(new_folder5)
+        for key, val in dic.items():
+            write_csv(key, val)
+            splitting_log(f"{key} will be renamed {val}")
+            cid_data.append(f"{key} has been renamed {val}")
+    if len(post_foldername_list) > 0:
+        for dic in post_foldername_list:
+            for key, val in dic.items():
+                write_csv(key, val)
+                splitting_log(f"{key} will be renamed {val}")
+                cid_data.append(f"{key} has been renamed {val}")
 
-                    # Obtain: file_count, cuts, dpx_block data
-                    LOGGER.info("Folder %s will be divided into %s divisions now", dpx_sequence, division)
-                    block_data = count_files(root, division)
-                    block_list = block_data[0]
-                    cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}\n")
-                    # Output data to splitting log
-                    splitting_log(f"\nFolder {dpx_sequence} contains {block_list[0]} DPX items. Requires {division} divisions, {block_list[1]} items per folder")
-                    splitting_log(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
-                    splitting_log(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
-                    cid_data.append(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
-                    cid_data.append(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
-                    if folder2:
-                        splitting_log(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
-                        cid_data.append(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
-                    if folder3:
-                        splitting_log(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
-                        cid_data.append(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
-                    if folder4:
-                        splitting_log(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
-                        cid_data.append(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
-                    if folder5:
-                        splitting_log(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
-                        cid_data.append(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
+    # Find path for all scan folders containing DPX files
+    new_folder1 = new_folder2 = new_folder3 = new_folder4 = new_folder5 = ''
+    for root, dirs, files in os.walk(dpx_path):
+        for file in files:
+            if file.endswith((".dpx", ".DPX")):
+                folder_paths = root.split(f"{dpx_sequence}")
 
-                    LOGGER.info("Block data being calculated and DPX moved to final destinations")
-                    dpx_list = block_data[1]
-                    for dictionary in dpx_list:
-                        for key, val in dictionary.items():
+                splitting_log(f"\n*** Making new folders with new sequence names for path: {root}")
+                cid_data.append(f"\nNew division folders created using: {dpx_sequence}{folder_paths[1]}")
+                new_folder1 = os.path.join(folder1, os.path.relpath(root, dpx_path))
+                make_dirs(new_folder1)
+                if folder2:
+                    new_folder2 = os.path.join(folder2, os.path.relpath(root, dpx_path))
+                    make_dirs(new_folder2)
+                if folder3:
+                    new_folder3 = os.path.join(folder3, os.path.relpath(root, dpx_path))
+                    make_dirs(new_folder3)
+                if folder4:
+                    new_folder4 = os.path.join(folder4, os.path.relpath(root, dpx_path))
+                    make_dirs(new_folder4)
+                if folder5:
+                    new_folder5 = os.path.join(folder5, os.path.relpath(root, dpx_path))
+                    make_dirs(new_folder5)
 
-                            if 'block2' in key:
-                                splitting_log(f"\nMoving block 2 DPX data to {new_folder1}")
-                                cid_data.append(f"\nMoving block 2 DPX data to {new_folder1}")
-                                for dpx in val:
-                                    dpx_to_move = os.path.join(root, dpx)
-                                    shutil.move(dpx_to_move, new_folder1)
-                                # Check move function
-                                missing_list = move_check(val, new_folder1)
-                                if len(missing_list) > 0:
-                                    move_retry(missing_list, root, new_folder1)
-                                else:
-                                    splitting_log(f"All DPX files copied and checked in {folder1}")
+                # Obtain: file_count, cuts, dpx_block data
 
-                            if 'block3' in key:
-                                splitting_log(f"Moving block 3 DPX data to {new_folder2}")
-                                cid_data.append(f"Moving block 3 DPX data to {new_folder2}")
-                                for dpx in val:
-                                    dpx_to_move = os.path.join(root, dpx)
-                                    shutil.move(dpx_to_move, new_folder2)
-                                # Check move function
-                                missing_list = move_check(val, new_folder2)
-                                if len(missing_list) > 0:
-                                    move_retry(missing_list, root, new_folder2)
-                                else:
-                                    splitting_log(f"All DPX files copied and checked in {folder2}")
+                block_data = count_files(root, division)
+                block_list = block_data[0]
+                cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}\n")
+                # Output data to splitting log
+                splitting_log(f"\nFolder {dpx_sequence} contains {block_list[0]} DPX items. Requires {division} divisions, {block_list[1]} items per folder")
+                splitting_log(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
+                splitting_log(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
+                cid_data.append(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
+                cid_data.append(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
+                if folder2:
+                    splitting_log(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
+                    cid_data.append(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
+                if folder3:
+                    splitting_log(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
+                    cid_data.append(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
+                if folder4:
+                    splitting_log(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
+                    cid_data.append(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
+                if folder5:
+                    splitting_log(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
+                    cid_data.append(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
 
-                            if 'block4' in key:
-                                splitting_log(f"Moving block 4 DPX data to {new_folder3}")
-                                cid_data.append(f"Moving block 4 DPX data to {new_folder3}")
-                                for dpx in val:
-                                    dpx_to_move = os.path.join(root, dpx)
-                                    shutil.move(dpx_to_move, new_folder3)
-                                # Check move function
-                                missing_list = move_check(val, new_folder3)
-                                if len(missing_list) > 0:
-                                    move_retry(missing_list, root, new_folder3)
-                                else:
-                                    splitting_log(f"All DPX files copied and checked in {folder3}")
 
-                            if 'block5' in key:
-                                splitting_log(f"Moving block 5 DPX data to {new_folder4}")
-                                cid_data.append(f"Moving block 5 DPX data to {new_folder4}")
-                                for dpx in val:
-                                    dpx_to_move = os.path.join(root, dpx)
-                                    shutil.move(dpx_to_move, new_folder4)
-                                # Check move function
-                                missing_list = move_check(val, new_folder4)
-                                if len(missing_list) > 0:
-                                    move_retry(missing_list, root, new_folder4)
-                                else:
-                                    splitting_log(f"All DPX files copied and checked in {folder4}")
+                dpx_list = block_data[1]
+                for dictionary in dpx_list:
+                    for key, val in dictionary.items():
 
-                            if 'block6' in key:
-                                splitting_log(f"Moving block 6 DPX data to {new_folder5}")
-                                cid_data.append(f"Moving block 6 DPX data to {new_folder5}")
-                                for dpx in val:
-                                    dpx_to_move = os.path.join(root, dpx)
-                                    shutil.move(dpx_to_move, new_folder5)
-                                # Check move function
-                                missing_list = move_check(val, new_folder5)
-                                if len(missing_list) > 0:
-                                    move_retry(missing_list, root, new_folder5)
-                                else:
-                                    splitting_log(f"All DPX files copied and checked in {folder5}")
+                        if 'block2' in key:
+                            splitting_log(f"\nMoving block 2 DPX data to {new_folder1}")
+                            cid_data.append(f"\nMoving block 2 DPX data to {new_folder1}")
+                            for dpx in val:
+                                dpx_to_move = os.path.join(root, dpx)
+                                shutil.move(dpx_to_move, new_folder1)
+                            # Check move function
+                            missing_list = move_check(val, new_folder1)
+                            if len(missing_list) > 0:
+                                move_retry(missing_list, root, new_folder1)
+                            else:
+                                splitting_log(f"All DPX files copied and checked in {folder1}")
 
-                    for dictionary in dpx_list:
-                        for key, val in dictionary.items():
-                            if 'block1' in key:
-                                # Check first sequence has correct remaining files from block list
-                                missing_list = move_check(val, root)
-                                if len(missing_list) > 0:
-                                    LOGGER.warning("DPX missing from original sequence %s", missing_list)
-                                    error_mssg1 = "DPX items are missing from original sequence following move."
-                                    error_mssg2 = "and inform of this failure with the DPX movements"
-                                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
-                                else:
-                                    splitting_log(f"All DPX files checked and remain in place in original folder {dpx_sequence}")
-                                # Check correct total of files in first sequence, no stragglers
-                                length_check = len([f for f in os.listdir(root) if f.endswith(('.dpx', '.DPX'))])
-                                if int(length_check) == int(block_list[1]):
-                                    LOGGER.info("Correct number of DPX remain in original sequence %s", root)
-                                else:
-                                    LOGGER.warning("Incorrect number of DPX files remain in original sequence: %s", root)
-                                    LOGGER.warning("There are %s files in folder, when there should be %s DPX files", int(block_list[1]), length_check)
-                                    error_mssg1 = f"Incorrect number of DPX files remain in original sequence folder: {root}."
-                                    error_mssg2 = "and inform of this failure with the DPX movements"
-                                    error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
-                    cid_data.append(f"\n------ {dpx_sequence}{folder_paths[1]} SPLIT COMPLETE ------\n")
-                    break
+                        if 'block3' in key:
+                            splitting_log(f"Moving block 3 DPX data to {new_folder2}")
+                            cid_data.append(f"Moving block 3 DPX data to {new_folder2}")
+                            for dpx in val:
+                                dpx_to_move = os.path.join(root, dpx)
+                                shutil.move(dpx_to_move, new_folder2)
+                            # Check move function
+                            missing_list = move_check(val, new_folder2)
+                            if len(missing_list) > 0:
+                                move_retry(missing_list, root, new_folder2)
+                            else:
+                                splitting_log(f"All DPX files copied and checked in {folder2}")
+
+                        if 'block4' in key:
+                            splitting_log(f"Moving block 4 DPX data to {new_folder3}")
+                            cid_data.append(f"Moving block 4 DPX data to {new_folder3}")
+                            for dpx in val:
+                                dpx_to_move = os.path.join(root, dpx)
+                                shutil.move(dpx_to_move, new_folder3)
+                            # Check move function
+                            missing_list = move_check(val, new_folder3)
+                            if len(missing_list) > 0:
+                                move_retry(missing_list, root, new_folder3)
+                            else:
+                                splitting_log(f"All DPX files copied and checked in {folder3}")
+
+                        if 'block5' in key:
+                            splitting_log(f"Moving block 5 DPX data to {new_folder4}")
+                            cid_data.append(f"Moving block 5 DPX data to {new_folder4}")
+                            for dpx in val:
+                                dpx_to_move = os.path.join(root, dpx)
+                                shutil.move(dpx_to_move, new_folder4)
+                            # Check move function
+                            missing_list = move_check(val, new_folder4)
+                            if len(missing_list) > 0:
+                                move_retry(missing_list, root, new_folder4)
+                            else:
+                                splitting_log(f"All DPX files copied and checked in {folder4}")
+
+                        if 'block6' in key:
+                            splitting_log(f"Moving block 6 DPX data to {new_folder5}")
+                            cid_data.append(f"Moving block 6 DPX data to {new_folder5}")
+                            for dpx in val:
+                                dpx_to_move = os.path.join(root, dpx)
+                                shutil.move(dpx_to_move, new_folder5)
+                            # Check move function
+                            missing_list = move_check(val, new_folder5)
+                            if len(missing_list) > 0:
+                                move_retry(missing_list, root, new_folder5)
+                            else:
+                                splitting_log(f"All DPX files copied and checked in {folder5}")
+
+                for dictionary in dpx_list:
+                    for key, val in dictionary.items():
+                        if 'block1' in key:
+                            # Check first sequence has correct remaining files from block list
+                            missing_list = move_check(val, root)
+                            if len(missing_list) > 0:
+
+                                error_mssg1 = "DPX items are missing from original sequence following move."
+                                error_mssg2 = "and inform of this failure with the DPX movements"
+                                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
+                            else:
+                                splitting_log(f"All DPX files checked and remain in place in original folder {dpx_sequence}")
+                            # Check correct total of files in first sequence, no stragglers
+                            length_check = len([f for f in os.listdir(root) if f.endswith(('.dpx', '.DPX'))])
+                            if int(length_check) == int(block_list[1]):
+
+                            else:
+
+                                error_mssg1 = f"Incorrect number of DPX files remain in original sequence folder: {root}."
+                                error_mssg2 = "and inform of this failure with the DPX movements"
+                                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
+                cid_data.append(f"\n------ {dpx_sequence}{folder_paths[1]} SPLIT COMPLETE ------\n")
+                break
 
         # Update splitting data in text file to each new folder for encoding
         cid_data_string = '\n'.join(cid_data)
@@ -758,23 +686,21 @@ def launch_splitting(dpx_path, kb_size, encoding):
             make_text_file(cid_data_string, folder5)
 
         # Update splitting data to CID item record UTB.content (temporary)
-        LOGGER.info("Updating split information to CID Item record")
+
         utb_content = get_utb(priref)
         old_payload = utb_content[0].replace('\r\n', '\n')
         success = record_append(priref, cid_data_string, old_payload)
         if success:
-            LOGGER.info("CID splitting data appended to priref %s", priref)
+
             splitting_log(f"Splitting data written to CID priref {priref}")
         else:
-            LOGGER.warning("FAIL: CID Splitting data not appended to priref %s", priref)
+
             splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
             error_mssg1 = f"Failed to write splitting data to CID item record: {priref}"
             error_mssg2 = "and inform of this failure to write the splitting data to CID item record"
             error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
         splitting_log(f"\n------ SPLIT END {dpx_sequence} ------ {str(datetime.datetime.now())}")
-        LOGGER.info("Splitting completed for path: %s", root)
 
-    LOGGER.info("==================== END Python3 DPX splitting script END ====================")
 
 
 def move_check(dpx_list, folder):
@@ -901,19 +827,6 @@ def splitting_log(data):
         with open(SPLITTING_LOG, 'a') as log:
             log.write(data + "\n")
             log.close()
-
-
-def part_whole_log(fname):
-    '''
-    Output ob_num to part_whole_search.log in DPX Errors folder. Used by various encoding scripts
-    to avoid moving files if their numbers are present in the list. Original name ONLY to be added
-    to this list. Handles if ob_num already listed, or if log removed, replaces and appends number.
-    '''
-    ob_num = fname[:-7]
-    object_number = f"{ob_num}\n"
-    with open(PART_WHOLE_LOG, 'a+') as log:
-        log.write(object_number)
-        log.close()
 
 
 def record_append(priref, cid_data, original_data):

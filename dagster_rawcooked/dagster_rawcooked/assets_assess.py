@@ -128,18 +128,25 @@ def assessment(context, dynamic_process_subfolders):
         context.log.info(f"DPX sequence {dpx_seq} is 4K")
     if 'Y' == cspace:
         luma = True
+
     if tar is True:
         row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path)
         if not row_id:
             context.log.warning(f"Failed to update status new reord data")
             return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "tar", "dpx_seq": dpx_path, "size": size, "4k": fourk, "luma": luma, "part": part, "whole": whole}
+        return {"status": "tar", "dpx_seq": dpx_path, "size": size, "encoding": 'tar', "part": part, "whole": whole}
+    if luma is True and fourk is True:
+        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path)
+        if not row_id:
+            context.log.warning(f"Failed to update status new reord data")
+            return {"status": "database failure", "dpx_seq": dpx_path}
+        return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'luma_4k', "part": part, "whole": whole}
     else:
         row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path)
         if not row_id:
             context.log.warning(f"Failed to update status new reord data")
             return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "4k": fourk, "luma": luma, "part": part, "whole": whole}
+        return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'rawcook', "part": part, "whole": whole}    
 
 
 @asset
@@ -151,7 +158,7 @@ def move_for_split_or_encoding(context, assessment):
     '''
     if 'failure' not in assessment['status']:
         if assessment['size'] > 1395864370:
-            reels = launch_splitting(assessment['dpx_seq'])
+            reels = launch_splitting(assessment['dpx_seq'], assessment['kb_size'], assessment['encoding'])
             if 'failure' in reels['status']:
                 raise Exception("Reels were not split correctly. Exiting")
             if assessment['status'] == 'rawcook':
@@ -162,9 +169,15 @@ def move_for_split_or_encoding(context, assessment):
                 for reel in reels:
                     context.log.info(f"Moving reel {reel} to {PART_TAR}")
                     shutil.move(reel, os.path.join(QNAP_FILM, PART_TAR))
+
         if int(assessment['whole']) == 1:
             context.log.info(f"Moving single reel under 1TB to encoding path")
             if assessment['status'] == 'rawcook':
                 shutil.move(assessment['dpx_seq'], os.path.join(QNAP_FILM, DPX_COOK))         
             elif assessment['status'] == 'tar':
                 shutil.move(assessment['dpx_seq'], os.path.join(QNAP_FILM, TAR_WRAP))
+        else:
+            if assessment['status'] == 'rawcook':
+                shutil.move(reel, os.path.join(QNAP_FILM, PART_RAWCOOK))
+            elif assessment['status'] == 'tar':
+                shutil.move(reel, os.path.join(QNAP_FILM, PART_TAR))
