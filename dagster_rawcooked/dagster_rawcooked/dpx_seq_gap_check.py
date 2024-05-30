@@ -22,10 +22,8 @@ Joanna White 2024
 
 import os
 import re
-import sys
-import shutil
 import logging
-import datetime
+
 
 DPX_PATH = os.environ['QNAP_FILM']
 DPX_GAP_CHECK = os.path.join(DPX_PATH, 'automation_dpx/encoding/dpx_gap_check/')
@@ -53,10 +51,12 @@ def iterate_folders(fpath):
     filenames = []
     for root, _,files in os.walk(fpath):
         for file in files:
+            dpx_path = root
             if file.endswith(('.dpx', '.DPX')):
+
                 file_nums.append(int(re.search(r'\d+', file).group()))
                 filenames.append(os.path.join(root, file))
-    return file_nums, filenames
+    return file_nums, filenames, dpx_path
 
 
 def count_folder_depth(fpath):
@@ -120,7 +120,7 @@ def gaps(fpath):
     # Fetch lists
     gaps = False
     for dpath in dpx_paths:
-        file_nums, filenames = iterate_folders(dpath)
+        file_nums, filenames, dpx_path = iterate_folders(dpath)
 
         # Calculate range from first/last
         file_range = [ x for x in range(min(file_nums), max(file_nums) + 1) ]
@@ -142,6 +142,6 @@ def gaps(fpath):
 
     # Return findings
     if gaps is True:
-        return True, missing
+        return True, missing, os.path.join(dpx_path, first_dpx)
     else:
-        return False, None
+        return False, None, os.path.join(dpx_path, first_dpx)

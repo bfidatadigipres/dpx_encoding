@@ -20,8 +20,9 @@ import shutil
 from dagster import asset, DynamicOutput
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import create_first_entry, update_table
-import dpx_seq_gap_check
-from .config import DOWNTIME, DATABASE, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW
+from .dpx_seq_gap_check import gaps
+from .dpx_splitting import launch_splitting
+from .config import DOWNTIME, DATABASE, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
 
 
 def check_control():
@@ -72,7 +73,7 @@ def dynamic_process_subfolders(get_dpx_folders):
 def assessment(context, dynamic_process_subfolders):
     ''' Calling dpx_assess modules run assessment '''
     dpx_path = dynamic_process_subfolders
-    dpx_seq = os.path.split(dpx_path)
+    dpx_seq = os.path.split(dpx_path)[1]
     context.log.info(f"Processing DPX sequence: {dpx_path}")
 
     part, whole = get_partwhole(dpx_seq)
@@ -80,6 +81,7 @@ def assessment(context, dynamic_process_subfolders):
         row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.')
         if not row_id:
             context.log.warning("Failed to update status with 'DPX sequence named incorrectly'")
+            return {"status": "database failure", "dpx_seq": dpx_path}
         return {"status": "partWhole failure", "dpx_seq": dpx_path}        
     context.log.info(f"* Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
 
@@ -89,10 +91,11 @@ def assessment(context, dynamic_process_subfolders):
         row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.')
         if not row_id:
             context.log.warning("Failed to update status with 'Folders formatted incorrectly'")
+            return {"status": "database failure", "dpx_seq": dpx_path}
         return {"status": "folder failure", "dpx_seq": dpx_path}
     context.log.info(f"Folder depth is {folder_depth}")
 
-    gaps, missing = dpx_seq_gap_check.gaps(dpx_path)
+    gaps, missing, first_dpx = gaps(dpx_path)
     if gaps is True:
         context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
         review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
@@ -100,7 +103,7 @@ def assessment(context, dynamic_process_subfolders):
         row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.')
         if not row_id:
             context.log.warning(f"Failed to update status with 'Gaps found in sequence'\n{missing}")
-        return {"status": "gaps", "dpx_seq": dpx_path}
+        return {"status": "gap failure", "dpx_seq": dpx_path}
 
     size = get_folder_size(dpx_path)
     cspace = get_metadata('Video', 'ColorSpace', first_dpx)
@@ -113,45 +116,55 @@ def assessment(context, dynamic_process_subfolders):
     if not width:
         width = get_metadata('Image', 'Width', first_dpx)
 
-    split = tar = fourk = luma = False
+    tar = fourk = luma = False
     context.log.info(f"* Size: {size} | Colourspace {cspace} | Bit-depth {bdepth} | Pixel width {width}")
     policy_pass, response = get_mediaconch(dpx_path, DPOLICY)
-    context.log.info(f"* DPX policy status: {policy_pass}")
-    if size > 1395864370:
-        split = True
+
     if not policy_pass:
         tar = True
         context.log.info(f"DPX sequence {dpx_seq} failed DPX policy:\n{response}")
     if int(width) > 3999:
         fourk = True
+        context.log.info(f"DPX sequence {dpx_seq} is 4K")
     if 'Y' == cspace:
         luma = True
-
-
-
+    if tar is True:
+        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path)
+        if not row_id:
+            context.log.warning(f"Failed to update status new reord data")
+            return {"status": "database failure", "dpx_seq": dpx_path}
+        return {"status": "tar", "dpx_seq": dpx_path, "size": size, "4k": fourk, "luma": luma, "part": part, "whole": whole}
     else:
-        return {"status": "split rawcook", "dpx_seq": dpx_path, "size": size}
+        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path)
+        if not row_id:
+            context.log.warning(f"Failed to update status new reord data")
+            return {"status": "database failure", "dpx_seq": dpx_path}
+        return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "4k": fourk, "luma": luma, "part": part, "whole": whole}
 
 
 @asset
-def handle_assessments(assessment):
+def move_for_split_or_encoding(context, assessment):
     '''
     Move to splittig or to encoding
     by updating sqlite data and trigger
     splitting.py (next asset scripts)
     '''
-    if assessment['status'] ==  'gaps':
-        pass
-    elif assessment['status'] == 'tar':
-        # Move to tar wrap path
-        pass
-    elif assessment['status'] == 'rawcook':
-        # Move to RAWcooked path
-        pass
-    elif assessment['status'] == 'split tar':
-        # Initiate splitting with tar argument
-        pass
-    elif assessment['status'] == 'split rawcook':
-        # Initiate splitting with rawcook argument
-        pass
-
+    if 'failure' not in assessment['status']:
+        if assessment['size'] > 1395864370:
+            reels = launch_splitting(assessment['dpx_seq'])
+            if not reels:
+                raise Exception("Reels were not split correctly. Exiting")
+            if assessment['status'] == 'rawcook':
+                for reel in reels:
+                    context.log.info(f"Moving reel {reel} to {PART_RAWCOOK}")
+                    shutil.move(reel, os.path.join(QNAP_FILM, PART_RAWCOOK))
+            elif assessment['status'] == 'tar':
+                for reel in reels:
+                    context.log.info(f"Moving reel {reel} to {PART_TAR}")
+                    shutil.move(reel, os.path.join(QNAP_FILM, PART_TAR))
+        if int(assessment['whole']) == 1:
+            context.log.info(f"Moving single reel under 1TB to encoding path")
+            if assessment['status'] == 'rawcook':
+                shutil.move(assessment['dpx_seq'], os.path.join(QNAP_FILM, DPX_COOK))         
+            elif assessment['status'] == 'tar':
+                shutil.move(assessment['dpx_seq'], os.path.join(QNAP_FILM, TAR_WRAP))

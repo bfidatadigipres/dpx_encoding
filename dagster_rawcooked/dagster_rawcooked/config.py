@@ -17,11 +17,14 @@ DPX_REVIEW = os.environ.get('DPX_REVIEW')
 DPX_COMPLETE = os.environ.get('DPX_COMPLETE')
 RAWCOOK = os.environ.get('RAWCOOKED_PATH')
 MKV_ENCODED = os.environ.get('MKV_ENCODED')
+TAR_WRAP = os.environ.get('DPX_WRAP')
 TO_DELETE = os.environ.get('TO_DELETE')
+PART_RAWCOOK = os.environ.get('PART_RAWCOOK')
+PART_TAR = os.environ.get('PART_RAWCOOK')
 
 # Documents
 DPOLICY = os.environ.get('POLICY_DPX')
-MPOLICY = os.environ['POLICY_RAWCOOK']
+MPOLICY = os.environ.get('POLICY_RAWCOOK')
 DATABASE = os.path.join(os.environ.get('LOG_PATH'), 'rawcooked_dagster.db')
 LICENCE = os.environ.get('RAWCOOKED_LICENSE')
 DOWNTIME = os.environ.get('DOWNTIME_CONTROL')
