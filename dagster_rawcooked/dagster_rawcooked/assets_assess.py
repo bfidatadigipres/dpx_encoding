@@ -44,9 +44,9 @@ def dynamic_process_assess_folders(get_assess_folders):
 
 
 @asset
-def assessment(context, dynamic_process_assess_subfolders):
+def assessment(context, dynamic_process_assess_folders):
     ''' Calling dpx_assess modules run assessment '''
-    dpx_path = dynamic_process_assess_subfolders
+    dpx_path = dynamic_process_assess_folders
     dpx_seq = os.path.split(dpx_path)[1]
     context.log.info(f"Processing DPX sequence: {dpx_path}")
 
