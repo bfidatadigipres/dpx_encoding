@@ -57,7 +57,7 @@ def get_dpx_folders():
 
 @asset(
     config_schema={"dpx_path": str},
-    required_resource_keys={"dpx_path"}
+    required_resource_keys={"dpx_path": str}
 )
 @asset
 def dynamic_process_subfolders(get_dpx_folders):
