@@ -152,10 +152,10 @@ def move_for_split_or_encoding(context, assessment):
     if 'failure' not in assessment['status']:
         if assessment['size'] > 1395864370:
             reels = launch_splitting(assessment['dpx_seq'])
-            if not reels:
+            if 'failure' in reels['status']:
                 raise Exception("Reels were not split correctly. Exiting")
             if assessment['status'] == 'rawcook':
-                for reel in reels:
+                for reel in reels['paths']:
                     context.log.info(f"Moving reel {reel} to {PART_RAWCOOK}")
                     shutil.move(reel, os.path.join(QNAP_FILM, PART_RAWCOOK))
             elif assessment['status'] == 'tar':
