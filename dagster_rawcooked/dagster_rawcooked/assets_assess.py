@@ -20,7 +20,7 @@ from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_med
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
 from .dpx_splitting import launch_split
-from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
+from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
 
 
 @asset
@@ -52,7 +52,7 @@ def assessment(context, dynamic_process_assess_folders):
 
     part, whole = get_partwhole(dpx_seq)
     if not part:
-        row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.')
+        row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.', DATABASE)
         if not row_id:
             context.log.warning("Failed to update status with 'DPX sequence named incorrectly'")
             return {"status": "database failure", "dpx_seq": dpx_path}
@@ -62,7 +62,7 @@ def assessment(context, dynamic_process_assess_folders):
     folder_depth, first_dpx = count_folder_depth(dpx_path)
     if folder_depth is None:
         # Incorrect formatting of folders
-        row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.')
+        row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.', DATABASE)
         if not row_id:
             context.log.warning("Failed to update status with 'Folders formatted incorrectly'")
             return {"status": "database failure", "dpx_seq": dpx_path}
@@ -74,7 +74,7 @@ def assessment(context, dynamic_process_assess_folders):
         context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
         review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
         shutil.move(dpx_path, review_path)
-        row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.')
+        row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.', DATABASE)
         if not row_id:
             context.log.warning(f"Failed to update status with 'Gaps found in sequence'\n{missing}")
         return {"status": "gap failure", "dpx_seq": dpx_path}
@@ -104,19 +104,19 @@ def assessment(context, dynamic_process_assess_folders):
         luma = True
 
     if tar is True:
-        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path)
+        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path, DATABASE)
         if not row_id:
             context.log.warning(f"Failed to update status new reord data")
             return {"status": "database failure", "dpx_seq": dpx_path}
         return {"status": "tar", "dpx_seq": dpx_path, "size": size, "encoding": 'tar', "part": part, "whole": whole}
     if luma is True and fourk is True:
-        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path)
+        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
         if not row_id:
             context.log.warning(f"Failed to update status new reord data")
             return {"status": "database failure", "dpx_seq": dpx_path}
         return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'luma_4k', "part": part, "whole": whole}
     else:
-        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path)
+        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
         if not row_id:
             context.log.warning(f"Failed to update status new reord data")
             return {"status": "database failure", "dpx_seq": dpx_path}

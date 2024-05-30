@@ -6,12 +6,7 @@ splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, rawcook_version TEXT
 
 import sqlite3
 import datetime
-from .config import DATABASE
 
-CONNECT = sqlite3.connect(DATABASE)
-CONNECT.execute(
-    'CREATE TABLE IF NOT EXISTS PROCESSING (name TEXT, colourspace TEXT, size_dpx TEXT, bitdepth TEXT, start TEXT, splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, rawcook_version TEXT)'
-)
 
 def format_date_time():
     '''
@@ -21,7 +16,7 @@ def format_date_time():
     return now.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def create_first_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpath):
+def create_first_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpath, database):
     '''
     Apply name and start time etc to dB
     '''
@@ -30,7 +25,7 @@ def create_first_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpat
     processing_values = (fname,cspace,fsize,bdepth,start_time,start_time,status,encoding_type,fpath)
     sql = f''' INSERT INTO PROCESSING(name,colourspace,size_dpx,bitdepth,start,status,encoding_type,fpath) VALUES (?,?,?,?,?,?,?,?) '''
     try:
-        connect = sqlite3.connect(DATABASE)
+        connect = sqlite3.connect(database)
         connect.execute(
             'CREATE TABLE IF NOT EXISTS PROCESSING (name TEXT, colourspace TEXT, size_dpx TEXT, bitdepth TEXT, start TEXT, splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, encoding_type TEXT, fullpath TEXT)'
         )
@@ -47,7 +42,7 @@ def create_first_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpat
             connect.close()
 
 
-def update_table(arg, fname, new_status):
+def update_table(arg, fname, new_status, database):
     '''
     Update specific row with new
     data, for fname match
@@ -62,7 +57,7 @@ def update_table(arg, fname, new_status):
     elif arg == 'complete':
         sql_query = '''UPDATE PROCESSING SET complete = ? WHERE name = ?'''
     try:
-        connect = sqlite3.connect(DATABASE)
+        connect = sqlite3.connect(database)
         cur = connect.cursor()
         cur.execute(sql_query, data)
         connect.commit()
