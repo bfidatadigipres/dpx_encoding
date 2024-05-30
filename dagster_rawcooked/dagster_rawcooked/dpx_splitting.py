@@ -42,7 +42,7 @@ def get_utb(priref):
     if 'utb.content' in str(record):
         utb_content = []
         for rec in record:
-            content = adlib.retrieve_field_name(rec], 'utb.content')[0]
+            content = adlib.retrieve_field_name(rec, 'utb.content')[0]
             utb_content.append(content)
     else:
         utb_content = ['']
