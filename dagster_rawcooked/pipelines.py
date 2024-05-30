@@ -5,14 +5,14 @@ from .config import QNAP_FILM
 from .resources import dpx_path_resource
 from .loggers import log_status
 
-dpx_assessment_job = JobDefinition(
+assets_assess = JobDefinition(
     name="assets_assess",
     resource_defs={"storage_path": dpx_path_resource.configured({"dpx_path": QNAP_FILM})},
     asset_defs=[get_dpx_folders, dynamic_process_subfolders, assessment, move_for_split_or_encoding],
     executor_def=multiprocess_executor.configured({'max_concurrent': 1})
 )
 
-dpx_encoding_job = JobDefinition(
+assets_rawcook = JobDefinition(
     name="assets_rawcook",
     resource_defs={"storage_path": dpx_path_resource.configured({"dpx_path": QNAP_FILM})},
     asset_defs=[get_dpx_folders, dynamic_process_subfolders, encoding],
@@ -20,7 +20,7 @@ dpx_encoding_job = JobDefinition(
 )
 
 defs = Definitions(
-    jobs=[dpx_assessment_job, dpx_encoding_job],
+    jobs=[assets_assess, assets_rawcook],
     resources={"storage_path": dpx_path_resource.configured({"dpx_path": QNAP_FILM})},
     loggers={"log_status": log_status.configured({"name": "logger_path1", "log_level": "INFO"})}
 )

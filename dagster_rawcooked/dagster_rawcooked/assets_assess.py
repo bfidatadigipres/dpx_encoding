@@ -25,16 +25,6 @@ from .dpx_splitting import launch_split
 from .config import DOWNTIME, QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
 
 
-def check_control():
-    '''
-    Check control json for downtime requests
-    '''
-    with open(DOWNTIME) as control:
-        j = json.load(control)
-        if not j['rawcooked']:
-            sys.exit("Downtime control close")
-
-
 @asset
 def get_dpx_folders():
     '''

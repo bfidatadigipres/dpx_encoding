@@ -15,16 +15,6 @@ from .dpx_rawcook import encoder
 from .config import DOWNTIME, QNAP_FILM, DPX_COOK, MKV_ENCODED
 
 
-def check_control():
-    '''
-    Check control json for downtime requests
-    '''
-    with open(DOWNTIME) as control:
-        j = json.load(control)
-        if not j['rawcooked']:
-            sys.exit("Downtime control close")
-
-
 @asset
 def get_dpx_folders():
     '''
