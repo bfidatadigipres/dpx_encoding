@@ -1,7 +1,7 @@
 from dagster import Definitions, JobDefinition, multiprocess_executor
-from assets_assess import get_assess_folders, dynamic_process_assess_folders, assessment, move_for_split_or_encoding
-from assets_rawcook import get_dpx_folders, dynamic_process_subfolders,encoding
-from .config import QNAP_FILM
+from dagster_rawcooked.assets_assess import get_assess_folders, dynamic_process_assess_folders, assessment, move_for_split_or_encoding
+from dagster_rawcooked.assets_rawcook import get_dpx_folders, dynamic_process_subfolders,encoding
+from dagster_rawcooked.config import QNAP_FILM
 from .resources import dpx_path_resource
 from .loggers import log_status
 
