@@ -408,7 +408,7 @@ def return_range_following(dpx_sequence, division):
     return change_list
 
 
-def launch_splitting(dpx_path, kb_size, encoding):
+def launch_split(dpx_path, kb_size, encoding):
     '''
     Receives sys.argv items from launching script
     Checks folder against CSV_PATH file. Updates if found in original column
