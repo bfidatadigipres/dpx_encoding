@@ -9,11 +9,10 @@ and with use of sqlite update on prgress
 import os
 import sys
 import json
-import shutil
 from dagster import asset, DynamicOut, DynamicOutput
-from .sqlite_funcs import create_first_entry, update_table
+from .sqlite_funcs import update_table
 from .dpx_rawcook import encoder
-from .config import DOWNTIME, QNAP_FILM, DPX_COOK, MKV_ENCODED, LOGS
+from .config import DOWNTIME, QNAP_FILM, DPX_COOK, MKV_ENCODED
 
 
 def check_control():
