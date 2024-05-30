@@ -17,12 +17,12 @@ import os
 import sys
 import json
 import shutil
-from dagster import asset, DynamicOutput
+from dagster import asset, DynamicOut, DynamicOutput
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
 from .dpx_splitting import launch_splitting
-from .config import DOWNTIME, DATABASE, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
+from .config import DOWNTIME, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
 
 
 def check_control():
@@ -55,16 +55,12 @@ def get_dpx_folders():
     return dpx_folders
 
 
-@asset(
-    config_schema={"dpx_path": str},
-    required_resource_keys={"dpx_path": str}
-)
 @asset
 def dynamic_process_subfolders(get_dpx_folders):
     ''' Push get_dpx_folder list to multiple assets'''
-    for dpx_folder in get_dpx_folders:
-        dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_folder)
-        yield DynamicOutput(dpath, mapping_key=dpx_folder)
+    for dpx_path in get_dpx_folders:
+        dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_path)
+        yield DynamicOutput(dpath, mapping_key=dpx_path)
 
 
 @asset
