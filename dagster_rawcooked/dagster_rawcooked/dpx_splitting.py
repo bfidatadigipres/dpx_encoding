@@ -9,7 +9,7 @@ import adlib_v3 as adlib
 # Paths required
 CID_API = os.environ.get('CID_API4')
 LOG_PATH = os.environ.get('LOG_PATH')
-ERRORS = ''
+SPLITTING_LOG = ''
 
 
 def get_cid_data(dpx_sequence):
@@ -532,7 +532,8 @@ def launch_splitting(dpx_path, kb_size, encoding):
 
     # Find path for all scan folders containing DPX files
     new_folder1 = new_folder2 = new_folder3 = new_folder4 = new_folder5 = ''
-    for root, dirs, files in os.walk(dpx_path):
+    reels = []
+    for root, _, files in os.walk(dpx_path):
         for file in files:
             if file.endswith((".dpx", ".DPX")):
                 folder_paths = root.split(f"{dpx_sequence}")
@@ -555,29 +556,33 @@ def launch_splitting(dpx_path, kb_size, encoding):
                     make_dirs(new_folder5)
 
                 # Obtain: file_count, cuts, dpx_block data
-
                 block_data = count_files(root, division)
                 block_list = block_data[0]
                 cid_data.append(f"Total DPX in sequence: {block_list[0]}, DPX per new division: {block_list[1]}\n")
+
                 # Output data to splitting log
                 splitting_log(f"\nFolder {dpx_sequence} contains {block_list[0]} DPX items. Requires {division} divisions, {block_list[1]} items per folder")
                 splitting_log(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
                 splitting_log(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
                 cid_data.append(f"First DPX number is {block_list[2]} remaining in original folder: {dpx_sequence}{folder_paths[1]}")
                 cid_data.append(f"First DPX number is {block_list[3]} for new folder: {new_folder1}")
+                reels.append(new_folder1)
                 if folder2:
                     splitting_log(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
                     cid_data.append(f"First DPX number is {block_list[4]} for new folder: {new_folder2}")
+                    reels.append(new_folder2)
                 if folder3:
                     splitting_log(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
                     cid_data.append(f"First DPX number is {block_list[5]} for new folder: {new_folder3}")
+                    reels.append(new_folder3)
                 if folder4:
                     splitting_log(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
                     cid_data.append(f"First DPX number is {block_list[6]} for new folder: {new_folder4}")
+                    reels.append(new_folder4)
                 if folder5:
                     splitting_log(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
                     cid_data.append(f"First DPX number is {block_list[7]} for new folder: {new_folder5}")
-
+                    reels.append(new_folder5)
 
                 dpx_list = block_data[1]
                 for dictionary in dpx_list:
@@ -654,21 +659,16 @@ def launch_splitting(dpx_path, kb_size, encoding):
                             # Check first sequence has correct remaining files from block list
                             missing_list = move_check(val, root)
                             if len(missing_list) > 0:
-
-                                error_mssg1 = "DPX items are missing from original sequence following move."
-                                error_mssg2 = "and inform of this failure with the DPX movements"
-                                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
+                                splitting_log("DPX items are missing from original sequence following move:\n{missing_list}.")
                             else:
                                 splitting_log(f"All DPX files checked and remain in place in original folder {dpx_sequence}")
+
                             # Check correct total of files in first sequence, no stragglers
                             length_check = len([f for f in os.listdir(root) if f.endswith(('.dpx', '.DPX'))])
                             if int(length_check) == int(block_list[1]):
-
+                                pass
                             else:
-
-                                error_mssg1 = f"Incorrect number of DPX files remain in original sequence folder: {root}."
-                                error_mssg2 = "and inform of this failure with the DPX movements"
-                                error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
+                                splitting_log(f"Incorrect number of DPX files remain in original sequence folder: {root}.")
                 cid_data.append(f"\n------ {dpx_sequence}{folder_paths[1]} SPLIT COMPLETE ------\n")
                 break
 
@@ -686,21 +686,16 @@ def launch_splitting(dpx_path, kb_size, encoding):
             make_text_file(cid_data_string, folder5)
 
         # Update splitting data to CID item record UTB.content (temporary)
-
         utb_content = get_utb(priref)
         old_payload = utb_content[0].replace('\r\n', '\n')
         success = record_append(priref, cid_data_string, old_payload)
         if success:
-
             splitting_log(f"Splitting data written to CID priref {priref}")
         else:
-
             splitting_log(f"*** Failed to write data to CID. Please manually append above to priref: {priref}")
-            error_mssg1 = f"Failed to write splitting data to CID item record: {priref}"
-            error_mssg2 = "and inform of this failure to write the splitting data to CID item record"
-            error_log(os.path.join(ERRORS, f"{dpx_sequence}_errors.log"), error_mssg1, error_mssg2)
         splitting_log(f"\n------ SPLIT END {dpx_sequence} ------ {str(datetime.datetime.now())}")
 
+    return {"status": "Split complete", "dpx_seq": dpx_path, "reels": reels}
 
 
 def move_check(dpx_list, folder):
@@ -716,7 +711,7 @@ def move_check(dpx_list, folder):
 
     # If any missing from move, attempt a re-move
     if len(missing_list) == 0:
-        LOGGER.info("move_check(): All DPX copied and checked in folder: %s", folder)
+        splitting_log(f"move_check(): All DPX copied and checked in folder: {folder}")
 
     return missing_list
 
@@ -725,19 +720,19 @@ def move_retry(missing_list, root, folder):
     '''
     Function to attempt copy retries if some fail
     '''
-    LOGGER.warning("move_retry(): MISSING DPX AFTER MOVE TO FOLDER: %s\n%s", folder, missing_list)
+
     splitting_log(f"MISSING DPX: Some DPX are missing after move from {folder}:\n{missing_list}")
     for item in missing_list:
         dpx_missing = os.path.join(root, item)
         if os.path.exists(dpx_missing):
-            LOGGER.info("move_retry(): Retry move for missing dpx - %s", dpx_missing)
+            splitting_log(f"move_retry(): Retry move for missing dpx - {dpx_missing}")
             try:
                 shutil.move(dpx_missing, os.path.join(folder, item))
             except Exception:
-                LOGGER.warning("move_retry(): Move retry failed: %s to %s", dpx_missing, folder)
+                splitting_log(f"move_retry(): Move retry failed: {dpx_missing} to {folder}")
         else:
-            LOGGER.critical("move_retry(): Missing DPX not found: %s", item)
-
+            splitting_log(f"move_retry(): Missing DPX not found: {item}")
+        
 
 def make_text_file(cid_data, folderpath):
     '''
@@ -899,19 +894,3 @@ def unlock_record(priref):
         return True
     except Exception as err:
         LOGGER.warning("unlock_record(): Post to unlock record failed. Check Media record %s is unlocked manually\n%s", priref, err)
-
-
-def error_log(fpath, message, kandc):
-    '''
-    Logs for outputting to error file
-    '''
-    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if not kandc:
-        with open(fpath, 'a+') as log:
-            log.write(f"splitting_script {ts}: {message}.\n\n")
-            log.close()
-    else:
-        with open(fpath, 'a+') as log:
-            log.write(f"splitting_script {ts}: {message}.\n")
-            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.\n\n")
-            log.close()
