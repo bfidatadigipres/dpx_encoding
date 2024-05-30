@@ -21,7 +21,7 @@ from dagster import asset, DynamicOut, DynamicOutput
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
-from .dpx_splitting import launch_splitting
+from .dpx_splitting import launch_split
 from .config import DOWNTIME, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP
 
 
@@ -89,8 +89,8 @@ def assessment(context, dynamic_process_subfolders):
         return {"status": "folder failure", "dpx_seq": dpx_path}
     context.log.info(f"Folder depth is {folder_depth}")
 
-    gaps, missing, first_dpx = gaps(dpx_path)
-    if gaps is True:
+    gap_check, missing, first_dpx = gaps(dpx_path)
+    if gap_check is True:
         context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
         review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
         shutil.move(dpx_path, review_path)
@@ -146,13 +146,14 @@ def assessment(context, dynamic_process_subfolders):
 @asset
 def move_for_split_or_encoding(context, assessment):
     '''
-    Move to splittig or to encoding
+    Move to splitting or to encoding
     by updating sqlite data and trigger
-    splitting.py (next asset scripts)
+    dpx_splitting.py func launch_split()
     '''
     if 'failure' not in assessment['status']:
+
         if assessment['size'] > 1395864370:
-            reels = launch_splitting(assessment['dpx_seq'], assessment['kb_size'], assessment['encoding'])
+            reels = launch_split(assessment['dpx_seq'], assessment['kb_size'], assessment['encoding'])
             if 'failure' in reels['status']:
                 raise Exception("Reels were not split correctly. Exiting")
             if assessment['status'] == 'rawcook':

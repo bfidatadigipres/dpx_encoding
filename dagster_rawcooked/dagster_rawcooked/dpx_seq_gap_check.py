@@ -1,45 +1,6 @@
-#!/usr/bin/env python3
-
-'''
-dpx_sequence_gap_check.py
-
-Script functions:
-1. Iterate dpx_gap_check/ folders for DPX sequences
-   counting depth of DPX sequence folder from top folder
-2. Extract all numerical values from DPX filenames to
-   DPX file list
-3. Build two sets, one from the list and one with
-   a complete number sequence
-4. Compare the two and check for difference
-5. If different, DPX sequence is to be moved to one
-   folder and the missing DPX numbers are to be written
-   to a log file
-   If not different, the DPX sequence is moved to the
-   correct dpx_to_assess folder path / 3 or 4 depth
-
-Joanna White 2024
-'''
-
 import os
 import re
 import logging
-
-
-DPX_PATH = os.environ['QNAP_FILM']
-DPX_GAP_CHECK = os.path.join(DPX_PATH, 'automation_dpx/encoding/dpx_gap_check/')
-DPX_REVIEW = os.path.join(DPX_PATH, os.environ['DPX_REVIEW'])
-DPX_ASSESS = os.path.join(DPX_PATH, os.environ['DPX_ASSESS'])
-DPX_ASSESS_FOUR = os.path.join(DPX_PATH, os.environ['DPX_ASSESS_FOUR'])
-LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'], 'dpx_sequence_gap_check.log')
-LOCAL_LOG = os.path.join(DPX_REVIEW, 'dpx_gaps_found.log')
-
-# Logging config
-LOGGER = logging.getLogger('dpx_sequence_gap_check_qnap_film')
-hdlr = logging.FileHandler(LOG)
-formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
-hdlr.setFormatter(formatter)
-LOGGER.addHandler(hdlr)
-LOGGER.setLevel(logging.INFO)
 
 
 def iterate_folders(fpath):
@@ -89,9 +50,6 @@ def count_folder_depth(fpath):
 
         scan_num = len(total_scans)
         # Temp log monitoring of unusually high folder numbers
-        LOGGER.info("DPX sequence found with excess folders:")
-        for fold in folder_contents:
-            LOGGER.info(fold)
         if len(folder_contents) / scan_num == 2:
             # Ensure folder naming order is correct
             if 'scan' not in folder_contents[0].split('/')[-1].lower():
@@ -127,10 +85,6 @@ def gaps(fpath):
 
         # Retrieve equivalent DPX names for logs
         first_dpx = filenames[file_nums.index(min(file_nums))]
-        last_dpx = filenames[file_nums.index(max(file_nums))]
-        LOGGER.info("Total DPX files in sequence: %s", len(file_range))
-        LOGGER.info("First DPX: %s", first_dpx)
-        LOGGER.info("Last DPX: %s", last_dpx)
 
         # Check for absent numbers in sequence
         missing = list(set(file_nums) ^ set(file_range))
