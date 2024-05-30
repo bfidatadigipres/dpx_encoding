@@ -17,18 +17,11 @@ import os
 import sys
 import json
 import shutil
-import sqlite3
 from dagster import asset, DynamicOutput
 import dpx_assess
 import sqlite_funcs
 import dpx_seq_gap_check
 from .config import DOWNTIME, DATABASE, QNAP_FILM, ASSESS, DPX_COOK, MKV_ENCODED, DPOLICY, DPX_REVIEW
-
-
-CONNECT = sqlite3.connect(DATABASE)
-CONNECT.execute(
-    'CREATE TABLE IF NOT EXISTS PROCESSING (name TEXT, colourspace TEXT, size_dpx TEXT, bitdepth TEXT, start TEXT, splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, rawcook_version TEXT)'
-)
 
 
 def check_control():
@@ -133,7 +126,7 @@ def handle_assessments(assessment):
     elif assessment['status'] == 'split tar':
         # Initiate splitting with tar argument
         pass
-    elif assessment['status'] == 'split rawcook'
+    elif assessment['status'] == 'split rawcook':
         # Initiate splitting with rawcook argument
         pass
 
