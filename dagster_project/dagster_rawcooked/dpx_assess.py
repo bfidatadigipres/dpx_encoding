@@ -63,7 +63,7 @@ def get_metadata(stream, arg, dpath):
     cmd = [
         'mediainfo', '--Full',
         '--Language=raw',
-        '--Output={stream};%{arg}%',
+        f'--Output={stream};%{arg}%',
         dpath
     ]
     
