@@ -15,7 +15,7 @@ Joanna White
 # Imports
 import os
 import shutil
-from dagster import asset, DynamicOutput
+from dagster import op, asset, DynamicOutput, DynamicOutputDefinition
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
@@ -23,30 +23,23 @@ from .dpx_splitting import launch_split
 from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
 
 
-@asset
-def get_assess_folders():
-    '''
-    Retrieve list of DPX subfolders
-    extract items partially processed
-    '''
+@op(out=DynamicOutputDefinition())
+def dynamic_process_assess_folders(context):
+    ''' Push get_dpx_folder list to multiple assets'''
+
     dpx_folder = os.path.join(QNAP_FILM, ASSESS)
     print(dpx_folder)
     dpx_folders = [x for x in os.listdir(dpx_folder) if os.path.isdir(os.path.join(dpx_folder, x))]
+    context.log.info(f"Files found in dpx_to_assess/ folder path:\n{dpx_folders}")
 
-    return dpx_folders
-
-
-@asset
-def dynamic_process_assess_folders(get_assess_folders):
-    ''' Push get_dpx_folder list to multiple assets'''
-    if len(get_assess_folders) == 0:
+    if len(dpx_folders) == 0:
         return False
-    for dpx_path in get_assess_folders:
+    for dpx_path in dpx_folders:
         dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_path)
         yield DynamicOutput(dpath, mapping_key=dpx_path)
 
 
-@asset
+@op
 def assessment(context, dynamic_process_assess_folders):
     ''' Calling dpx_assess modules run assessment '''
     dpx_path = dynamic_process_assess_folders
