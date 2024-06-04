@@ -39,7 +39,7 @@ def get_assess_folders():
 @asset
 def dynamic_process_assess_folders(get_assess_folders):
     ''' Push get_dpx_folder list to multiple assets'''
-    if len(get_asset_folders) == 0:
+    if len(get_assess_folders) == 0:
         return False
     for dpx_path in get_assess_folders:
         dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_path)
