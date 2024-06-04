@@ -121,7 +121,7 @@ def assessment(context, dynamic_process_assess_folders):
         return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'rawcook', "part": part, "whole": whole}    
 
 
-@asset
+@op
 def move_for_split_or_encoding(context, assessment):
     '''
     Move to splitting or to encoding
