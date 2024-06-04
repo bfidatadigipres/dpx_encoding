@@ -2,7 +2,7 @@ import os
 
 # Storage paths
 FILM_OPS = os.environ.get('FILM_OPS')
-QNAP_FILM = os.environ.get('QNAP_FILM')
+QNAP_FILM = os.path.join(os.environ.get('QNAP_FILM'), 'test/')
 QNAP_FILMOPS = os.environ.get('QNAP_FILMOPS')
 QNAP_FILMOPS2 = os.environ.get('QNAP_FILMOPS2')
 DIGI_OPS = os.environ.get('IS_DIGITAL')
