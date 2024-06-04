@@ -30,6 +30,7 @@ def get_assess_folders():
     extract items partially processed
     '''
     dpx_folder = os.path.join(QNAP_FILM, ASSESS)
+    print(dpx_folder)
     dpx_folders = [x for x in os.listdir(dpx_folder) if os.path.isdir(os.path.join(dpx_folder, x))]
 
     return dpx_folders
@@ -38,6 +39,8 @@ def get_assess_folders():
 @asset
 def dynamic_process_assess_folders(get_assess_folders):
     ''' Push get_dpx_folder list to multiple assets'''
+    if len(get_asset_folders) == 0:
+        return False
     for dpx_path in get_assess_folders:
         dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_path)
         yield DynamicOutput(dpath, mapping_key=dpx_path)
@@ -47,6 +50,8 @@ def dynamic_process_assess_folders(get_assess_folders):
 def assessment(context, dynamic_process_assess_folders):
     ''' Calling dpx_assess modules run assessment '''
     dpx_path = dynamic_process_assess_folders
+    if not dpx_path:
+        return {"status": "no folders to process", "dpx_seq": dpx_path}
     dpx_seq = os.path.split(dpx_path)[1]
     context.log.info(f"Processing DPX sequence: {dpx_path}")
 
@@ -130,8 +135,9 @@ def move_for_split_or_encoding(context, assessment):
     by updating sqlite data and trigger
     dpx_splitting.py func launch_split()
     '''
-    if 'failure' not in assessment['status']:
-
+    if 'no folders to process' in assessment['status']:
+        pass
+    elif 'failure' not in assessment['status']:
         if assessment['size'] > 1395864370:
             reels = launch_split(assessment['dpx_seq'], assessment['kb_size'], assessment['encoding'])
             if 'failure' in reels['status']:
