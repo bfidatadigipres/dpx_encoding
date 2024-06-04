@@ -15,7 +15,7 @@ Joanna White
 # Imports
 import os
 import shutil
-from dagster import op, asset, DynamicOutput, DynamicOutputDefinition
+from dagster import op, asset, DynamicOutput, DynamicOut
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import create_first_entry, update_table
 from .dpx_seq_gap_check import gaps
@@ -23,7 +23,7 @@ from .dpx_splitting import launch_split
 from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
 
 
-@op(out=DynamicOutputDefinition())
+@op(out=DynamicOut())
 def dynamic_process_assess_folders(context):
     ''' Push get_dpx_folder list to multiple assets'''
 
