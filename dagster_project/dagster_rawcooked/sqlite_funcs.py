@@ -4,6 +4,7 @@ name TEXT, colourspace TEXT, size_dpx TEXT, bitdepth TEXT, start TEXT,
 splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, rawcook_version TEXT
 '''
 
+from dagster import asset
 import sqlite3
 import datetime
 
@@ -14,6 +15,53 @@ def format_date_time():
     '''
     now = datetime.datetime.now()
     return now.strftime('%Y-%m-%d %H:%M:%S')
+
+@asset
+def make_filename_entry(fname, fpath, database):
+    '''
+    Find list of sequences in dpx_to_assess
+    and move into dB
+    '''
+
+    processing_values = (fname,fpath)
+    sql = f''' INSERT INTO PROCESSING(name,fpath) VALUES (?,?) '''
+    try:
+        connect = sqlite3.connect(database)
+        connect.execute(
+            'CREATE TABLE IF NOT EXISTS PROCESSING (name TEXT, colourspace TEXT, size_dpx TEXT, bitdepth TEXT, start TEXT, splitting TEXT, size_mkv TEXT, complete TEXT, status TEXT, encoding_type TEXT, fullpath TEXT)'
+        )
+        cur = connect.cursor()
+        cur.execute(sql, processing_values)
+        connect.commit()
+        print(f"Record updated with new values {cur.lastrowid}")
+        return cur.lastrowid
+    except sqlite3.Error as err:
+        print(f"Failed to update database: {err}")
+        raise
+    finally:
+        if connect:
+            connect.close()
+
+
+@asset
+def retrieve_fnames(DATABASE):
+    '''
+    Read dB and retrieve new entries made today
+    '''
+    rdata = []
+    try:
+        sqlite_conn = sqlite3.connect(DATABASE)
+        cursor = sqlite_conn.cursor()
+        cursor.execute(''' SELECT * FROM PROCESSING WHERE fname = "N_*" AND WHERE start = ISNULL ''')
+        data = cursor.fetchall()
+        for row in data:
+            rdata.append(row[10])
+    except sqlite3.Error as err:
+        print(err)
+    finally:
+        if sqlite_conn:
+            sqlite_conn.close()
+    return rdata
 
 
 def create_first_entry(fname, cspace, fsize, bdepth, status, encoding_type, fpath, database):

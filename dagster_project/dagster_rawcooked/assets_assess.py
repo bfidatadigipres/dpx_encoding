@@ -17,14 +17,14 @@ import os
 import shutil
 from dagster import op, asset, DynamicOutput, DynamicOut
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
-from .sqlite_funcs import create_first_entry, update_table
+from .sqlite_funcs import retrieve_fnames, create_first_entry, make_filename_entry, update_table
 from .dpx_seq_gap_check import gaps
 from .dpx_splitting import launch_split
 from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
 
 
-@op(out=DynamicOut())
-def dynamic_process_assess_folders(context):
+@asset
+def process_assess_folder(context):
     ''' Push get_dpx_folder list to multiple assets'''
 
     dpx_folder = os.path.join(QNAP_FILM, ASSESS)
@@ -35,94 +35,97 @@ def dynamic_process_assess_folders(context):
     if len(dpx_folders) == 0:
         return False
     for dpx_path in dpx_folders:
-        dpath = os.path.join(QNAP_FILM, DPX_COOK, dpx_path)
-        yield DynamicOutput(dpath, mapping_key=dpx_path)
+        dpath = os.path.join(QNAP_FILM, ASSESS, dpx_path)
+        make_filename_entry(dpx_path, dpath, DATABASE)
 
 
-@op
-def assessment(context, dynamic_process_assess_folders):
+@asset(deps=['process_assess_folder'])
+def assessment(context):
     ''' Calling dpx_assess modules run assessment '''
-    dpx_path = dynamic_process_assess_folders
-    if not dpx_path:
-        return {"status": "no folders to process", "dpx_seq": dpx_path}
-    dpx_seq = os.path.split(dpx_path)[1]
-    context.log.info(f"Processing DPX sequence: {dpx_path}")
 
-    part, whole = get_partwhole(dpx_seq)
-    if not part:
-        row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.', DATABASE)
-        if not row_id:
-            context.log.warning("Failed to update status with 'DPX sequence named incorrectly'")
-            return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "partWhole failure", "dpx_seq": dpx_path}        
-    context.log.info(f"* Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
+    dpx_paths = retrieve_fnames(DATABASE)
+    if not dpx_paths:
+        return {"status": "no folders to process", "dpx_seq": dpx_paths}
+    
+    for dpx_path in dpx_paths:
+        dpx_seq = os.path.split(dpx_path)[1]
+        context.log.info(f"Processing DPX sequence: {dpx_path}")
 
-    folder_depth, first_dpx = count_folder_depth(dpx_path)
-    if folder_depth is None:
-        # Incorrect formatting of folders
-        row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.', DATABASE)
-        if not row_id:
-            context.log.warning("Failed to update status with 'Folders formatted incorrectly'")
-            return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "folder failure", "dpx_seq": dpx_path}
-    context.log.info(f"Folder depth is {folder_depth}")
+        part, whole = get_partwhole(dpx_seq)
+        if not part:
+            row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.', DATABASE)
+            if not row_id:
+                context.log.warning("Failed to update status with 'DPX sequence named incorrectly'")
+                return {"status": "database failure", "dpx_seq": dpx_path}
+            return {"status": "partWhole failure", "dpx_seq": dpx_path}        
+        context.log.info(f"* Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
 
-    gap_check, missing, first_dpx = gaps(dpx_path)
-    if gap_check is True:
-        context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
-        review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
-        shutil.move(dpx_path, review_path)
-        row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.', DATABASE)
-        if not row_id:
-            context.log.warning(f"Failed to update status with 'Gaps found in sequence'\n{missing}")
-        return {"status": "gap failure", "dpx_seq": dpx_path}
+        folder_depth, first_dpx = count_folder_depth(dpx_path)
+        if folder_depth is None:
+            # Incorrect formatting of folders
+            row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.', DATABASE)
+            if not row_id:
+                context.log.warning("Failed to update status with 'Folders formatted incorrectly'")
+                return {"status": "database failure", "dpx_seq": dpx_path}
+            return {"status": "folder failure", "dpx_seq": dpx_path}
+        context.log.info(f"Folder depth is {folder_depth}")
 
-    size = get_folder_size(dpx_path)
-    cspace = get_metadata('Video', 'ColorSpace', first_dpx)
-    bdepth = get_metadata('Video', 'BitDepth', first_dpx)
-    width = get_metadata('Video', 'Width', first_dpx)
-    if not cspace:
-        cspace = get_metadata('Image', 'ColorSpace', first_dpx)
-    if not bdepth:
-        bdepth = get_metadata('Image', 'BitDepth', first_dpx)
-    if not width:
-        width = get_metadata('Image', 'Width', first_dpx)
+        gap_check, missing, first_dpx = gaps(dpx_path)
+        if gap_check is True:
+            context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
+            review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
+            shutil.move(dpx_path, review_path)
+            row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.', DATABASE)
+            if not row_id:
+                context.log.warning(f"Failed to update status with 'Gaps found in sequence'\n{missing}")
+            return {"status": "gap failure", "dpx_seq": dpx_path}
 
-    tar = fourk = luma = False
-    context.log.info(f"* Size: {size} | Colourspace {cspace} | Bit-depth {bdepth} | Pixel width {width}")
-    policy_pass, response = get_mediaconch(dpx_path, DPOLICY)
+        size = get_folder_size(dpx_path)
+        cspace = get_metadata('Video', 'ColorSpace', first_dpx)
+        bdepth = get_metadata('Video', 'BitDepth', first_dpx)
+        width = get_metadata('Video', 'Width', first_dpx)
+        if not cspace:
+            cspace = get_metadata('Image', 'ColorSpace', first_dpx)
+        if not bdepth:
+            bdepth = get_metadata('Image', 'BitDepth', first_dpx)
+        if not width:
+            width = get_metadata('Image', 'Width', first_dpx)
 
-    if not policy_pass:
-        tar = True
-        context.log.info(f"DPX sequence {dpx_seq} failed DPX policy:\n{response}")
-    if int(width) > 3999:
-        fourk = True
-        context.log.info(f"DPX sequence {dpx_seq} is 4K")
-    if 'Y' == cspace:
-        luma = True
+        tar = fourk = luma = False
+        context.log.info(f"* Size: {size} | Colourspace {cspace} | Bit-depth {bdepth} | Pixel width {width}")
+        policy_pass, response = get_mediaconch(dpx_path, DPOLICY)
 
-    if tar is True:
-        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path, DATABASE)
-        if not row_id:
-            context.log.warning(f"Failed to update status new reord data")
-            return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "tar", "dpx_seq": dpx_path, "size": size, "encoding": 'tar', "part": part, "whole": whole}
-    if luma is True and fourk is True:
-        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
-        if not row_id:
-            context.log.warning(f"Failed to update status new reord data")
-            return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'luma_4k', "part": part, "whole": whole}
-    else:
-        row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
-        if not row_id:
-            context.log.warning(f"Failed to update status new reord data")
-            return {"status": "database failure", "dpx_seq": dpx_path}
-        return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'rawcook', "part": part, "whole": whole}    
+        if not policy_pass:
+            tar = True
+            context.log.info(f"DPX sequence {dpx_seq} failed DPX policy:\n{response}")
+        if int(width) > 3999:
+            fourk = True
+            context.log.info(f"DPX sequence {dpx_seq} is 4K")
+        if 'Y' == cspace:
+            luma = True
+
+        if tar is True:
+            row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path, DATABASE)
+            if not row_id:
+                context.log.warning(f"Failed to update status new reord data")
+                return {"status": "database failure", "dpx_seq": dpx_path}
+            return {"status": "tar", "dpx_seq": dpx_path, "size": size, "encoding": 'tar', "part": part, "whole": whole}
+        if luma is True and fourk is True:
+            row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
+            if not row_id:
+                context.log.warning(f"Failed to update status new reord data")
+                return {"status": "database failure", "dpx_seq": dpx_path}
+            return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'luma_4k', "part": part, "whole": whole}
+        else:
+            row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
+            if not row_id:
+                context.log.warning(f"Failed to update status new reord data")
+                return {"status": "database failure", "dpx_seq": dpx_path}
+            return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'rawcook', "part": part, "whole": whole}    
 
 
-@op
-def move_for_split_or_encoding(context, assessment):
+@asset(deps=['assessment'])
+def move_for_split_or_encoding(context):
     '''
     Move to splitting or to encoding
     by updating sqlite data and trigger

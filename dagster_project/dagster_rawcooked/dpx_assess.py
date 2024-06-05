@@ -3,8 +3,10 @@ Modules for assess.py
 '''
 import os
 import subprocess
+from dagster import asset
 
 
+@asset
 def get_partwhole(folder):
     ''' Extract part wholes as int '''
     pw = folder.split('_')[-1]
@@ -12,6 +14,7 @@ def get_partwhole(folder):
     return int(part), int(whole)
 
 
+@asset
 def count_folder_depth(fpath):
     '''
     Work out the depth of folders to the DPX sequence
@@ -57,6 +60,7 @@ def count_folder_depth(fpath):
     return None
 
 
+@asset
 def get_metadata(stream, arg, dpath):
     ''' Retrieve metadata with subprocess '''
 
@@ -71,6 +75,7 @@ def get_metadata(stream, arg, dpath):
     return meta.decode('utf-8')
 
 
+@asset
 def get_mediaconch(dpath, policy):
     ''' Check for pass! {path} in mediaconch reponse '''
 
