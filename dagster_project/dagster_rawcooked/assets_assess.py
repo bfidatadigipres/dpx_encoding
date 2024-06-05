@@ -15,7 +15,7 @@ Joanna White
 # Imports
 import os
 import shutil
-from dagster import op, asset, DynamicOutput, DynamicOut
+from dagster import asset
 from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
 from .sqlite_funcs import retrieve_fnames, create_first_entry, make_filename_entry, update_table
 from .dpx_seq_gap_check import gaps
