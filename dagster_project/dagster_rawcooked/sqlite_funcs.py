@@ -16,7 +16,7 @@ def format_date_time():
     now = datetime.datetime.now()
     return now.strftime('%Y-%m-%d %H:%M:%S')
 
-@asset
+
 def make_filename_entry(fname, fpath, database):
     '''
     Find list of sequences in dpx_to_assess
@@ -43,7 +43,7 @@ def make_filename_entry(fname, fpath, database):
             connect.close()
 
 
-@asset
+
 def retrieve_fnames(DATABASE):
     '''
     Read dB and retrieve new entries made today
