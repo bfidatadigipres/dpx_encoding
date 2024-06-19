@@ -75,8 +75,8 @@ grep ^N_ "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
 done
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 12 "echo 'Encoding start {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log && rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && echo 'Encoding end {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log"
-cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 12 "echo 'Encoding start {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log && rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && echo 'Encoding end {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log"
+cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -116,8 +116,8 @@ grep ^N_ "${MKV_DEST}rawcook_list.txt" | while IFS= read -r dpx_seq; do
 done
 
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 12 "echo 'Encoding start {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log && rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && echo 'Encoding end {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log"
-cat "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 12 "echo 'Encoding start {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log && rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt && echo 'Encoding end {}.mkv $(date --date "+0hour" +\%Y-\%m-\%d_\%H-\%M-\%S)' >> ${SCRIPT_LOG}dpx_rawcook.log"
+cat "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 log "===================== DPX RAWcook ENDED ====================="
 

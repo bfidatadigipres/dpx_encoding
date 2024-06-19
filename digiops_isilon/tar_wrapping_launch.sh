@@ -6,6 +6,19 @@
 
 date_FULL=$(date +'%Y-%m-%d - %T')
 
+# Function to check for control json activity
+function control {
+    boole=$(cat "${LOG_PATH}downtime_control.json" | grep "rawcooked" | awk -F': ' '{print $2}')
+    if [ "$boole" = false, ] ; then
+      log "Control json requests script exit immediately"
+      log "===================== DPX assessment workflow ENDED ====================="
+      exit 0
+    fi
+}
+
+# Control check
+control
+
 # Path to folder
 FPATH="${IS_DIGITAL}${DPX_WRAP}"
 LOGS="${IS_DIGITAL}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
