@@ -37,7 +37,9 @@ import tarfile
 import logging
 import hashlib
 import datetime
-import requests
+
+sys.path.append(os.environ['CODE'])
+import adlib_v3 as adlib
 
 # Global paths
 LOCAL_PATH = os.environ['QNAP_DIGIOPS']
@@ -74,21 +76,20 @@ def get_cid_data(fname):
         sys.exit(f"Incorrect filename formatting {fname}. Script exiting.")
 
     search = f"object_number='{ob_num}'"
-    query = {'database': 'items',
-             'search': search,
-             'output': 'json'}
-    results = requests.get(CID_API, params=query)
-    results = results.json()
+    record = adlib.retrieve_record(CID_API, 'items', search, '1', ['priref', 'file_type'])[1]
+    if not record:
+        return None
+
     try:
-        priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
+        priref = adlib.retrieve_field_name(record[0], 'priref')[0]
     except (IndexError, KeyError):
         priref = ''
     try:
-        file_type = results['adlibJSON']['recordList']['record'][0]['file_type'][0]
+        file_type = adlib.retrieve_field_name(record[0], 'file_type')[0]
     except (IndexError, KeyError):
         file_type = ''
 
-    return (priref, file_type)
+    return priref, file_type
 
 
 def tar_item(fpath):
@@ -376,9 +377,7 @@ def main():
             shutil.move(os.path.join(ERRORS, f"{tar_source}_errors.log"), os.path.join(ERRORS, "completed", f"{tar_source}_errors.log"))
 
         # Write note to CID Item record that file has been wrapped using Python tarfile module.
-        locked = write_lock(priref)
-        if locked:
-            success = write_to_cid(priref, tar_file)
+        success = write_to_cid(priref, tar_file)
         if not success:
             error_mssg1 = f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually."
             error_mssg2 = None
@@ -450,19 +449,6 @@ def error_log(fpath, message, kandc):
             log.close()
 
 
-def write_lock(priref):
-    '''
-    Apply a writing lock to the record before updating metadata to Headers
-    '''
-    try:
-        post_response = requests.post(
-            CID_API,
-            params={'database': 'items', 'command': 'lockrecord', 'priref': f'{priref}', 'output': 'json'})
-        return True
-    except Exception as err:
-        LOGGER.warning("write_lock(): Lock record wasn't applied to record %s\n%s", priref, err)
-
-
 def write_to_cid(priref, fname):
     '''
     Make payload and write to CID
@@ -479,41 +465,10 @@ def write_to_cid(priref, fname):
     payload_end = "</record></recordList></adlibXML>"
     payload = payload_head + payload_addition + payload_edit + payload_end
 
-    success = write_payload(priref, payload)
-    if not success:
-        unlock_record(priref)
+    record = adlib.post(CID_API, payload, 'items', 'updaterecord')
+    if record is None:
         return False
     return True
-
-
-def write_payload(priref, payload):
-    '''
-    Receive header, parser data and priref and write to CID media record
-    '''
-    post_response = requests.post(
-        CID_API,
-        params={'database': 'items', 'command': 'updaterecord', 'xmltype': 'grouped', 'output': 'json'},
-        data={'data': payload})
-
-    if "<error><info>" in str(post_response.text):
-        LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
-        return False
-    else:
-        LOGGER.info("No error warning in post_response. Assuming payload successfully written")
-        return True
-
-
-def unlock_record(priref):
-    '''
-    Only used if write fails and lock was successful, to guard against file remaining locked
-    '''
-    try:
-        post_response = requests.post(
-            CID_API,
-            params={'database': 'items', 'command': 'unlockrecord', 'priref': f'{priref}', 'output': 'json'})
-        return True
-    except Exception as err:
-        LOGGER.warning("unlock_record(): Post to unlock record failed. Check Media record %s is unlocked manually\n%s", priref, err)
 
 
 if __name__ == '__main__':
