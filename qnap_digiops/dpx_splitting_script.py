@@ -51,7 +51,9 @@ import json
 import shutil
 import logging
 import datetime
-import requests
+
+sys.path.append(os.environ['CODE'])
+import adlib_v3 as adlib
 
 # Global variables
 DPX_PATH = os.environ['QNAP_DIGIOPS']
@@ -93,40 +95,38 @@ def check_control():
 
 def get_cid_data(dpx_sequence):
     '''
-    Use requests to retrieve priref for associated item object number
+    Retrieve priref for associated item object number
     '''
+    print("get_cid_data()")
     ob_num_split = dpx_sequence.split('_')
     ob_num = '-'.join(ob_num_split[0:-1])
     search = f"object_number='{ob_num}'"
-    query = {'database': 'items',
-             'search': search,
-             'output': 'json'}
-    results = requests.get(CID_API, params=query)
-    results = results.json()
+    results = adlib.retrieve_record(CID_API, 'items', search, '1', ['priref', 'file_type'])[1]
+    if results is None:
+        return None, None
+
     try:
-        priref = results['adlibJSON']['recordList']['record'][0]['@attributes']['priref']
+        priref = adlib.retrieve_field_name(results[0], 'priref')[0]
     except (IndexError, KeyError):
         priref = ''
     try:
-        file_type = results['adlibJSON']['recordList']['record'][0]['file_type'][0]
+        file_type = adlib.retrieve_field_name(results[0], 'file_type')[0]
     except (IndexError, KeyError):
         file_type = ''
 
-    return (priref, file_type)
+    return priref, file_type
 
 
 def get_utb(priref):
     '''
-    Use requests to retrieve UTB data for associated priref
+    Retrieve UTB data for associated priref
     '''
     search = f"priref='{priref}'"
-    query = {'database': 'items',
-             'search': search,
-             'output': 'json'}
-    results = requests.get(CID_API, params=query)
-    results = results.json()
+    results = adlib.retrieve_record(CID_API, 'items', search, '1', ['utb.content'])[1]
+    if results is None:
+        return None
     try:
-        utb_content = results['adlibJSON']['recordList']['record'][0]['utb'][0]['utb.content']
+        utb_content = adlib.retrieve_field_name(results[0], 'utb.content')
     except (IndexError, KeyError):
         utb_content = ['']
 
@@ -518,6 +518,9 @@ def main():
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         priref, file_type = get_cid_data(dpx_sequence)
+        if priref is None or file_type is None:
+            sys.exit("Unable to access CID Item record. Exiting.")
+        LOGGER.info("%s - Priref %s and file_type %s", dpx_sequence, priref, file_type)
 
         # Sequence CID Item record check
         if 'dpx' in file_type.lower():
@@ -1071,60 +1074,16 @@ def record_append(priref, cid_data, original_data):
     payload_end = "</record></recordList></adlibXML>"
     payload = payload_head + payload_addition + payload_edit + payload_end
 
-    lock_success = write_lock(priref)
-    if lock_success:
-        write_success = write_payload(priref, payload)
-        if write_success:
-            return True
-        else:
-            unlock_record(priref)
-            return False
-    else:
+    record = adlib.post(CID_API, payload, 'items', 'updaterecord')
+    if record is None:
+        LOGGER.warning("record_append(): Failed adlib.post to %s\n%s", priref, payload)
         return False
-
-
-def write_lock(priref):
-    '''
-    Apply a writing lock to the record before updating metadata to Headers
-    '''
-    try:
-        post_response = requests.post(
-            CID_API,
-            params={'database': 'items', 'command': 'lockrecord', 'priref': f'{priref}', 'output': 'json'})
+    elif 'priref' in str(record):
+        LOGGER.info("record_append(): UTB Content payload successfully written to record %s", priref)
         return True
-    except Exception as err:
-        LOGGER.warning("write_lock(): Lock record wasn't applied to record %s\n%s", priref, err)
-
-
-def write_payload(priref, payload):
-    '''
-    Receive header, parser data and priref and write to CID items record
-    '''
-    post_response = requests.post(
-        CID_API,
-        params={'database': 'items', 'command': 'updaterecord', 'xmltype': 'grouped', 'output': 'json'},
-        data={'data': payload})
-
-    LOGGER.info(str(post_response.text))
-    if "<error><info>" in str(post_response.text):
-        LOGGER.warning("write_payload(): Error returned for requests.post to %s\n%s", priref, payload)
-        return False
     else:
-        LOGGER.info("No error warning in post_response. Assuming payload successfully written")
-        return True
-
-
-def unlock_record(priref):
-    '''
-    Only used if write fails and lock was successful, to guard against file remaining locked
-    '''
-    try:
-        post_response = requests.post(
-            CID_API,
-            params={'database': 'items', 'command': 'unlockrecord', 'priref': f'{priref}', 'output': 'json'})
-        return True
-    except Exception as err:
-        LOGGER.warning("unlock_record(): Post to unlock record failed. Check Media record %s is unlocked manually\n%s", priref, err)
+        LOGGER.warning("record_append(): Failed adlib.post to %s\n%s", priref, payload)
+        return False
 
 
 def error_log(fpath, message, kandc):
