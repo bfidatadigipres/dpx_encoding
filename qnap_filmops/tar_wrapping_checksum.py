@@ -51,7 +51,7 @@ OVERSIZE = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversized_seq
 ERRORS = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'])
 AUTOINGEST = os.path.join(LOCAL_PATH, os.environ['AUTOINGEST_STORE'])
 LOG = os.path.join(LOCAL_PATH, os.environ['DPX_SCRIPT_LOG'], 'tar_wrapping_checksum.log')
-CID_API = os.environ['CID_API3']
+CID_API = os.environ['CID_API4']
 
 # Logging config
 LOGGER = logging.getLogger('tar_wrapping_qnap_filmops')

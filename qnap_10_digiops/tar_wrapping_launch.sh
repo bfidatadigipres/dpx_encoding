@@ -20,9 +20,9 @@ function control {
 control
 
 # Path to folder
-FPATH="${GRACK_FILM}${DPX_WRAP}"
-LOGS="${GRACK_FILM}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
-FLIST="${GRACK_FILM}${TAR_PRES}temp_file_list.txt"
+FPATH="${QNAP_10_DIGIOPS}${DPX_WRAP}"
+LOGS="${QNAP_10_DIGIOPS}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
+FLIST="${QNAP_10_DIGIOPS}${TAR_PRES}temp_file_list.txt"
 
 if [ -z "$(ls -A ${FPATH})" ]
   then
@@ -47,6 +47,6 @@ cat "$FLIST" >> "$LOGS"
 
 # Launching Python script using parallel
 echo " Launching Python script to TAR wrap files/folders " >> "$LOGS"
-grep "/mnt/" "$FLIST" | parallel --jobs 1 "${PY3_ENV} ${DPX_SCRIPTS}grack_film/tar_wrapping_checksum.py {}"
+grep "/mnt/" "$FLIST" | parallel --jobs 1 "${PY3_ENV} ${DPX_SCRIPTS}qnap_10_digiops/tar_wrapping_checksum.py {}"
 echo " =========== TAR WRAPPING CHECKSUM SCRIPT END =========== $date_FULL" >> "$LOGS"
 echo "" >> "$LOGS"

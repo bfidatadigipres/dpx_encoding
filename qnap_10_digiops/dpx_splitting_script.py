@@ -56,7 +56,7 @@ sys.path.append(os.environ['CODE'])
 import adlib_v3 as adlib
 
 # Global variables
-DPX_PATH = os.environ['GRACK_FILM']
+DPX_PATH = os.environ['QNAP_10_DIGIOPS']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 ERRORS_COMPLETE = os.path.join(ERRORS, 'completed/')
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')
@@ -71,7 +71,7 @@ PART_RAWCOOK = os.path.join(DPX_PATH, os.environ['PART_RAWCOOK'])
 PART_TAR = os.path.join(DPX_PATH, os.environ['PART_TAR'])
 CONTROL_JSON = os.path.join(os.environ['LOG_PATH'], 'downtime_control.json')
 TODAY = str(datetime.datetime.now())[:10]
-CID_API = os.environ['CID_API3']
+CID_API = os.environ['CID_API4']
 
 # Setup logging
 LOGGER = logging.getLogger('dpx_splitting_script.log')
@@ -142,7 +142,6 @@ def read_csv(dpx_sequence):
     new_sequence = dpx_sequence
     with open(CSV_PATH, newline='') as fname:
         readme = csv.DictReader(fname)
-
         while number_present is True:
             for row in readme:
                 orig_num = row['original']
@@ -509,9 +508,7 @@ def main():
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         data = sys.argv[1]
         LOGGER.info("Received data: %s", data)
-        data = data.split(',\ ')
-        if len(data) == 1:
-            data = data.split(', ')
+        data = data.split(',\\ ')
         kb_size = int(data[0])
         dpx_path = str(data[1])
         encoding = str(data[2])

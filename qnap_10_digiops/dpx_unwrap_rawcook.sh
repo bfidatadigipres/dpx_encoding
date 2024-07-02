@@ -5,9 +5,9 @@
 # ===============================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG="${GRACK_FILM}${DPX_SCRIPT_LOG}"
-DPX_PATH="${GRACK_FILM}${UNWRAP_RAWCOOK}"
-ERRORS="${GRACK_FILM}${CURRENT_ERRORS}"
+SCRIPT_LOG="${QNAP_10_DIGIOPS}${DPX_SCRIPT_LOG}"
+DPX_PATH="${QNAP_10_DIGIOPS}${UNWRAP_RAWCOOK}"
+ERRORS="${QNAP_10_DIGIOPS}${CURRENT_ERRORS}"
 COMPLETED="${DPX_PATH}completed/"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.

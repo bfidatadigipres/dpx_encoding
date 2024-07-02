@@ -35,7 +35,7 @@ import datetime
 import subprocess
 
 # Global variables
-DPX_PATH = os.environ['GRACK_FILM']
+DPX_PATH = os.environ['QNAP_10_DIGIOPS']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 UNTAR_PATH = os.path.join(DPX_PATH, os.environ['UNWRAP_TAR'])
@@ -45,7 +45,7 @@ LOCAL_LOG = os.path.join(UNTAR_PATH, 'unwrapped_tar_checksum.log')
 TODAY = str(datetime.datetime.now())[:10]
 
 # Setup logging
-LOGGER = logging.getLogger('unwrap_tar_checksum_grack_film')
+LOGGER = logging.getLogger('unwrap_tar_checksum_qnap_10_digiops')
 HDLR = logging.FileHandler(os.path.join(SCRIPT_LOG, 'unwrap_tar_checksum.log'))
 FORMATTER = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 HDLR.setFormatter(FORMATTER)

@@ -5,13 +5,13 @@
 # ====================================================================
 
 # Global variables extracted from environmental vars
-ERRORS="${GRACK_FILM}${CURRENT_ERRORS}"
-DPX_PATH="${GRACK_FILM}${RAWCOOKED_PATH}"
-DPX_DEST="${GRACK_FILM}${DPX_COMPLETE}"
-MKV_DESTINATION="${GRACK_FILM}${MKV_ENCODED}"
-CHECK_FOLDER="${GRACK_FILM}${MKV_CHECK}"
+ERRORS="${QNAP_10_DIGIOPS}${CURRENT_ERRORS}"
+DPX_PATH="${QNAP_10_DIGIOPS}${RAWCOOKED_PATH}"
+DPX_DEST="${QNAP_10_DIGIOPS}${DPX_COMPLETE}"
+MKV_DESTINATION="${QNAP_10_DIGIOPS}${MKV_ENCODED}"
+CHECK_FOLDER="${QNAP_10_DIGIOPS}${MKV_CHECK}"
 MKV_POLICY="${POLICY_RAWCOOK}"
-SCRIPT_LOG="${GRACK_FILM}${DPX_SCRIPT_LOG}"
+SCRIPT_LOG="${QNAP_10_DIGIOPS}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {

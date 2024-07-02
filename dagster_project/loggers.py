@@ -14,12 +14,9 @@ def log_status(init_context):
 
     logger_ = logging.getLogger(name)
     logger_.setLevel(log_level)
-    
     handler = logging.StreamHandler()
     handler.setLevel(log_level)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    
     logger_.addHandler(handler)
-    
     return logger_

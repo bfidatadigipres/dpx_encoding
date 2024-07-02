@@ -42,7 +42,7 @@ sys.path.append(os.environ['CODE'])
 import adlib_v3 as adlib
 
 # Global paths
-LOCAL_PATH = os.environ['GRACK_FILM']
+LOCAL_PATH = os.environ['QNAP_10_DIGIOPS']
 AUTO_TAR = os.path.join(LOCAL_PATH, os.environ['TAR_PRES'])
 DELETE_TAR = os.path.join(LOCAL_PATH, os.environ['TO_DELETE'])
 TAR_FAIL = os.path.join(LOCAL_PATH, os.environ['TAR_FAIL'])
@@ -51,12 +51,10 @@ OVERSIZE = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'], 'oversized_seq
 ERRORS = os.path.join(LOCAL_PATH, os.environ['CURRENT_ERRORS'])
 AUTOINGEST = os.path.join(LOCAL_PATH, os.environ['AUTOINGEST_STORE'])
 LOG = os.path.join(LOCAL_PATH, os.environ['DPX_SCRIPT_LOG'], 'tar_wrapping_checksum.log')
-LOG_PATH = os.environ['LOG_PATH']
-CONTROL_JSON = os.path.join(os.environ['LOG_PATH'], 'downtime_control.json')
-CID_API = os.environ['CID_API3']
+CID_API = os.environ['CID_API4']
 
 # Logging config
-LOGGER = logging.getLogger('tar_wrapping_grack_film')
+LOGGER = logging.getLogger('tar_wrapping_qnap_10_digiops')
 hdlr = logging.FileHandler(LOG)
 formatter = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 hdlr.setFormatter(formatter)
@@ -195,7 +193,6 @@ def main():
     Delete original file, move TAR to autoingest path.
     '''
 
-    check_control()
     if len(sys.argv) != 2:
         LOGGER.warning("SCRIPT EXIT: Error with shell script input:\n %s", sys.argv)
         sys.exit()
@@ -208,6 +205,7 @@ def main():
 
     if fullpath.endswith('.md5'):
         sys.exit("Supplied path is MD5. Skipping.")
+
 
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
@@ -234,7 +232,7 @@ def main():
         sys.exit(f"No CID item record found to match TAR file {tar_source}. Exiting.")
     LOGGER.info("File for TAR wrapping %s has matching CID Item record: %s. File type: %s", tar_source, priref, file_type)
 
-    if file_type.lower() not in ['dpx', 'dcp', 'dcdm', 'wav']:
+    if file_type.lower() not in ['dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         LOGGER.warning("File type absent or doesn't match DPX, DCP, DCDM or WAV. Script exiting")
         error_mssg1 = f"File type absent or doesn't match DPX, DCP, DCDM or WAV: {file_type}\n\tPlease check 'file_type' field for CID item record {priref}"
         error_mssg2 = None
@@ -341,20 +339,8 @@ def main():
         log.append(f"File size is {file_size} bytes")
         LOGGER.info("File size is %s bytes.", file_size)
         if int(file_size) > 1099511627770:
-            log.append("FILE IS TOO LARGE FOR INGEST TO BLACK PEARL. Moving TAR and source folder to oversized folder path")
-            LOGGER.warning("MOVING TO OVERSIZE PATH: Filesize too large for ingest to DPI: %s", os.path.join(OVERSIZE, f'{tar_source}.tar'))
-            shutil.move(tar_path, os.path.join(OVERSIZE, f'{tar_source}.tar'))
-            error_mssg1 = f"TAR file too large for ingest to DPI - size {file_stats.st_size} bytes\n\t{tar_path}\n\tDPX sequence moved to oversized_sequences/ folder."
-            error_mssg2 = "as this file is too large for ingest and will need repeat splitting"
-            error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
-            LOGGER.warning("Moving sequence to current_error/ folder for manual assistance: %s", tar_source)
-            shutil.move(fullpath, os.path.join(OVERSIZE, tar_source))
-            log.append(f"==== Log actions complete: {fullpath} ====")
-            LOGGER.info("==== TAR Wrapping Check script END =================================")
-            # Write all log items in block
-            for item in log:
-                local_logs(AUTO_TAR, item)
-            sys.exit()
+            log.append("FILE IS OVER 1TB IN SIZE AND WILL USING BLOBBING TO BE PUT TO DPI")
+            LOGGER.warning("TAR file is over 1TB in size and will be PUT to DPI using blobbing: %s", tar_source)
 
         log.append("Moving TAR file to Autoingest, and moving source file to deletions path.")
         try:
@@ -365,7 +351,7 @@ def main():
         try:
             LOGGER.info("Moving and deleting DPX sequence: %s", os.path.join(DELETE_TAR, tar_source))
             shutil.move(fullpath, os.path.join(DELETE_TAR, tar_source))
-            os.rmdir(os.path.join(DELETE_TAR, tar_source))
+            # os.rmdir(os.path.join(DELETE_TAR, tar_source))
         except Exception as err:
             LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
         try:
@@ -385,14 +371,9 @@ def main():
             error_mssg2 = None
             error_log(os.path.join(ERRORS, f"{tar_source}_errors.log"), error_mssg1, error_mssg2)
     else:
-        LOGGER.warning("Manifests do not match. Different checksums:")
-        log.append("WARNING: Manifests do match, differences:")
-        for key, value in local_md5.items():
-            if value != tar_content_md5[key]:
-                log.append(f"Different checksum for {key}: {value} and {two[key]}")
-                LOGGER.warning("Different checksums for %s: %s and %s", key, value, two[key])
+        LOGGER.warning("Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5)
         LOGGER.warning("Moving TAR file to failures, leaving file/folder for retry.")
-        log.append("Moving TAR file to failures folder for retry")
+        log.append("MD5 manifests do not match. Moving TAR file to failures folder for retry")
         shutil.move(tar_path, os.path.join(TAR_FAIL, f'{tar_source}.tar'))
         error_mssg1 = f"MD5 checksum manifests do not match for source folder and TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
         error_mssg2 = "if this checksum comparison fails multiple times"
