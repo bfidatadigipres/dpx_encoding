@@ -508,10 +508,14 @@ def main():
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         data = sys.argv[1]
         LOGGER.info("Received data: %s", data)
-        data_split = data.split(',\\ ')
-        kb_size = int(data_split[0])
-        dpx_path = str(data_split[1])
-        encoding = str(data_split[2])
+        new_data = data.split(',\\ ')
+        if len(new_data) == 1:
+            new_data = data.split(',\ ')
+        if len(new_data) == 1:
+            new_data = data.split(', ')
+        kb_size = int(new_data[0])
+        dpx_path = str(new_data[1])
+        encoding = str(new_data[2])
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         priref, file_type = get_cid_data(dpx_sequence)

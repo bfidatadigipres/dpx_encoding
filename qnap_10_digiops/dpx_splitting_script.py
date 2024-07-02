@@ -508,10 +508,19 @@ def main():
         LOGGER.info("================== START Python3 DPX splitting script START ==================")
         data = sys.argv[1]
         LOGGER.info("Received data: %s", data)
+<<<<<<< HEAD:qnap_10_digiops/dpx_splitting_script.py
         data = data.split(',\\ ')
         kb_size = int(data[0])
         dpx_path = str(data[1])
         encoding = str(data[2])
+=======
+        new_data = data.split(',\ ')
+        if len(new_data) == 1:
+            new_data = data.split(', ')
+        kb_size = int(new_data[0])
+        dpx_path = str(new_data[1])
+        encoding = str(new_data[2])
+>>>>>>> 0479da95ae2cf5da4adec82a8d4bf6706cb3ea73:grack_film/dpx_splitting_script.py
         dpx_path = dpx_path.rstrip('/')
         dpx_sequence = os.path.basename(dpx_path)
         priref, file_type = get_cid_data(dpx_sequence)
