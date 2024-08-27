@@ -76,13 +76,8 @@ grep ^N_ "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
 done
 cat "${MKV_DEST}retry_list_no_flip.txt"
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-<<<<<<< HEAD
-grep ^N_ "${MKV_DEST}retry_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-grep ^N_ "${MKV_DEST}retry_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-=======
 grep ^N_ "${MKV_DEST}retry_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 5 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 grep ^N_ "${MKV_DEST}retry_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 5 "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
->>>>>>> cff3d1880ce0bdecf12a8e10fd61f0f613a4b0d5
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -121,15 +116,9 @@ grep ^N_ "${MKV_DEST}rawcook_list.txt" | while IFS= read -r dpx_seq; do
   fi
 done
 cat "${MKV_DEST}rawcook_list_no_flip.txt"
-<<<<<<< HEAD
-# Begin RAWcooked processing with GNU Parallel
-grep ^N_ "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-grep ^N_ "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 2 "rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-=======
 # Begin RAWcooked processing with GNU Parallele
 grep ^N_ "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 5 "time rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv >> ${MKV_DEST}mkv_cooked/{}.mkv.txt 2>&1"
 grep ^N_ "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --joblog "$JOB_LOG" --jobs 5 "time rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv >> ${MKV_DEST}mkv_cooked/{}.mkv.txt 2>&1"
->>>>>>> cff3d1880ce0bdecf12a8e10fd61f0f613a4b0d5
 
 log "===================== DPX RAWcook ENDED ====================="
 
