@@ -119,7 +119,7 @@ def tar_item(fpath):
 def get_tar_checksums(tar_path, folder):
     '''
     Open tar file and read/generate MD5 sums
-    and return dct {filename: hex}
+    cand return dct {filename: hex}
     '''
     data = {}
     tar = tarfile.open(tar_path, "r|")
@@ -129,7 +129,10 @@ def get_tar_checksums(tar_path, folder):
         if item.isdir():
             continue
 
-        fname = os.path.basename(item_name)
+        pth, fname = os.path.split(item_name)
+        if fname in ['ASSETMAP','VOLINDEX']:
+            folder_prefix = os.path.basename(pth)
+            fname = f'{folder_prefix}_{fname}'
         print(item_name, fname, item)
 
         try:
@@ -157,7 +160,10 @@ def get_checksum(fpath):
     return as list with filename
     '''
     data = {}
-    file = os.path.split(fpath)[1]
+    pth, file = os.path.split(fpath)
+    if file in ['ASSETMAP','VOLINDEX']:
+        folder_prefix = os.path.basename(pth)
+        fname = f'{folder_prefix}_{file}'
     hash_md5 = hashlib.md5()
     with open(fpath, 'rb') as f:
         for chunk in iter(lambda: f.read(65536), b""):
