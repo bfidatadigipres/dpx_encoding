@@ -1070,8 +1070,8 @@ def record_append(priref, cid_data, original_data):
     notes = 'Automated DPX splitting script, record of actions against this item.'
     summary = 'DPX splitting summary'
     payload_head = f"<adlibXML><recordList><record priref='{priref}'>"
-    payload_addition = f"<utb.fieldname>{summary}</utb.fieldname><utb.content><![CDATA[{cid_data}{original_data}]]></utb.content>"
-    payload_edit = f"<edit.name>{name}</edit.name><edit.date>{date}</edit.date><edit.time>{time}</edit.time><edit.notes>{notes}</edit.notes>"
+    payload_addition = f"<utb><utb.fieldname>{summary}</utb.fieldname><utb.content><![CDATA[{cid_data}{original_data}]]></utb.content></utb>"
+    payload_edit = f"<Edit><edit.name>{name}</edit.name><edit.date>{date}</edit.date><edit.time>{time}</edit.time><edit.notes>{notes}</edit.notes></Edit>"
     payload_end = "</record></recordList></adlibXML>"
     payload = payload_head + payload_addition + payload_edit + payload_end
 
