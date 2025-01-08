@@ -1,6 +1,5 @@
 import os
 import re
-import logging
 
 
 def iterate_folders(fpath):
