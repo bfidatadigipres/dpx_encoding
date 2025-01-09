@@ -10,6 +10,7 @@ import os
 # Define dynamic partitions for concurrent processing
 dpx_partitions = DynamicPartitionsDefinition(name="dpx_sequences")
 
+
 @asset
 def scan_source_directory(context: AssetExecutionContext) -> Dict[str, List[str]]:
     '''

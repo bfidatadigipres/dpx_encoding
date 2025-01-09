@@ -1,7 +1,10 @@
 from dagster import Definitions, load_assets_from_modules
-from dagster_duckdb import DuckDBResource
-from dagster import EnvVar
+
 from .assets import batch_bake, cookbook, make_ready, rawcook, taste_test, wipe_up
+from .resources import database_resource
+from .jobs import rawcooked_start_jobs
+from .schedules import rawcooked_schedule
+
 
 all_assets = load_assets_from_modules(
     [
@@ -14,10 +17,15 @@ all_assets = load_assets_from_modules(
     ]
 )
 
+all_jobs = [rawcooked_start_jobs]
+all_schedules = [rawcooked_schedule]
+
 defs = Definitions(
     assets=all_assets,
+    resources = {
+        "database": database_resource,
+    },
+    jobs=all_jobs,
+    schedules=all_schedules,
 )
 
-database_resource = DuckDBResource(
-    database=EnvVar("RAWCOOK_DB")
-)
