@@ -8,7 +8,7 @@ from .schedules import rawcooked_schedule
 
 all_assets = load_assets_from_modules(
     [
-        batch_bake,
+        # batch_bake,
         cookbook,
         make_ready,
         rawcook,
