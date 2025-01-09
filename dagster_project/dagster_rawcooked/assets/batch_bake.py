@@ -4,7 +4,7 @@ Example code to help with batch processing
 of DPX assets. Requires further development.
 '''
 
-from dagster import asset, Output, DynamicOutput, DynamicPartitionsDefinition
+from dagster import asset, Output, DynamicOutput, DynamicPartitionsDefinition, AssetExecutionContext
 import os
 
 # Define dynamic partitions for concurrent processing
