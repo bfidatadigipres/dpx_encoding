@@ -4,7 +4,7 @@ Example code to help with batch processing
 of DPX assets. Requires further development.
 '''
 
-from dagster import asset, Output, DynamicOutput, DynamicPartitionsDefinition, AssetExecutionContext
+from dagster import asset, DynamicOutput, DynamicPartitionsDefinition, AssetExecutionContext
 import os
 
 # Define dynamic partitions for concurrent processing
@@ -12,7 +12,7 @@ dpx_partitions = DynamicPartitionsDefinition(name="dpx_sequences")
 
 
 @asset
-def scan_source_directory(context: AssetExecutionContext) -> Dict[str, List[str]]:
+def scan_source_directory(context: AssetExecutionContext):
     '''
     Scans the source directory for DPX sequences and registers them in the database.
     Returns mapping of partition keys to DPX paths for concurrent processing.
