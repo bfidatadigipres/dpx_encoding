@@ -44,10 +44,11 @@ def encoder(dpx_path, mkv_cooked, log_path):
             f'{mkv_cooked}{dpx_seq}.mkv',
             '&>>', f'{mkv_cooked}{dpx_seq}.mkv.txt'
         ]
-
-    exit_code = subprocess.call(cmd, shell=True)
-    if not exit_code == 0:
-        print("Exit code is not 0, encoding failed")
+    try:
+        # Will this run config work with redirect above?
+        subprocess.run(cmd, shell=False, check=True, universal_newlines=True, stderr=subprocess.PIPE).stderr
+    except subprocess.CalledProcessError as err:
+        print(f"Exit code is not 0, encoding failed: {err}")
         return None
     return f'{mkv_cooked}{dpx_seq}.mkv'
     

@@ -1,40 +1,125 @@
 '''
-dagster_rawcooked/assess.py
+dagster_rawcooked/assessment.py
 Links together all python code
 for RAWcooked assessment calling
-in external module from dpx_assess
-as needed. Move for splitting.
+in external modules from dpx_assess
+as needed. Write data to dB.
 
-NOTE: Need splitting path so assess.py
-doesn't pick up for repeat assessment
-
-Joanna White
-2024
 '''
 
 # Imports
 import os
-import shutil
-from dagster import asset
-from .dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
-from .sqlite_funcs import retrieve_fnames, create_first_entry, make_filename_entry, update_table
-from .dpx_seq_gap_check import gaps
-from .dpx_splitting import launch_split
-from .config import QNAP_FILM, ASSESS, DPX_COOK, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
+import sys
+import requests
+from dagster import asset, AssetIn, DynamicPartitionsDefinition
+
+sys.path.append(os.environ.get('utils'))
+from dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
+from sqlite_funcs import retrieve_fnames, create_first_entry, make_filename_entry, update_table
+from dpx_seq_gap_check import gaps
+from config import DPX_PATH, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
+import adlib_v3
 
 
-@asset
-def process_assess_folder(context):
-    ''' Push get_dpx_folder list to multiple assets'''
+@asset(
+    partitions_def=dpx_partitions,
+    ins={
+        "sequence_info": AssetIn("process_dpx_sequences"),
+        "db": AssetIn("encoding_database")
+    }
+)
+def assess_dpx_sequence(context, sequence_info, db):
+    '''
+    Assess a single DPX sequence. Can run concurrently for different sequences.
+    '''
+    dpx_id = sequence_info["dpx_id"]
+    path = sequence_info["path"]
+    
+    cursor = db.cursor()
+    try:
+        # Update status to processing
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET status = 'processing',
+                current_stage = 'assessment',
+                processing_start = CURRENT_TIMESTAMP
+            WHERE dpx_id = ?
+        """, (dpx_id,))
+        db.commit()
+        
+        # Perform assessment
+        result = perform_assessment(path)
+        
+        # Update successful assessment
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET assessment_complete = 1,
+                current_stage = 'assessment_complete',
+                status = 'ready_for_encoding'
+            WHERE dpx_id = ?
+        """, (dpx_id,))
+        db.commit()
+        
+        return {
+            "dpx_id": dpx_id,
+            "path": path,
+            "metadata": result
+        }
+        
+    except Exception as e:
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET status = 'failed',
+                error_message = ?
+            WHERE dpx_id = ?
+        """, (str(e), dpx_id))
+        db.commit()
+        raise
 
-    dpx_folder = os.path.join(QNAP_FILM, ASSESS)
-    print(dpx_folder)
-    dpx_folders = [x for x in os.listdir(dpx_folder) if os.path.isdir(os.path.join(dpx_folder, x))]
-    context.log.info(f"Files found in dpx_to_assess/ folder path:\n{dpx_folders}")
+
+"""
+@asset(
+    ins={
+        "db": AssetIn("encoding_database")
+    }
+)
+def process_assess_folder(context, db):
+    '''
+    Push get_dpx_folder list to multiple assets
+    Validate DPX sequence metadata and check against internal API
+    '''
+    dpx_path = context.op_config["dpx_path"]
+    
+    # Check internal API for Item record - use adlib to check file_type is DPX
+    '''
+    api_response = requests.get(f"internal-api/items/{Path(dpx_path).name}")
+    if not api_response.ok:
+        raise Exception("No matching Item record found")
+    '''
+    # Run assessment script
+    result = subprocess.run(["assessment_script.py", dpx_path], capture_output=True)
+    if result.returncode != 0:
+        raise Exception("Assessment failed")
+        
+    # Update database
+    cursor = db.cursor()
+    cursor.execute(
+        "UPDATE encoding_status SET assessment_complete = ? WHERE fname = ?",
+        (str(datetime.date.now()), Path(dpx_path).name)
+    )
+    db.commit()
+    
+    return {"dpx_path": dpx_path, "metadata": result.stdout}
+
+
+    print(DPX_PATH)
+    dpx_folders = [x for x in os.listdir(DPX_PATH) if os.path.isdir(os.path.join(DPX_PATH, x))]
+    context.log.info(f"Sequences found in dpx_to_assess/ folder path:\n{dpx_folders}")
 
     if len(dpx_folders) == 0:
         return False
     for dpx_path in dpx_folders:
+        # Trying to keep sequences in one path now, rethink this!
         dpath = os.path.join(QNAP_FILM, ASSESS, dpx_path)
         make_filename_entry(dpx_path, dpath, DATABASE)
 
@@ -158,3 +243,4 @@ def move_for_split_or_encoding(context):
                 shutil.move(reel, os.path.join(QNAP_FILM, PART_RAWCOOK))
             elif assessment['status'] == 'tar':
                 shutil.move(reel, os.path.join(QNAP_FILM, PART_TAR))
+"""

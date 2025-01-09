@@ -3,7 +3,6 @@ Modules for assess.py
 '''
 import os
 import subprocess
-from dagster import asset
 
 
 def get_partwhole(folder):

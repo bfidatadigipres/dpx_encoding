@@ -7,12 +7,64 @@ and with use of sqlite update on prgress
 
 # Imports
 import os
-from dagster import asset, DynamicOutput
-from .sqlite_funcs import update_table
+from dagster import asset, AssetIn, DynamicOutput, DynamicPartitionsDefinition
 from .dpx_rawcook import encoder
 from .config import QNAP_FILM, DPX_COOK, MKV_ENCODED
 
 
+@asset(
+    partitions_def=dpx_partitions,
+    ins={
+        "assessment_result": AssetIn("assess_dpx_sequence"),
+        "db": AssetIn("encoding_database")
+    }
+)
+def encode_to_ffv1(context, assessment_result, db):
+    '''
+    Encode a single DPX sequence to FFV1. Can run concurrently with other sequences.
+    '''
+    dpx_id = assessment_result["dpx_id"]
+    cursor = db.cursor()
+    
+    try:
+        # Update status to encoding
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET current_stage = 'encoding'
+            WHERE dpx_id = ?
+        """, (dpx_id,))
+        db.commit()
+        
+        # Run RAWcooked
+        result = run_rawcook(assessment_result)
+        
+        # Update successful encoding
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET encoding_complete = 1,
+                current_stage = 'encoding_complete',
+                status = 'ready_for_validation'
+            WHERE dpx_id = ?
+        """, (dpx_id,))
+        db.commit()
+        
+        return {
+            "dpx_id": dpx_id,
+            "mkv_path": result["output_path"],
+            "encoding_log": result["log"]
+        }
+        
+    except Exception as e:
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET status = 'failed',
+                error_message = ?
+            WHERE dpx_id = ?
+        """, (str(e), dpx_id))
+        db.commit()
+        raise
+
+"""
 @asset
 def get_dpx_folders():
     '''
@@ -58,4 +110,4 @@ def encoding(context, dynamic_process_subfolders):
         if not row_id:
             context.log.warning(f"Failed to update status with 'DPX encoding to MKV failure'")
             return {"status": "encoding failure", "dpx_seq": dpx_path}
-    
+"""
