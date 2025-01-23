@@ -1,12 +1,11 @@
-from dagster_duckdb import DuckDBResource
-from dagster import EnvVar
+import os
 from dagster import resource
 
-# Improvised
+
 path_resource = resource(
-    dpx_path=EnvVar("DPX_PATH"),
+    dpx_path=os.path.join(os.getenv("STORAGE"), os.getenv("ENCODING_PATH")),
 )
 
-database_resource = DuckDBResource(
-    database=EnvVar("RAWCOOK_DUCKDB"),
+database_resource = resource(
+    database=os.getenv("RAWCOOK_DB"),
 )

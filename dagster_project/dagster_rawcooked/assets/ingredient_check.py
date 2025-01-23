@@ -1,40 +1,32 @@
 '''
-dagster_rawcooked/assessment.py
+dagster_rawcooked/assessment
 Links together all python code
 for RAWcooked assessment calling
 in external modules from dpx_assess
 as needed. Write data to dB.
-
 '''
 
 # Imports
 import os
-import sys
-import requests
-from dagster import asset, AssetIn, DynamicPartitionsDefinition
-
-sys.path.append(os.environ.get('utils'))
-from dpx_assess import get_partwhole, count_folder_depth, get_metadata, get_mediaconch, get_folder_size
-from sqlite_funcs import retrieve_fnames, create_first_entry, make_filename_entry, update_table
-from dpx_seq_gap_check import gaps
-from config import DPX_PATH, DPOLICY, DPX_REVIEW, PART_RAWCOOK, PART_TAR, TAR_WRAP, DATABASE
-import adlib_v3
+import re
+import subprocess
+from datetime import datetime
+from dagster import asset, AssetIn, AssetExecutionContext
 
 
 @asset(
-    partitions_def=dpx_partitions,
     ins={
         "sequence_info": AssetIn("process_dpx_sequences"),
         "db": AssetIn("encoding_database")
     }
 )
-def assess_dpx_sequence(context, sequence_info, db):
+def assess_dpx_sequence(context: AssetExecutionContext, sequence_info, db):
     '''
     Assess a single DPX sequence. Can run concurrently for different sequences.
     '''
+    print(context)
     dpx_id = sequence_info["dpx_id"]
     path = sequence_info["path"]
-    
     cursor = db.cursor()
     try:
         # Update status to processing
@@ -48,23 +40,40 @@ def assess_dpx_sequence(context, sequence_info, db):
         db.commit()
         
         # Perform assessment
-        result = perform_assessment(path)
-        
-        # Update successful assessment
-        cursor.execute("""
-            UPDATE encoding_status 
-            SET assessment_complete = 1,
-                current_stage = 'assessment_complete',
-                status = 'ready_for_encoding'
-            WHERE dpx_id = ?
-        """, (dpx_id,))
-        db.commit()
-        
-        return {
-            "dpx_id": dpx_id,
-            "path": path,
-            "metadata": result
-        }
+        db_dict = perform_assessment(context, path)
+
+        if db_dict['encoding_pass'] is False:
+            context.log.warning(f"Assessment failed!")
+            # Update unsuccessful assessment
+            cursor.execute(f"""
+                UPDATE encoding_status 
+                SET assessment_complete = 0,
+                    current_stage = 'assessment',
+                    status = 'assessment_failed',
+                    error_message = {db_dict['error_message']}
+                WHERE dpx_id = ?
+            """, (dpx_id,))
+            db.commit()
+
+        else:
+            # Update successful assessment
+            context.log.info(f"Assessment passed!")
+            cursor.execute(f"""
+                UPDATE encoding_status 
+                SET assessment_complete = 1,
+                    current_stage = 'rawcooked_encoding_ready',
+                    assessment_pass = 'True'
+                    colorspace {db_dict['colorspace']},
+                    dir_size {db_dict['dir_size']},
+                    bitdepth {db_dict['bitdepth']},
+                    encoding_choice {db_dict['encoding_choice']},
+                    first_dpx {db_dict['first_dpx']},
+                    last_dpx {db_dict['last_dpx']},
+                    status = 'Assessment complete',
+                    assessment_complete = {str(datetime.today())[:19]},
+                WHERE dpx_id = ?
+            """, (dpx_id,))
+            db.commit()
         
     except Exception as e:
         cursor.execute("""
@@ -77,170 +86,248 @@ def assess_dpx_sequence(context, sequence_info, db):
         raise
 
 
-"""
-@asset(
-    ins={
-        "db": AssetIn("encoding_database")
-    }
-)
-def process_assess_folder(context, db):
+@op # type: ignore
+def perform_assessment(context, dpx_path) -> dict:
     '''
-    Push get_dpx_folder list to multiple assets
-    Validate DPX sequence metadata and check against internal API
+    Calling dpx_assess modules run assessment
+    Updating database with results
     '''
-    dpx_path = context.op_config["dpx_path"]
-    
-    # Check internal API for Item record - use adlib to check file_type is DPX
-    '''
-    api_response = requests.get(f"internal-api/items/{Path(dpx_path).name}")
-    if not api_response.ok:
-        raise Exception("No matching Item record found")
-    '''
-    # Run assessment script
-    result = subprocess.run(["assessment_script.py", dpx_path], capture_output=True)
-    if result.returncode != 0:
-        raise Exception("Assessment failed")
-        
-    # Update database
-    cursor = db.cursor()
-    cursor.execute(
-        "UPDATE encoding_status SET assessment_complete = ? WHERE fname = ?",
-        (str(datetime.date.now()), Path(dpx_path).name)
-    )
-    db.commit()
-    
-    return {"dpx_path": dpx_path, "metadata": result.stdout}
+
+    db_dict = {}
+    dpx_seq = os.path.basename(dpx_path)
+    db_dict['dpx_id'] = dpx_seq
+    db_dict['status'] = 'Assessment'
+
+    context.log.info(f"Processing DPX sequence: {dpx_path}")
+
+    part, whole = get_partwhole(dpx_seq)
+    context.log.info(f"Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
+    if not part:
+        db_dict['error_message'] = 'Part whole error'
+        db_dict['assessment_pass'] = False
+        context.log.warning("Part Whole extraction failure. Assessment failed.")
+        return db_dict
+
+    folder_depth, first_dpx = count_folder_depth(dpx_path)
+    context.log.info(f"Folder depth is {folder_depth} folder to DPX")
+    if folder_depth is None:
+        # Incorrect formatting of folders
+        db_dict['error_message'] = 'Folder depth error'
+        db_dict['assessment_pass'] = False
+        context.log.warning("Folder path is non-standard. Assessment failed.")
+        return db_dict 
+
+    first_dpx, last_dpx, missing = gaps(dpx_path)
+    context.log.info(f"DPX data - first {first_dpx} - last {last_dpx} - missing: {len(missing)}")
+    if len(missing) > 0:
+        context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
+        db_dict['error_message'] = 'Gaps found in sequence'
+        db_dict['assessment_pass'] = False
+        context.log.warning("DPX files contain gaps. Assessment failed.")
+        return db_dict
+
+    folder_size = get_folder_size(dpx_path)
+    cspace = get_metadata('Video', 'ColorSpace', first_dpx)
+    context.log.info(f"Colourspace: {cspace}")
+    if not cspace:
+        cspace = get_metadata('Image', 'ColorSpace', first_dpx)
+    bdepth = get_metadata('Video', 'BitDepth', first_dpx)
+    context.log.info(f"Bit depth: {bdepth}")
+    if not bdepth:
+        bdepth = get_metadata('Image', 'BitDepth', first_dpx)
+    width = get_metadata('Video', 'Width', first_dpx)
+    context.log.info(f"DPX width: {width}")
+    if not width:
+        width = get_metadata('Image', 'Width', first_dpx)
+    if not folder_size or not cspace or not bdepth or not width:
+        db_dict['error_message'] = 'Metadata of directory/dpx not accessible'
+        db_dict['assessment_pass'] = False
+        context.log.warning("Folder metadata could not be extracted. Assessment failed.")
+        return db_dict
+
+    context.log.info(f"* Size: {folder_size} | Colourspace {cspace} | Bit-depth {bdepth} | Pixel width {width}")
+    policy_pass, response = get_mediaconch(dpx_path)
+
+    if policy_pass is False:
+        db_dict['encoding_choice'] = 'TAR'
+        context.log.info(f"DPX sequence {dpx_seq} failed DPX policy:\n{response}")
+    if policy_pass is True:
+        db_dict['encoding_choice'] = 'RAWcook'
+        context.log.info("DPX sequence {dpx_seq} passed DPX policy:")
+    if int(width) > 3999:
+        db_dict['resolution'] = '4K'
+        context.log.info(f"DPX sequence {dpx_seq} is 4K")
+    else:
+        db_dict['resolution'] = '2K'
+        context.log.info(f"DPX sequence {dpx_seq} is 2K")
+
+    db_dict['colorspace'] = cspace
+    db_dict['width'] = width
+    db_dict['bitdepth'] = bdepth
+    db_dict['dir_size'] = folder_size
+    db_dict['first_dpx'] = first_dpx
+    db_dict['last_dpx'] = last_dpx
+    db_dict['assessment_pass'] = True
+    return db_dict
 
 
-    print(DPX_PATH)
-    dpx_folders = [x for x in os.listdir(DPX_PATH) if os.path.isdir(os.path.join(DPX_PATH, x))]
-    context.log.info(f"Sequences found in dpx_to_assess/ folder path:\n{dpx_folders}")
+@op # type: ignore
+def get_partwhole(fname) -> tuple[int, int]:
+    '''
+    Check part whole well formed
+    '''
+    match = re.search(r'(?:_)(\d{2,4}of\d{2,4})(?:\.)', fname)
+    if not match:
+        print('* Part-whole has illegal charcters...')
+        return None, None
+    part, whole = [int(i) for i in match.group(1).split('of')]
+    len_check = fname.split('_')
+    len_check = len_check[-1].split('.')[0]
+    str_part, str_whole = len_check.split('of')
+    if len(str_part) != len(str_whole):
+        return None, None
+    if part > whole:
+        print('* Part is larger than whole...')
+        return None, None
+    return (part, whole)
 
-    if len(dpx_folders) == 0:
+
+@op # type: ignore
+def count_folder_depth(fpath) -> str:
+    '''
+    Check if folder is three depth of four depth
+    across total scan folder contents and folders
+    ordered correctly
+    '''
+    folder_contents = []
+    for root, dirs, _ in os.walk(fpath):
+        for directory in dirs:
+            folder_contents.append(os.path.join(root, directory))
+
+    if len(folder_contents) < 2:
         return False
-    for dpx_path in dpx_folders:
-        # Trying to keep sequences in one path now, rethink this!
-        dpath = os.path.join(QNAP_FILM, ASSESS, dpx_path)
-        make_filename_entry(dpx_path, dpath, DATABASE)
+    if len(folder_contents) == 2:
+        if 'scan' in folder_contents[0].split('/')[-1].lower() and 'x' in folder_contents[1].split('/')[-1].lower():
+            return '3'
+    if len(folder_contents) == 3:
+        if 'x' in folder_contents[0].split('/')[-1].lower() and 'scan' in folder_contents[1].split('/')[-1].lower() and 'R' in folder_contents[2].split('/')[-1].upper():
+            return '4'
+    if len(folder_contents) > 3:
+        total_scans = []
+        for num in range(0, len(folder_contents)):
+            if 'scan' in folder_contents[num].split('/')[-1].lower():
+                total_scans.append(folder_contents[num].split('/')[-1])
+
+        scan_num = len(total_scans)
+        if len(folder_contents) / scan_num == 2:
+            # Ensure folder naming order is correct
+            if 'scan' not in folder_contents[0].split('/')[-1].lower():
+                return None
+            sorted(folder_contents, key=len)
+            return '3'
+        if (len(folder_contents) - 1) / scan_num == 2:
+            # Ensure folder naming order is correct
+            if 'scan' in folder_contents[0].split('/')[-1].lower() and 'R' not in folder_contents[len(folder_contents) - 1].split('/')[-1].upper():
+                return None
+            sorted(folder_contents, key=len)
+            return '4'
 
 
-@asset(deps=['process_assess_folder'])
-def assessment(context):
-    ''' Calling dpx_assess modules run assessment '''
-
-    dpx_paths = retrieve_fnames(DATABASE)
-    if not dpx_paths:
-        return {"status": "no folders to process", "dpx_seq": dpx_paths}
-    
-    for dpx_path in dpx_paths:
-        dpx_seq = os.path.split(dpx_path)[1]
-        context.log.info(f"Processing DPX sequence: {dpx_path}")
-
-        part, whole = get_partwhole(dpx_seq)
-        if not part:
-            row_id = update_table('status', dpx_seq, f'Fail! DPX sequence named incorrectly.', DATABASE)
-            if not row_id:
-                context.log.warning("Failed to update status with 'DPX sequence named incorrectly'")
-                return {"status": "database failure", "dpx_seq": dpx_path}
-            return {"status": "partWhole failure", "dpx_seq": dpx_path}        
-        context.log.info(f"* Reel number {str(part).zfill(2)} of {str(whole).zfill(2)}")
-
-        folder_depth, first_dpx = count_folder_depth(dpx_path)
-        if folder_depth is None:
-            # Incorrect formatting of folders
-            row_id = update_table('status', dpx_seq, f'Fail! Folders formatted incorrectly.', DATABASE)
-            if not row_id:
-                context.log.warning("Failed to update status with 'Folders formatted incorrectly'")
-                return {"status": "database failure", "dpx_seq": dpx_path}
-            return {"status": "folder failure", "dpx_seq": dpx_path}
-        context.log.info(f"Folder depth is {folder_depth}")
-
-        gap_check, missing, first_dpx = gaps(dpx_path)
-        if gap_check is True:
-            context.log.info(f"Gaps found in sequence,moving to dpx_review folder: {missing}")
-            review_path = os.path.join(QNAP_FILM, DPX_REVIEW, dpx_seq)
-            shutil.move(dpx_path, review_path)
-            row_id = update_table('status', dpx_seq, f'Fail! Gaps found in sequence: {missing}.', DATABASE)
-            if not row_id:
-                context.log.warning(f"Failed to update status with 'Gaps found in sequence'\n{missing}")
-            return {"status": "gap failure", "dpx_seq": dpx_path}
-
-        size = get_folder_size(dpx_path)
-        cspace = get_metadata('Video', 'ColorSpace', first_dpx)
-        bdepth = get_metadata('Video', 'BitDepth', first_dpx)
-        width = get_metadata('Video', 'Width', first_dpx)
-        if not cspace:
-            cspace = get_metadata('Image', 'ColorSpace', first_dpx)
-        if not bdepth:
-            bdepth = get_metadata('Image', 'BitDepth', first_dpx)
-        if not width:
-            width = get_metadata('Image', 'Width', first_dpx)
-
-        tar = fourk = luma = False
-        context.log.info(f"* Size: {size} | Colourspace {cspace} | Bit-depth {bdepth} | Pixel width {width}")
-        policy_pass, response = get_mediaconch(dpx_path, DPOLICY)
-
-        if not policy_pass:
-            tar = True
-            context.log.info(f"DPX sequence {dpx_seq} failed DPX policy:\n{response}")
-        if int(width) > 3999:
-            fourk = True
-            context.log.info(f"DPX sequence {dpx_seq} is 4K")
-        if 'Y' == cspace:
-            luma = True
-
-        if tar is True:
-            row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'tar', dpx_path, DATABASE)
-            if not row_id:
-                context.log.warning(f"Failed to update status new reord data")
-                return {"status": "database failure", "dpx_seq": dpx_path}
-            return {"status": "tar", "dpx_seq": dpx_path, "size": size, "encoding": 'tar', "part": part, "whole": whole}
-        if luma is True and fourk is True:
-            row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
-            if not row_id:
-                context.log.warning(f"Failed to update status new reord data")
-                return {"status": "database failure", "dpx_seq": dpx_path}
-            return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'luma_4k', "part": part, "whole": whole}
-        else:
-            row_id = create_first_entry(dpx_seq, cspace, size, bdepth, 'Ready for split assessment', 'rawcook', dpx_path, DATABASE)
-            if not row_id:
-                context.log.warning(f"Failed to update status new reord data")
-                return {"status": "database failure", "dpx_seq": dpx_path}
-            return {"status": "rawcook", "dpx_seq": dpx_path, "size": size, "encoding": 'rawcook', "part": part, "whole": whole}    
-
-
-@asset(deps=['assessment'])
-def move_for_split_or_encoding(context):
+@op # type: ignore
+def gaps(dpath) -> tuple[str, str, list]:
     '''
-    Move to splitting or to encoding
-    by updating sqlite data and trigger
-    dpx_splitting.py func launch_split()
+    Return True/False depending on if gaps
+    are sensed in the DPX sequence
     '''
-    if 'no folders to process' in assessment['status']:
-        pass
-    elif 'failure' not in assessment['status']:
-        if assessment['size'] > 1395864370:
-            reels = launch_split(assessment['dpx_seq'], assessment['kb_size'], assessment['encoding'])
-            if 'failure' in reels['status']:
-                raise Exception("Reels were not split correctly. Exiting")
-            if assessment['status'] == 'rawcook':
-                for reel in reels['paths']:
-                    context.log.info(f"Moving reel {reel} to {PART_RAWCOOK}")
-                    shutil.move(reel, os.path.join(QNAP_FILM, PART_RAWCOOK))
-            elif assessment['status'] == 'tar':
-                for reel in reels:
-                    context.log.info(f"Moving reel {reel} to {PART_TAR}")
-                    shutil.move(reel, os.path.join(QNAP_FILM, PART_TAR))
 
-        if int(assessment['whole']) == 1:
-            context.log.info(f"Moving single reel under 1TB to encoding path")
-            if assessment['status'] == 'rawcook':
-                shutil.move(assessment['dpx_seq'], os.path.join(QNAP_FILM, DPX_COOK))         
-            elif assessment['status'] == 'tar':
-                shutil.move(assessment['dpx_seq'], os.path.join(QNAP_FILM, TAR_WRAP))
-        else:
-            if assessment['status'] == 'rawcook':
-                shutil.move(reel, os.path.join(QNAP_FILM, PART_RAWCOOK))
-            elif assessment['status'] == 'tar':
-                shutil.move(reel, os.path.join(QNAP_FILM, PART_TAR))
-"""
+    missing_dpx = []
+    file_nums, filenames = iterate_folders(dpath)
+    # Calculate range from first/last
+    file_range = [ x for x in range(min(file_nums), max(file_nums) + 1) ]
+
+    # Retrieve equivalent DPX names for logs
+    first_dpx = filenames[file_nums.index(min(file_nums))]
+    last_dpx = filenames[file_nums.index(max(file_nums))]
+
+    # Check for absent numbers in sequence
+    missing = list(set(file_nums) ^ set(file_range))
+    print(missing)
+    if len(missing) > 0:
+        for missed in missing:
+            missing_dpx.append(missed)
+ 
+    return (first_dpx, last_dpx, missing_dpx)
+
+
+def iterate_folders(fpath) -> tuple[list, list]:
+    '''
+    Iterate suppied path and return list
+    of filenames
+    '''
+    file_nums = []
+    filenames = []
+    for root, _,files in os.walk(fpath):
+        for file in files:
+            if file.endswith(('.dpx', '.DPX')):
+                file_nums.append(int(re.search(r'\d+', file).group()))
+                filenames.append(os.path.join(root, file))
+    return (file_nums, filenames)
+
+
+@op # type: ignore
+def get_folder_size(fpath) -> int:
+    '''
+    Check the size of given folder path
+    return size in kb
+    '''
+    if os.path.isfile(fpath):
+        return os.path.getsize(fpath)
+
+    try:
+        byte_size = sum(
+            os.path.getsize(os.path.join(fpath, f)) for f in os.listdir(fpath) \
+            if os.path.isfile(os.path.join(fpath, f))
+            )
+        return byte_size
+    except OSError as err:
+        print(f"get_size(): Cannot reach folderpath for size check: {fpath}\n{err}")
+        return 0
+
+
+@op # type: ignore
+def get_metadata(stream, arg, dpath) -> str:
+    '''
+    Retrieve metadata with subprocess
+    for supplied stream/field arg
+    '''
+
+    cmd = [
+        'mediainfo', '--Full',
+        '--Language=raw',
+        f'--Output={stream};%{arg}%',
+        dpath
+    ]
+
+    meta = subprocess.check_output(cmd)
+    return meta.decode('utf-8').rstrip('\n')
+
+
+@op # type: ignore
+def get_mediaconch(dpath) -> tuple[bool, str]:
+    '''
+    Check for 'pass! {path}' in mediaconch reponse
+    for supplied file path and policy
+    '''
+    policy = os.getenv("DPX_POLICY")
+
+    cmd = [
+        'mediaconch', '--force',
+        '-p', policy,
+        dpath
+    ]
+
+    meta = subprocess.check_output(cmd)
+    meta = meta.decode('utf-8')
+    if meta.startswith(f'pass! {dpath}'):
+        return (True, meta)
+    return (False, meta)

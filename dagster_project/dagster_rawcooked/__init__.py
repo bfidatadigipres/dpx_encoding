@@ -1,6 +1,6 @@
 from dagster import Definitions, load_assets_from_modules
 
-from .assets import batch_bake, cookbook, make_ready, rawcook, taste_test, wipe_up
+from .assets import adhoc_requests, cookbook, make_ready, rawcook, taste_test, wipe_up
 from .resources import database_resource
 from .jobs import rawcooked_start_jobs
 from .schedules import rawcooked_schedule
@@ -8,7 +8,7 @@ from .schedules import rawcooked_schedule
 
 all_assets = load_assets_from_modules(
     [
-        # batch_bake,
+        adhoc_requests,
         cookbook,
         make_ready,
         rawcook,

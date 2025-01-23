@@ -6,6 +6,7 @@ of DPX assets. Requires further development.
 
 from dagster import asset, DynamicOutput, DynamicPartitionsDefinition, AssetExecutionContext
 import os
+from datetime import datetime
 
 # Define dynamic partitions for concurrent processing
 dpx_partitions = DynamicPartitionsDefinition(name="dpx_sequences")
@@ -17,42 +18,41 @@ def scan_source_directory(context: AssetExecutionContext):
     Scans the source directory for DPX sequences and registers them in the database.
     Returns mapping of partition keys to DPX paths for concurrent processing.
     '''
-    source_path = context.resources.encoding_config.input_path
+    root = os.getenv("ENCODE_PATH")
     conn = context.resources.cookbook.get_connection()
     cursor = conn.cursor()
-    
     new_sequences = {}
     
     # Recursively scan for DPX sequences
-    for root, _, files in os.walk(source_path):
-        if any(f.endswith('.dpx') for f in files):
-            dpx_id = os.path.basename(root)
+    directories = [ x for x in os.listdir(root) if os.path.isdir(os.path.join(root, x))]
+    for directory in directories:
+        dpath = os.path.join(root, directory)
             
-            # Check if sequence is already registered
-            cursor.execute(
-                "SELECT status FROM encoding_status WHERE dpx_id = ?", 
-                (dpx_id,)
-            )
-            result = cursor.fetchone()
-            
-            if not result:
-                # Register new sequence
-                cursor.execute("""
-                    INSERT INTO encoding_status 
-                    (dpx_id, folder_path, status, current_stage) 
-                    VALUES (?, ?, 'pending', 'discovered')
-                """, (dpx_id, root))
-                new_sequences[dpx_id] = root
-            elif result[0] == 'failed':
-                # Re-queue failed sequences
-                cursor.execute("""
-                    UPDATE encoding_status 
-                    SET status = 'pending', 
-                        current_stage = 'rediscovered',
-                        error_message = NULL 
-                    WHERE dpx_id = ?
-                """, (dpx_id,))
-                new_sequences[dpx_id] = root
+        # Check if sequence is already registered
+        cursor.execute(
+            "SELECT status FROM encoding_status WHERE dpx_id = ?", 
+            (directory),
+        )
+        result = cursor.fetchone()
+        
+        if not result:
+            # Register new sequence
+            cursor.execute(f"""
+                INSERT INTO encoding_status 
+                (dpx_id, folder_path, status, current_stage, last_updated) 
+                VALUES (?, ?, 'pending', 'discovered', str({datetime.today()[:19]}))
+            """, (directory, dpath))
+            new_sequences[directory] = root
+        elif result[0] == 'failed':
+            # Re-queue failed sequences
+            cursor.execute("""
+                UPDATE encoding_status 
+                SET status = 'pending', 
+                    current_stage = 'rediscovered',
+                    error_message = NULL 
+                WHERE dpx_id = ?
+            """, (directory,))
+            new_sequences[directory] = dpath
     
     conn.commit()
     return new_sequences

@@ -18,7 +18,7 @@ dagster dev --host <machine IP> --port 8080
 
 Open http://***.**.**.**:8080 with your browser to see the project.
 
-You can start writing assets in `dagster_rawcooked/assets.py`. The assets are automatically loaded into the Dagster code location as you define them.
+You can start writing assets in `dagster_rawcooked/assets`. The assets are automatically loaded into the Dagster code location as you define them.
 
 ## Development
 

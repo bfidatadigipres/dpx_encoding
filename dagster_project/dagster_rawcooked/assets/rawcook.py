@@ -7,23 +7,20 @@ and with use of sqlite update on prgress
 
 # Imports
 import os
-from dagster import asset, AssetIn, DynamicOutput, DynamicPartitionsDefinition
+from dagster import asset, AssetIn, DynamicOutput, AssetExecutionContext
 from .dpx_rawcook import encoder
 from .config import QNAP_FILM, DPX_COOK, MKV_ENCODED
 
 
 @asset(
-    partitions_def=dpx_partitions,
     ins={
-        "assessment_result": AssetIn("assess_dpx_sequence"),
         "db": AssetIn("encoding_database")
     }
 )
-def encode_to_ffv1(context, assessment_result, db):
+def encode_to_ffv1(context: AssetExecutionContext, assessment_result, db):
     '''
     Encode a single DPX sequence to FFV1. Can run concurrently with other sequences.
     '''
-    dpx_id = assessment_result["dpx_id"]
     cursor = db.cursor()
     
     try:
@@ -64,7 +61,7 @@ def encode_to_ffv1(context, assessment_result, db):
         db.commit()
         raise
 
-"""
+
 @asset
 def get_dpx_folders():
     '''
@@ -110,4 +107,30 @@ def encoding(context, dynamic_process_subfolders):
         if not row_id:
             context.log.warning(f"Failed to update status with 'DPX encoding to MKV failure'")
             return {"status": "encoding failure", "dpx_seq": dpx_path}
-"""
+
+
+
+'''
+ Maybe useful
+    if not result:
+        # Register new sequence
+        cursor.execute(f"""
+            INSERT INTO encoding_status 
+            (dpx_id, folder_path, status, current_stage, last_updated) 
+            VALUES (?, ?, 'pending', 'discovered', str({datetime.today()[:19]}))
+        """, (directory, dpath))
+        new_sequences[directory] = root
+    elif result[0] == 'failed':
+        # Re-queue failed sequences
+        cursor.execute("""
+            UPDATE encoding_status 
+            SET status = 'pending', 
+                current_stage = 'rediscovered',
+                error_message = NULL 
+            WHERE dpx_id = ?
+        """, (directory,))
+        new_sequences[directory] = dpath
+    
+    conn.commit()
+
+'''
