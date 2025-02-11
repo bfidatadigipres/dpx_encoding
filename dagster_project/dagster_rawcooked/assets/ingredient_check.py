@@ -312,7 +312,7 @@ def get_metadata(stream, arg, dpath) -> str:
     return meta.decode('utf-8').rstrip('\n')
 
 
-@op # type: ignore
+@asset
 def get_mediaconch(dpath) -> tuple[bool, str]:
     '''
     Check for 'pass! {path}' in mediaconch reponse

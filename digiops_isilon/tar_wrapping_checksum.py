@@ -44,7 +44,7 @@ sys.path.append(os.environ['CODE'])
 import adlib_v3 as adlib
 
 # Global paths
-LOCAL_PATH = os.environ['IS_DIGITAL']
+LOCAL_PATH = os.environ['BP_DIGITAL']
 AUTO_TAR = os.path.join(LOCAL_PATH, os.environ['TAR_PRES'])
 DELETE_TAR = os.path.join(LOCAL_PATH, os.environ['TO_DELETE'])
 TAR_FAIL = os.path.join(LOCAL_PATH, os.environ['TAR_FAIL'])

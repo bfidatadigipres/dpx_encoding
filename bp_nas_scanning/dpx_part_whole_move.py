@@ -36,7 +36,7 @@ import csv
 import datetime
 
 # Global variables
-DPX_PATH = os.environ['FILM_OPS']
+DPX_PATH = os.environ['BP_FILM_SCANNING']
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 CSV_PATH = os.path.join(SCRIPT_LOG, 'splitting_document.csv')
 TAR_PATH = os.path.join(DPX_PATH, os.environ['DPX_WRAP'])

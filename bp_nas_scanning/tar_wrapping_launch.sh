@@ -20,9 +20,9 @@ function control {
 control
 
 # Path to folder
-FPATH="${FILM_OPS}${DPX_WRAP}"
-LOGS="${FILM_OPS}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
-FLIST="${FILM_OPS}${TAR_PRES}temp_file_list.txt"
+FPATH="${BP_FILM_SCANNING}${DPX_WRAP}"
+LOGS="${BP_FILM_SCANNING}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
+FLIST="${BP_FILM_SCANNING}${TAR_PRES}temp_file_list.txt"
 
 if [ -z "$(ls -A ${FPATH})" ]
   then

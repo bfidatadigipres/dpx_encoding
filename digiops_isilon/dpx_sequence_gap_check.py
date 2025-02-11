@@ -27,7 +27,7 @@ import shutil
 import logging
 import datetime
 
-DPX_PATH = os.environ['IS_DIGITAL']
+DPX_PATH = os.environ['BP_DIGITAL']
 DPX_GAP_CHECK = os.path.join(DPX_PATH, 'automation_dpx/encoding/dpx_gap_check/')
 DPX_REVIEW = os.path.join(DPX_PATH, os.environ['DPX_REVIEW'])
 DPX_ASSESS = os.path.join(DPX_PATH, os.environ['DPX_ASSESS'])

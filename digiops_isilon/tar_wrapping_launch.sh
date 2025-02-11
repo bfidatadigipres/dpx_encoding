@@ -20,9 +20,9 @@ function control {
 control
 
 # Path to folder
-FPATH="${IS_DIGITAL}${DPX_WRAP}"
-LOGS="${IS_DIGITAL}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
-FLIST="${IS_DIGITAL}${TAR_PRES}temp_file_list.txt"
+FPATH="${BP_DIGITAL}${DPX_WRAP}"
+LOGS="${BP_DIGITAL}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
+FLIST="${BP_DIGITAL}${TAR_PRES}temp_file_list.txt"
 
 # Refresh list / add items to list
 rm "$FLIST"

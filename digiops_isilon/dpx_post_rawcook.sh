@@ -5,13 +5,13 @@
 # ====================================================================
 
 # Global variables extracted from environmental vars
-ERRORS="${IS_DIGITAL}${CURRENT_ERRORS}"
-DPX_PATH="${IS_DIGITAL}${RAWCOOKED_PATH}"
-DPX_DEST="${IS_DIGITAL}${DPX_COMPLETE}"
-MKV_DESTINATION="${IS_DIGITAL}${MKV_ENCODED}"
-CHECK_FOLDER="${IS_DIGITAL}${MKV_CHECK}"
+ERRORS="${BP_DIGITAL}${CURRENT_ERRORS}"
+DPX_PATH="${BP_DIGITAL}${RAWCOOKED_PATH}"
+DPX_DEST="${BP_DIGITAL}${DPX_COMPLETE}"
+MKV_DESTINATION="${BP_DIGITAL}${MKV_ENCODED}"
+CHECK_FOLDER="${BP_DIGITAL}${MKV_CHECK}"
 MKV_POLICY="$POLICY_RAWCOOK"
-SCRIPT_LOG="${IS_DIGITAL}${DPX_SCRIPT_LOG}"
+SCRIPT_LOG="${BP_DIGITAL}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {

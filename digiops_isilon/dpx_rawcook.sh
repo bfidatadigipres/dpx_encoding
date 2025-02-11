@@ -5,9 +5,9 @@
 # =========================================================================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG="${IS_DIGITAL}${DPX_SCRIPT_LOG}"
-DPX_PATH="${IS_DIGITAL}${DPX_COOK}"
-MKV_DEST="${IS_DIGITAL}${MKV_ENCODED}"
+SCRIPT_LOG="${BP_DIGITAL}${DPX_SCRIPT_LOG}"
+DPX_PATH="${BP_DIGITAL}${DPX_COOK}"
+MKV_DEST="${BP_DIGITAL}${MKV_ENCODED}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {

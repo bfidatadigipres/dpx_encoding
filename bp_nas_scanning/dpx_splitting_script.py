@@ -56,7 +56,7 @@ sys.path.append(os.environ['CODE'])
 import adlib_v3 as adlib
 
 # Global variables
-DPX_PATH = os.environ['FILM_OPS']
+DPX_PATH = os.environ['BP_FILM_SCANNING']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 ERRORS_COMPLETE = os.path.join(ERRORS, 'completed/')
 OVERSIZED_SEQ = os.path.join(ERRORS, 'oversized_sequences/')

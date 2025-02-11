@@ -35,7 +35,7 @@ import datetime
 import subprocess
 
 # Global variables
-DPX_PATH = os.environ['IS_DIGITAL']
+DPX_PATH = os.environ['BP_DIGITAL']
 ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
 SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
 UNTAR_PATH = os.path.join(DPX_PATH, os.environ['UNWRAP_TAR'])

@@ -5,9 +5,9 @@
 # ==========================================================================
 
 # Global variables call environmental variables
-DPX_LOG="${IS_DIGITAL}${DPX_SCRIPT_LOG}"
-DPX_PATH="${IS_DIGITAL}${DPX_ASSESS_FOUR}"
-ERRORS="${IS_DIGITAL}${CURRENT_ERRORS}"
+DPX_LOG="${BP_DIGITAL}${DPX_SCRIPT_LOG}"
+DPX_PATH="${BP_DIGITAL}${DPX_ASSESS_FOUR}"
+ERRORS="${BP_DIGITAL}${CURRENT_ERRORS}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"

@@ -5,9 +5,9 @@
 # ===============================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG="${IS_DIGITAL}${DPX_SCRIPT_LOG}"
-DPX_PATH="${IS_DIGITAL}${UNWRAP_RAWCOOK}"
-ERRORS="${IS_DIGITAL}${CURRENT_ERRORS}"
+SCRIPT_LOG="${BP_DIGITAL}${DPX_SCRIPT_LOG}"
+DPX_PATH="${BP_DIGITAL}${UNWRAP_RAWCOOK}"
+ERRORS="${BP_DIGITAL}${CURRENT_ERRORS}"
 COMPLETED="${DPX_PATH}completed/"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
