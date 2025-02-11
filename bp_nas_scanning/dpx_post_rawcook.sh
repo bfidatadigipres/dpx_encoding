@@ -5,13 +5,13 @@
 # ====================================================================
 
 # Global variables extracted from environmental vars
-ERRORS="${QNAP_11_DIGIOPS}${CURRENT_ERRORS}"
-DPX_PATH="${QNAP_11_DIGIOPS}${RAWCOOKED_PATH}"
-DPX_DEST="${QNAP_11_DIGIOPS}${DPX_COMPLETE}"
-MKV_DESTINATION="${QNAP_11_DIGIOPS}${MKV_ENCODED}"
-CHECK_FOLDER="${QNAP_11_DIGIOPS}${MKV_CHECK}"
+ERRORS="${FILM_OPS}${CURRENT_ERRORS}"
+DPX_PATH="${FILM_OPS}${RAWCOOKED_PATH}"
+DPX_DEST="${FILM_OPS}${DPX_COMPLETE}"
+MKV_DESTINATION="${FILM_OPS}${MKV_ENCODED}"
+CHECK_FOLDER="${FILM_OPS}${MKV_CHECK}"
 MKV_POLICY="${POLICY_RAWCOOK}"
-SCRIPT_LOG="${QNAP_11_DIGIOPS}${DPX_SCRIPT_LOG}"
+SCRIPT_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
 function log {
@@ -165,7 +165,7 @@ if [ -s "${MKV_DESTINATION}matroska_deletion.txt" ];
     log "MKV files that will be deleted due to reversibility data error in logs (if present):"
     cat "${MKV_DESTINATION}matroska_deletion.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
     # Delete broken Matroska files if they exist (unlikely as error exits before encoding)
-    #grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+    grep ^N_ "${MKV_DESTINATION}matroska_deletion.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
   else
     echo "No MKV files for deletion. Skipping."
 fi
@@ -208,7 +208,7 @@ if [ -s "${MKV_DESTINATION}matroska_deletion_list.txt" ];
     log "MKV files that will be deleted due to repeated error in logs:"
     cat "${MKV_DESTINATION}matroska_deletion_list.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
     # Delete broken Matroska files
-    #grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
+    grep ^N_ "${MKV_DESTINATION}matroska_deletion_list.txt" | parallel --jobs 10 rm "${MKV_DESTINATION}mkv_cooked/{}"
   else
     echo "No MKV files for deletion at this time. Skipping."
 fi
@@ -235,7 +235,7 @@ if [ -s "${MKV_DESTINATION}stale_encodings.txt" ];
     log "Stalled files that will be deleted:"
     cat "${MKV_DESTINATION}stale_encodings.txt" >> "${SCRIPT_LOG}dpx_post_rawcook.log"
     # Delete broken log files
-    # grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | parallel --jobs 10 'rm {}.txt'
+    grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | parallel --jobs 10 'rm {}.txt'
   else
     echo "No stale encodings to process at this time. Skipping."
 fi
@@ -246,7 +246,7 @@ grep '/mnt/' "${MKV_DESTINATION}stale_encodings.txt" | while IFS= read -r stale_
     then
       true
     else
-      #rm "${stale_mkv}"
+      rm "${stale_mkv}"
   fi
 done
 

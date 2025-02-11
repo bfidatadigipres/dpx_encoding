@@ -5,16 +5,16 @@
 # ===================================================
 
 # Global variables extracted from environmental variables
-MKV_PATH="${QNAP_11_DIGIOPS}${MKV_CHECK}"
-MKV_LOG="${QNAP_11_DIGIOPS}${MKV_ENCODED}logs/"
-MKV_KILLED="${QNAP_11_DIGIOPS}${MKV_ENCODED}killed/"
-MKV_AUTOINGEST="${QNAP_11_DIGIOPS}${AUTOINGEST_VID}"
-DPX_PATH="${QNAP_11_DIGIOPS}${DPX_COMPLETE}"
-DPX_TO_COOK="${QNAP_11_DIGIOPS}${DPX_COOK}"
-FOR_DELETION="${QNAP_11_DIGIOPS}${TO_DELETE}"
-DPX_LOG="${QNAP_11_DIGIOPS}${DPX_SCRIPT_LOG}"
-ERRORS="${QNAP_11_DIGIOPS}${CURRENT_ERRORS}"
-ERRORS_DONE="${QNAP_11_DIGIOPS}${CURRENT_ERRORS}completed/"
+MKV_PATH="${FILM_OPS}${MKV_CHECK}"
+MKV_LOG="${FILM_OPS}${MKV_ENCODED}logs/"
+MKV_KILLED="${FILM_OPS}${MKV_ENCODED}killed/"
+MKV_AUTOINGEST="${FILM_OPS}${AUTOINGEST_VID}"
+DPX_PATH="${FILM_OPS}${DPX_COMPLETE}"
+DPX_TO_COOK="${FILM_OPS}${DPX_COOK}"
+FOR_DELETION="${FILM_OPS}${TO_DELETE}"
+DPX_LOG="${FILM_OPS}${DPX_SCRIPT_LOG}"
+ERRORS="${FILM_OPS}${CURRENT_ERRORS}"
+ERRORS_DONE="${FILM_OPS}${CURRENT_ERRORS}completed/"
 
 # Function to write output to log
 function log {
@@ -132,8 +132,8 @@ if [ -z "$dpx_list" ]
         # Moves successfully ingested items in deleted list to 'to_delete/' folder
         grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 10 "mv ${DPX_PATH}{} ${FOR_DELETION}{}"
         # Deletes the files that have been successfully ingested to Imagen AND deleted
-        log "PAUSED: Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
-        #grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
+        log "Deleting files listed as 'Successfully deleted' and moved to ${FOR_DELETION}"
+        grep ^N_ "${DPX_PATH}dpx_deletion_list.txt" | parallel --jobs 3 "rm -r ${FOR_DELETION}{}"
 fi
 
 rm "${MKV_PATH}mkv_list.txt"
