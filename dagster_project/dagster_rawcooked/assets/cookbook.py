@@ -1,5 +1,5 @@
 '''
-Create/populate the dagster_rawcook.db
+Create/populate the rawcook.db
 sqlite3 database to store data about
 the DPX encoding workflows
 '''
@@ -7,7 +7,6 @@ the DPX encoding workflows
 import os
 from dagster import asset
 from dagster._utils.backoff import backoff
-import duckdb
 import sqlite3
 
 
@@ -17,7 +16,6 @@ def encoding_database():
     Initialize and maintain connection to SQLite database tracking encoding progress.
     This is a foundational asset that other assets depend on for state tracking.
     The database serves as the source of truth for encoding progress.
-    DUCKDB method better with backoff() but won't work as below (see exaple in Dagster Uni)
     '''
     conn = backoff(fn=sqlite3.connect,
                    retry_on=(RuntimeError, sqlite3.SQLITE_IOERR),
@@ -27,23 +25,30 @@ def encoding_database():
                    max_retries=10
     )
     cursor = conn.cursor()
+
     # Create tables if they don't exist
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS encoding_status (
             dpx_id TEXT PRIMARY KEY,
             folder_path TEXT,
-            colorspace TEXT DEFAULT 0,
-            dpx_size INTEGER DEFAULT 0,
-            bitdepth INTEGER DEFAULT 0,
-            process_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            mkv_size INTEGER DEFAULT 0,
+            first_dpx TEXT,
+            last_dpx TEXT,
+            gaps_in_sequence TEXT,
+            assessment_pass BOOL,
             assessment_complete TIMESTAMP,
+            colorspace TEXT DEFAULT 0,
+            dir_size INTEGER DEFAULT 0,
+            bitdepth INTEGER DEFAULT 0,
+            resolution TEXT,
+            process_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            encoding_choice TEXT,
             rawcook_complete TIMESTAMP 0,
+            mkv_path TEXT,
+            mkv_size INTEGER DEFAULT 0,
             validation_complete TIMESTAMP 0,
             validation_success TEXT,
             wipeup_complete INTEGER DEFAULT 0,
             status TEXT,
-            current_stage TEXT,
             error_message TEXT,
             last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )

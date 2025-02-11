@@ -5,7 +5,7 @@ setup(
     packages=find_packages(exclude=["dagster_rawcooked_tests"]),
     install_requires=[
         "dagster",
-        "dagster-cloud"
+        "dagster-cloud",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
 )
