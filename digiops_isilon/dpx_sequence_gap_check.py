@@ -26,6 +26,7 @@ import sys
 import shutil
 import logging
 import datetime
+import collections
 
 DPX_PATH = os.environ['BP_DIGITAL']
 DPX_GAP_CHECK = os.path.join(DPX_PATH, 'automation_dpx/encoding/dpx_gap_check/')
@@ -55,6 +56,12 @@ def count_folder_depth(fpath):
     for root, dirs, _ in os.walk(fpath):
         for directory in dirs:
             folder_contents.append(os.path.join(root, directory))
+
+    # Check for nested folders (eg N_123_01of01/N_123_01of01/scan01)
+    repeat_folders = [ x for x, count in collections.counter(folder_contents).items() if count > 1 ]
+    if len(repeat_folders) > 0:
+        LOGGER.info("Folder has repeating folder names, skipping: %s", repeat_folders)
+        return None, None
 
     if len(folder_contents) < 2:
         return None, None
