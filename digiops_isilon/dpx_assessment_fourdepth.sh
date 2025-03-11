@@ -11,7 +11,7 @@ ERRORS="${BP_DIGITAL}${CURRENT_ERRORS}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT_ISILON_DIGIOPS}"
+SPLITTING="${SPLITTING_SCRIPT_BP_DIGITAL}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
