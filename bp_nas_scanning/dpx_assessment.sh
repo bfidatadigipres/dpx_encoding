@@ -12,7 +12,7 @@ DPX_REVIEW="${BP_FILM_SCANNING}${DPX_REVIEW}"
 POLICY_PATH="${POLICY_DPX}"
 POLICY_PATH2="${POLICY_IMAGE_ORIENTATION}"
 PY3_LAUNCH="${PY3_ENV}"
-SPLITTING="${SPLITTING_SCRIPT_FILMOPS}"
+SPLITTING="${SPLITTING_SCRIPT_BP_NAS_SCANNING}"
 
 # Function to write output to log, using call 'log' + 'statement' to populate $1.
 function log {
