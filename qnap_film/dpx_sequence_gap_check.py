@@ -58,7 +58,7 @@ def count_folder_depth(fpath):
             folder_contents.append(os.path.join(root, directory))
 
     # Check for nested folders (eg N_123_01of01/N_123_01of01/scan01)
-    repeat_folders = [ x for x, count in collections.counter(folder_contents).items() if count > 1 ]
+    repeat_folders = [ x for x, count in collections.Counter(folder_contents).items() if count > 1 ]
     if len(repeat_folders) > 0:
         LOGGER.info("Folder has repeating folder names, skipping: %s", repeat_folders)
         return None, None
