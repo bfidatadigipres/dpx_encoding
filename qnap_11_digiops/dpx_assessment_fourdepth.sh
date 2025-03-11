@@ -49,7 +49,7 @@ control
 
 # Loop that retrieves single DPX file in each folder, runs Mediaconch check and generates metadata files
 # Configured for four level folders: N_123456_01of01/dimensions/scan01/Reel/<dpx_seq>
-find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | while IFS= read -r files; do
+find "${DPX_PATH}" -maxdepth 4 -mindepth 4 -type d -mmin +30 | head -5 | while IFS= read -r files; do
     # Find first DPX of sequence
     dpx=$(ls "$files" | head -1)
     reel=$(basename "$files")

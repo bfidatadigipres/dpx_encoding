@@ -97,7 +97,7 @@ def get_cid_data(dpx_sequence):
     '''
     Retrieve priref for associated item object number
     '''
-    print("get_cid_data()")
+    print(f"get_cid_data({dpx_sequence})")
     ob_num_split = dpx_sequence.split('_')
     ob_num = '-'.join(ob_num_split[0:-1])
     search = f"object_number='{ob_num}'"
