@@ -5,15 +5,9 @@
 # =========================================================================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG="${BP_FILM_SCANNING}${DPX_SCRIPT_LOG}"
+LOG="${BP_FILM_SCANNING}${DPX_SCRIPT_LOG}dpx_rawcook.log"
 DPX_PATH="${BP_FILM_SCANNING}${DPX_COOK}"
 MKV_DEST="${BP_FILM_SCANNING}${MKV_ENCODED}"
-
-# Function to write output to log, call 'log' + 'statement' that populates $1.
-function log {
-    timestamp=$(date "+%Y-%m-%d - %H.%M.%S")
-    echo "$1 - $timestamp"
-} >> "${SCRIPT_LOG}dpx_rawcook.log"
 
 # Remove or generate temporary files per script run
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
@@ -29,14 +23,14 @@ touch "${MKV_DEST}rawcook_list_image_flip.txt"
 # Write a START note to the logfile if files for encoding, else exit
 if [ -s "${MKV_DEST}reversibility_list.txt" ]
   then
-    log "============= DPX RAWcook script START ============="
+    echo "============= DPX RAWcook script START ============= - $timestamp" >> "$LOG"
   else
     if [ -z "$(ls -A ${DPX_PATH})" ]
       then
         echo "No files available for encoding, script exiting"
         exit 1
       else
-        log "============= DPX RAWcook script START ============="
+        echo "============= DPX RAWcook script START ============= - $timestamp" >> "$LOG"
     fi
 fi
 
@@ -45,7 +39,7 @@ fi
 # ========================
 
 # Run first pass where list generated for large reversibility cases by dpx_post_rawcook.sh
-log "Checking for files that failed RAWcooked due to large reversibility files"
+echo "Checking for files that failed RAWcooked due to large reversibility files - $timestamp" >> "$LOG"
 grep '/mnt/' "${MKV_DEST}reversibility_list.txt" | while IFS= read -r retry; do
   folder_retry=$(basename "$retry")
   count_cooked_2=$(grep -c "$folder_retry" "${MKV_DEST}rawcooked_success.log")
@@ -60,8 +54,8 @@ done
 # Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt
 grep ^N_ "${MKV_DEST}temporary_retry_list.txt" | sort -n -k10.12 | uniq > "${MKV_DEST}retry_list.txt"
 cook_retry=$(grep ^N_ "${MKV_DEST}retry_list.txt")
-log "DPX folder will be cooked using --output-version 2:"
-log "${cook_retry}"
+echo "DPX folder will be cooked using --output-version 2: - $timestamp" >> "$LOG"
+echo "${cook_retry} - $timestamp" >> "$LOG"
 
 # Check here for RAWcooked_notes.txt, if found add framemd5 output commands
 grep ^N_ "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
@@ -74,8 +68,8 @@ grep ^N_ "${MKV_DEST}retry_list.txt" | while IFS= read -r dpx_seq; do
 done
 
 # Begin RAWcooked processing with GNU Parallel using --output-version 2
-cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 4 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 4 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list_no_flip.txt" | parallel --jobs 6 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}retry_list_image_flip.txt" | parallel --jobs 6 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps --output-version 2 -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
 rm "${MKV_DEST}reversibility_list.txt"
 
@@ -87,7 +81,7 @@ rm "${MKV_DEST}reversibility_list.txt"
 ls "${MKV_DEST}mkv_cooked" > "${MKV_DEST}temp_queued_list.txt"
 
 # When large reversibility cooks complete target all N_ folders, and pass any not already being processed to temporary_rawcook_list.txt
-log "Outputting files from DPX_PATH to list, if not already queued"
+echo "Outputting files from DPX_PATH to list, if not already queued - $timestamp" >> "$LOG"
 find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -type d -name "N_*" | while IFS= read -r folders; do
   folder_clean=$(basename "$folders")
   count_cooked=$(grep -c "$folder_clean" "${MKV_DEST}rawcooked_success.log")
@@ -101,8 +95,8 @@ done
 # Sort the temporary_rawcook_list by part of extension, pass first 20 to rawcook_list.txt and write items to log
 grep ^N_ "${MKV_DEST}temporary_rawcook_list.txt" | sort -n -k10.12 | uniq | head -20 > "${MKV_DEST}rawcook_list.txt"
 cook_list=$(grep ^N_ "${MKV_DEST}rawcook_list.txt")
-log "DPX folder will be cooked:"
-log "${cook_list}"
+echo "DPX folder will be cooked: - $timestamp" >> "$LOG"
+echo "${cook_list} - $timestamp" >> "$LOG"
 
 # Check here for RAWcooked_notes.txt, if found add framemd5 output commands
 grep ^N_ "${MKV_DEST}rawcook_list.txt" | while IFS= read -r dpx_seq; do
@@ -115,10 +109,10 @@ grep ^N_ "${MKV_DEST}rawcook_list.txt" | while IFS= read -r dpx_seq; do
 done
 
 # Begin RAWcooked processing with GNU Parallel
-cat "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --jobs 4 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
-cat "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --jobs 4 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list_no_flip.txt" | parallel --jobs 6 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps -s 5281680 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
+cat "${MKV_DEST}rawcook_list_image_flip.txt" | parallel --jobs 6 --joblog "/mnt/qnap_03/automation_dpx/rawcook.log" "rawcooked -y --all --no-accept-gaps -s 5281680 --framemd5 ${DPX_PATH}{} -o ${MKV_DEST}mkv_cooked/{}.mkv &>> ${MKV_DEST}mkv_cooked/{}.mkv.txt"
 
-log "===================== DPX RAWcook ENDED ====================="
+echo "===================== DPX RAWcook ENDED ===================== - $timestamp" >> "$LOG"
 
 #rm "${MKV_DEST}temporary_rawcook_list.txt"
 #rm "${MKV_DEST}temporary_retry_list.txt"
