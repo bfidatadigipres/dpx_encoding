@@ -55,7 +55,7 @@ hourly_schedule = dg.ScheduleDefinition(
 # Def for resources
 resources = {
     "database": resources.SQLiteResource(filepath=f"{DATABASE}"),
-    "process_pool": resources.process_pool.configured({"num_processes": 4})
+    "process_pool": resources.process_pool.configured({"num_processes": 2})
 }
 
 defs = dg.Definitions(

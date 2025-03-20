@@ -1,7 +1,6 @@
-# Env vars
+# Ignore
 .env
-
-# Database
+.DS_Store
 *.db
 
 # Pycache
