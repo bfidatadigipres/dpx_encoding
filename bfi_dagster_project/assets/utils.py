@@ -1,0 +1,751 @@
+import os
+import re
+import sys
+import json
+import shutil
+import tarfile
+import hashlib
+import datetime
+import collections
+import subprocess
+import dagster as dg
+from typing import List, Dict, Optional
+from dotenv import load_dotenv
+
+# Local library
+sys.path.append(os.environ['CODE'])
+import adlib_v3 as ad
+
+# Import paths
+load_dotenv()
+METADATA_PATH = os.environ.get('CID_MEDIAINFO')
+LOG_PATH = os.environ.get('LOGS')
+IMG_PROC = os.environ.get('IMG_PROC')
+AUTOINGEST = os.environ.get('AUTOINGEST')
+FAIL_PATH = os.environ.get('FAILS')
+CID_API = os.environ.get('CID_API')
+
+
+# (fname: str) -> str | bool | None:
+def get_object_number(fname: str) -> Optional[str]:
+    '''
+    Extract object number from name formatted
+    with partWhole, eg N_123456_01of03.ext
+    '''
+    if not any(fname.startswith(px) for px in PREFIX):
+        return False
+    try:
+        splits: list[str] = fname.split('_')
+        object_number: Optional[str] = '-'.join(splits[:-1])
+    except Exception:
+        object_number = None
+    return object_number
+
+
+def get_metadata(
+    stream: str,
+    arg: str,
+    dpath: str
+) -> str:
+    '''
+    Retrieve metadata with subprocess
+    for supplied stream/field arg
+    '''
+
+    cmd = [
+        'mediainfo', '--Full',
+        '--Language=raw',
+        f'--Output={stream};%{arg}%',
+        dpath
+    ]
+
+    meta = subprocess.check_output(cmd)
+    return meta.decode('utf-8').rstrip('\n')
+
+
+def write_dir_tree(
+    dpath: str
+) -> str:
+    '''
+    Call subprocess tree to map directory
+    into file for inclusion in source folder
+    '''
+
+    seq = os.path.basename(dpath)
+    fpath = os.path.join(dpath, f"{seq}_directory_contents.txt")
+    cmd = [
+        'tree', dpath,
+        '-o', fpath
+    ]
+    try:
+        success = subprocess.run(cmd, text=True, check=True, shell=False)
+        return fpath
+    except Exception as err:
+        print(err)
+        return False
+
+
+def metadata_dump(
+    dpath: str,
+    file_path: str,
+    ext: str
+) -> str:
+    '''
+    Capture metadata for file into source folder
+    if ext supplied copy to metadata folder for
+    inclusion in CID digital media record
+    '''
+    command = command2 = []
+    fpath, file = os.path.split(file_path)
+    directory = os.path.basename(dpath)
+
+    if len(ext) == 0:
+        fpath = os.path.split(fpath)[0]
+        outpath = os.path.join(dpath, f"{directory}_{file}_metadata.txt")
+        command = [
+            'mediainfo',
+            '--Full', '--Details=0',
+            f'--Output=TEXT',
+            f'--LogFile={outpath}',
+            file_path
+        ]
+        try:
+            subprocess.run(command, check=True, shell=False)
+        except Exception as err:
+            print(err)
+            return False
+        if os.path.isfile(outpath):
+            return outpath
+
+    elif len(ext) > 0:
+        outpath = os.path.join(METADATA_PATH, f"{directory}_{file}_SOURCE.json")
+        command = [
+            'mediainfo',
+            '--Full',
+            f'--Output=JSON',
+            f'--LogFile={outpath}',
+            file_path
+        ]
+        outpath2 = os.path.join(METADATA_PATH, f"{directory}_{file}_SOURCE.txt")
+        command2 = [
+            'mediainfo',
+            '--Full',
+            f'--LogFile={outpath2}',
+            file_path
+        ]
+
+        try:
+            subprocess.run(command, check=True, shell=False)
+            subprocess.run(command2, check=True, shell=False)
+        except Exception as err:
+            print(err)
+            return False, err
+        if os.path.isfile(outpath) and os.path.isfile(outpath2):
+            return outpath, outpath2
+
+
+def mediaconch(
+    ipath: str,
+    arg: str
+) -> List:
+    '''
+    Check against relevant policy return pass/fail, and captured result
+    '''
+    if arg == 'TIF':
+        policy = os.environ.get("POLICY_TIF")
+    elif arg == 'DPX':
+        policy = os.environ.get("POLICY_DPX")
+    elif arg == 'TAR':
+        return ['Fail', 'Image sequence extension not recognised for RAWcook']
+
+    cmd = [
+        'mediaconch', '-p',
+        policy, ipath
+    ]
+
+    try:
+        result = subprocess.check_output(' '.join(cmd), shell=True).decode()
+        if str(result).startswith("pass!"):
+            return ['Pass', str(result)]
+        else:
+            return ['Fail', str(result)]
+    except Exception as err:
+        print(err)
+        raise
+
+
+def mediaconch_mkv(
+    dpath: str
+) -> tuple[str, str]:
+    '''
+    Check FFV1 MKV against policy
+    '''
+    policy = os.environ.get("POLICY_MKV")
+    cmd = [
+        'mediaconch', '-p',
+        policy, f"{dpath}"
+    ]
+
+    try:
+        result = subprocess.check_output(' '.join(cmd), shell=True).decode()
+        if str(result).startswith("pass!"):
+            return ['Pass', result]
+        return 'Fail', result
+    except Exception as err:
+        print(err)
+        raise
+
+
+def get_partwhole(
+    fname: str
+) -> tuple[int, int]:
+    '''
+    Check part whole well formed
+    '''
+    match = re.search(r'(?:_)(\d{2,4}of\d{2,4})', fname)
+    if not match:
+        return None, None
+    part, whole = [int(i) for i in match.group(1).split('of')]
+    len_check = fname.split('_')
+    len_check = len_check[-1].split('.')[0]
+    str_part, str_whole = len_check.split('of')
+    if len(str_part) != len(str_whole):
+        return None, None
+    if part > whole:
+        return None, None
+
+    return (part, whole)
+
+
+def count_folder_depth(
+    fpath: str
+) -> tuple[str, str]:
+    '''
+    Check if folder is three depth of four depth
+    across total scan folder contents and folders
+    ordered correctly
+    '''
+    folder_contents = []
+    dpx_path = []
+    for root, dirs, files in os.walk(fpath):
+        for directory in dirs:
+            folder_contents.append(os.path.join(root, directory))
+        for file in files:
+            if file.lower().endswith(('.dpx', '.tif', '.tiff')):
+                dpx_path.append(os.path.join(root, file))
+    dpx_path.sort()
+
+    first_dpx = dpx_path[0]
+
+    # Check for dupes in folder names and length of found folders
+    repeats = [item for item, count in collections.Counter(folder_contents).items() if count > 1]
+    if len(repeats) > 0:
+        return False, first_dpx
+    if len(folder_contents) < 2:
+        return False, first_dpx
+    if len(folder_contents) == 2:
+        if 'scan' in folder_contents[0].split('/')[-1].lower() and 'x' in folder_contents[1].split('/')[-1].lower():
+            return '3', first_dpx
+    if len(folder_contents) == 3:
+        if 'x' in folder_contents[0].split('/')[-1].lower() and 'scan' in folder_contents[1].split('/')[-1].lower() and 'R' in folder_contents[2].split('/')[-1].upper():
+            return '4', first_dpx
+    if len(folder_contents) > 3:
+        total_scans = []
+        for num in range(0, len(folder_contents)):
+            if 'scan' in folder_contents[num].split('/')[-1].lower():
+                total_scans.append(folder_contents[num].split('/')[-1])
+
+        scan_num = len(total_scans)
+        if len(folder_contents) / scan_num == 2:
+            # Ensure folder naming order is correct
+            if 'scan' not in folder_contents[0].split('/')[-1].lower():
+                return None, first_dpx
+            sorted(folder_contents, key=len)
+            return '3', first_dpx
+        if (len(folder_contents) - 1) / scan_num == 2:
+            # Ensure folder naming order is correct
+            if 'scan' in folder_contents[0].split('/')[-1].lower() and 'R' not in folder_contents[len(folder_contents) - 1].split('/')[-1].upper():
+                return None, first_dpx
+            sorted(folder_contents, key=len)
+            return '4', first_dpx
+
+
+def get_file_type(
+    seq: str
+) -> tuple[str, str]:
+    '''
+    Call up CID with fname
+    and check item file-type
+    '''
+    f = seq.split('_')
+    if len(f) == 3:
+        ob_num = '-'.join(seq.split('_')[:2])
+    elif len(f) == 4:
+        ob_num = '-'.join(seq.split('_')[:3])
+
+    search = f'object_number={ob_num}'
+    rec = ad.retrieve_record(CID_API, 'items', search, '1', ['priref', 'file_type', 'reproduction.reference'])
+    ftype = ad.retrieve_field_name(rec[0], 'file_type')
+    priref = ad.retrieve_field_name(rec[0], 'priref')
+    repro_ref = ad.retrieve_field_name(rec[0], 'reproduction.reference')
+    return priref, ftype, repro_ref
+
+
+def gaps(
+    dpath: str
+) -> tuple[str, str, list]:
+    '''
+    Return abs path to first and last DPX
+    in sequence then list of any numbers
+    missing in DPX sequence
+    '''
+
+    missing_dpx = []
+    file_nums, filenames = iterate_folders(dpath)
+    # Calculate range from first/last
+    file_range = list(range(min(file_nums), max(file_nums) + 1))
+
+    # Retrieve equivalent DPX names for logs
+    first_dpx = filenames[file_nums.index(min(file_nums))]
+    last_dpx = filenames[file_nums.index(max(file_nums))]
+
+    # Check for absent numbers in sequence
+    missing = list(set(file_nums) ^ set(file_range))
+    if len(missing) > 0:
+        for missed in missing:
+            missing_dpx.append(missed)
+
+    return (first_dpx, last_dpx, missing_dpx)
+
+
+def check_fname(
+    fname: str
+) -> bool:
+    '''
+    Run series of checks against BFI filenames
+    check accepted prefixes, and extensions
+    '''
+    prefix = [
+    'N',
+    'C',
+    'PD',
+    'SPD',
+    'PBS',
+    'PBM',
+    'PBL',
+    'SCR',
+    'CA'
+    ]
+    if not any(fname.startswith(px) for px in prefix):
+        return False
+    if not re.search("^[A-Za-z0-9_.]*$", fname):
+        return False
+
+    sname = fname.split('_')
+    if len(sname) > 4 or len(sname) < 3:
+        return False
+    if len(sname) == 4 and len(sname[2]) != 1:
+        return False
+    return True
+
+
+def iterate_folders(
+    fpath: str
+) -> tuple[list, list]:
+    '''
+    Iterate suppied path and return list
+    of filenames
+    '''
+    file_nums = []
+    filenames = []
+    for root, _,files in os.walk(fpath):
+        for file in files:
+            if file.endswith(('.dpx', '.DPX')):
+                file_nums.append(int(re.search(r'\d+', file).group()))
+                filenames.append(os.path.join(root, file))
+
+    return (file_nums, filenames)
+
+
+def get_folder_size(
+    fpath: str
+) -> int:
+    '''
+    Check the size of given folder path
+    return size in kb
+    '''
+    if os.path.isfile(fpath):
+        return os.path.getsize(fpath)
+
+    byte_size = 0
+    for root, _, files in os.walk(fpath):
+        for file in files:
+            fpath = os.path.join(root, file)
+            byte_size += os.path.getsize(fpath)
+
+    return byte_size
+    
+
+def move_to_failures(
+    fpath: str
+) -> None:
+    '''
+    Move a file or sequence to the failures folder.
+    '''
+    try:
+        if not os.path.exists(FAIL_PATH):
+            os.makedirs(FAIL_PATH, exist_ok=True)
+
+        dest_path = os.path.join(FAIL_PATH, os.path.basename(fpath))
+        shutil.move(fpath, dest_path)
+        return f"Moved to failures folder: {dest_path}"
+    except Exception as e:
+        return f"Failed to move {os.path.basename(fpath)} to failures {dest_path}"
+       
+
+
+def move_log_to_failures(
+    lpath: str
+) -> None:
+    '''
+    Move a file or sequence to the failures folder.
+    '''
+    log_failures = '/Users/joanna/Desktop/automation/image_sequence_processing/logs/failures/'
+    # log_failures = os.path.join(os.getenv('LOGS'), 'failures')
+    try:
+        if not os.path.exists(log_failures):
+            os.makedirs(log_failures, exist_ok=True)
+
+        dest_path = os.path.join(log_failures, os.path.basename(lpath))
+        shutil.move(lpath, dest_path)
+
+    except Exception as e:
+        print(e)
+
+
+def move_to_autoingest(
+    fpath: str
+) -> bool:
+    '''
+    Move a file to the new workflow folder.
+    '''
+
+    autoingest = '/Users/joanna/Desktop/automation/autoingest/ingest/'
+    # autoingest = os.getenv("AUTOINGEST")
+    try:
+        dest_path = os.path.join(autoingest, 'autodetect', os.path.basename(fpath))
+        shutil.move(fpath, dest_path)
+    except Exception as e:
+        print(e)
+        raise
+    if os.path.isfile(dest_path):
+        return True
+
+
+def delete_sequence(
+    sequence_path: str
+) -> bool:
+    '''
+    Delete an image sequence and any associated files.
+    '''
+    if not os.path.exists(sequence_path):
+        return None
+    try:
+        shutil.rmtree(sequence_path)
+    except OSError as err:
+        print(err)
+        raise
+
+    if not os.path.isdir(sequence_path):
+        return True
+
+
+def tar_item(
+    fullpath: str
+) -> str:
+    '''
+    Make tar path from supplied filepath
+    Use tarfile to create TAR
+    '''
+
+    fpath, fname = os.path.split(fullpath)
+    local_log = os.path.join(fpath, f'{fname}_tar_wrap.log')
+    tfile = f"{fname}.tar"
+    tarring = os.path.join(IMG_PROC, 'tar_wrapping/')
+    tar_path = os.path.join(tarring, tfile)
+    if os.path.exists(tar_path):
+        append_to_tar_log(local_log, "Exiting. File already exists: {tar_path}")
+        return None
+
+    try:
+        tarring = tarfile.open(tar_path, 'w:')
+        tarring.add(fullpath, arcname=f"{fname}")
+        tarring.close()
+        return tar_path
+    
+    except Exception as exc:
+        append_to_tar_log(local_log, f"ERROR TARRING FILE: {exc}")
+        tarring.close()
+        return None
+
+
+def get_checksums(
+    tar_path: str,
+    folder: str
+)-> Dict[str, str]:
+    '''
+    Open tar file and read/generate MD5 sums
+    and return dct {filename: hex}
+    '''
+    data = {}
+    tar = tarfile.open(tar_path, "r:")
+
+    for item in tar:
+        item_name = item.name
+        if item.isdir():
+            continue
+        pth, fname = os.path.split(item_name)
+        if 'tar_wrap.log' in fname:
+            continue
+        if '.DS_Store' in fname:
+            continue
+
+        folder_prefix = os.path.basename(pth)
+        fname = f'{folder_prefix}_{fname}'
+        try:
+            f = tar.extractfile(item)
+        except Exception as exc:
+            continue
+
+        hash_md5 = hashlib.md5()
+        for chunk in iter(lambda: f.read(65536), b""):
+            hash_md5.update(chunk)
+
+        if not folder:
+            file = os.path.basename(fname)
+            data[file] = str(hash_md5.hexdigest())
+        else:
+            data[fname] = str(hash_md5.hexdigest())
+    tar.close()
+    return data
+
+
+def get_checksum(
+    fpath: str
+) -> Dict[str, str]:
+    '''
+    Using file path, generate file checksum
+    return as list with filename
+    '''
+    data = {}
+    pth, file = os.path.split(fpath)
+    folder_prefix = os.path.basename(pth)
+    file = f'{folder_prefix}_{file}'
+    hash_md5 = hashlib.md5()
+    with open(fpath, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            hash_md5.update(chunk)
+        data[file] = str(hash_md5.hexdigest())
+        f.close()
+    return data
+
+
+def make_manifest(
+    tar_path: str,
+    md5_dct: str
+) -> str:
+    '''
+    Output md5 to JSON file format and add to TAR file
+    '''
+    md5_path = f"{tar_path}_manifest.md5"
+
+    try:
+        with open(md5_path, 'w+') as json_file:
+            json_file.write(json.dumps(md5_dct, indent=4))
+            json_file.close()
+    except Exception as exc:
+        print(exc)
+
+    if os.path.exists(md5_path):
+        return md5_path
+
+
+def md5_hash(
+    tar_file: str
+) -> Optional[int]:
+    '''
+    Make whole file TAR MD5 checksum
+    '''
+    try:
+        hash_md5 = hashlib.md5()
+        with open(tar_file, "rb") as fname:
+            for chunk in iter(lambda: fname.read(65536), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
+    except Exception as err:
+        print(err)
+        return None
+
+
+def append_to_tar_log(
+    local_log: str,
+    data: str
+) -> None:
+    '''
+    Output local log data for team
+    to monitor TAR wrap process
+    '''
+    if not os.path.isfile(local_log):
+        with open(local_log, 'x') as log:
+            log.close()
+
+    with open(local_log, 'a') as log:
+        log.write(f"{str(datetime.datetime.now())[:19]} - {data}\n")
+        log.close()
+
+
+def error_log(
+    fpath: str,
+    message: str,
+    kandc: str
+) -> None:
+    '''
+    If needed, write error log
+    for incomplete sequences.
+    '''
+    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if not kandc:
+        with open(fpath, 'a+') as log:
+            log.write(f"tar_wrapping {ts}: {message}.\n\n")
+            log.close()
+    else:
+        with open(fpath, 'a+') as log:
+            log.write(f"tar_wrapping {ts}: {message}.\n")
+            log.write(f"\tPlease contact the KLC Developer team {kandc}.\n\n")
+            log.close()
+
+
+def write_to_cid(
+    priref: str,
+    fname: str
+) -> bool:
+    '''
+    Make payload and write to CID
+    '''
+
+    name = 'datadigipres'
+    method = "TAR wrapping method:"
+    text = f"For preservation to DPI the item {fname} was wrapped using Python tarfile module, and the TAR includes checksum manifests of all contents."
+    date = str(datetime.datetime.now())[:10]
+    time = str(datetime.datetime.now())[11:19]
+    notes = 'Automated TAR wrapping script.'
+    payload_head = f"<adlibXML><recordList><record priref='{priref}'>"
+    payload_addition = f"<utb.fieldname>{method}</utb.fieldname><utb.content>{text}</utb.content>"
+    payload_edit = f"<edit.name>{name}</edit.name><edit.date>{date}</edit.date><edit.time>{time}</edit.time><edit.notes>{notes}</edit.notes>"
+    payload_end = "</record></recordList></adlibXML>"
+    payload = payload_head + payload_addition + payload_edit + payload_end
+
+    record = ad.post(CID_API, payload, 'items', 'updaterecord')
+    if record is None:
+        return False
+    return True
+
+
+def check_for_version_two(
+    log: str
+) -> bool:
+    ''' Check if outout version2 needed '''
+
+    warnings = [
+        'Error: undecodable file is becoming too big',
+        'Error: the reversibility file is becoming big'
+    ]
+
+    if not os.path.isfile(log):
+        return False
+
+    with open(log, 'r') as log_file:
+        for line in log_file:
+            if warnings[0] in str(line) or warnings[1] in str(line):
+                return True
+
+    return False
+
+
+def check_mkv_log(
+    log_path: str
+) -> bool:
+    '''
+    Check for success note in log
+    '''
+    errors = ['Reversibility was checked, issues detected',
+              'Error:',
+              'Conversion failed!',
+              'Please contact info@mediaarea.net',
+              'Error while decoding stream']
+
+    success = 'Reversibility was checked, no issue detected.'
+
+    if not os.path.exists(log_path):
+        return False
+
+    with open(log_path, 'r') as log_file:
+        data = log_file.readlines()
+        for line in data:
+            if success in str(line):
+                return True
+            if any(elem in str(line) for elem in errors):
+                return False
+
+    return False
+
+
+def check_tar_log(
+    log_path:str
+) -> bool:
+    '''
+    Look for failure message
+    '''
+    errors = ["Failure exit",
+             "Checksum mismatch"]
+
+    success = "TAR wrap completed successfully."
+
+    with open(log_path, 'r') as log_file:
+        lines = log_file.readlines()
+        for line in lines:
+            if success in str(line):
+                return True
+            if any(elem in str(line) for elem in errors):
+                return False
+    return False
+
+
+def check_file(
+    mpath: str
+) -> bool:
+    '''
+    Run check, check console output for
+    success statement
+    '''
+    root, fname = os.path.split(mpath)
+    log = os.path.join(root, f"check_log_{fname}.txt")
+    cmd = [
+        'rawcooked', '--check', f"{mpath}",
+        "&>", log
+    ]
+    try:
+        subprocess.run(' '.join(cmd), shell=True)
+    except subprocess.CalledProcessError as err:
+        print(err)
+        raise err
+
+    with open(log, 'r') as file:
+        logs = file.readlines()
+    for line in logs:
+        if 'Reversibility was checked, no issue detected.' in line:
+            shutil.move(log, os.path.join(LOG_PATH, 'check_logs/'))
+            return True
+    move_log_to_failures(log)
+    return False

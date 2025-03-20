@@ -1,0 +1,221 @@
+import os
+import sys
+import shutil
+import tarfile
+import datetime
+import dagster as dg
+from typing import List, Dict, Optional, Any
+from dotenv import load_dotenv
+from . import utils
+
+# Global variables
+load_dotenv()
+LOG_PATH = os.environ.get('LOGS')
+
+
+@dg.asset(
+    ins={"assess_seqs": dg.AssetIn("assess_sequence")},
+    required_resource_keys={'database', 'process_pool'}
+)
+def create_tar(
+    context: dg.AssetExecutionContext,
+    assess_seqs: Dict[str, List[str]],
+) -> List[Optional[str]]:
+    '''
+    Receive dictionary of folder paths, selects those suitable for TAR wrap.
+    Builds MD5 manifest of sequence contents, TAR wraps file then compares
+    manifest with internal TAR checksums. Updates CID record with Python
+    tar file statement, updates database and passes list of TAR filepaths
+    to the validation asset.
+    '''
+    context.log.info("Received new encoding data: %s", assess_seqs)
+    if not assess_seqs['TAR']:
+        context.log.info("No TAR sequences to process at this time.")
+        return []
+
+    tar_tasks = [(folder,) for folder in assess_seqs['TAR']]
+
+    results = context.resources.process_pool.map(tar_wrap, tar_tasks)
+    completed_files = [r['path'] for r in results if r['success'] is not False]
+    context.log.info(f"Successfully completed {len(completed_files)} TAR archives: \n{results}")
+
+    success_list = []
+    for data in results:
+        context.log.info(data)
+        seq = data['sequence']
+        if data['success'] is True:
+            success_list.append(data['path'])
+        args = data['db_arguments']
+        entry = context.resources.database.append_to_database(context, seq, args)
+        context.log.info(f"Written to Database: {entry}")
+        for log in data['logs']:
+            if 'WARNING' in log:
+                context.log.warning(log)
+            else:
+                context.log.info(log)
+
+    return success_list
+
+
+def tar_wrap(fullpath: str) -> Dict[str, Any]:
+    '''
+    TAR wrap under parallelisation
+    '''
+
+    log_data = []
+    root, seq = os.path.split(fullpath[0])
+    local_log = os.path.join(root, f'{seq}_tar_wrap.log')
+    if not os.path.exists(fullpath[0]):
+        log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
+        return {
+            "sequence": seq,
+            "success": False,
+            "path": None,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
+    log_data.append(f"==== New path for TAR wrap: {fullpath[0]} ====")
+    tar_source = os.path.split(fullpath[0])[-1]
+
+    # Calculate checksum manifest for supplied fullpath
+    local_md5 = {}
+    for root, _, files in os.walk(fullpath[0]):
+        for file in files:
+            if file.endswith(('.ini', '.md5', '.DS_Store', '.')):
+                continue
+            if 'tar_wrap.log' in file:
+                continue
+            rel_path = os.path.relpath(root, os.path.dirname(fullpath[0]))
+            if rel_path == seq or rel_path.startswith(seq + os.sep):
+                dct = utils.get_checksum(os.path.join(root, file))
+                local_md5.update(dct)
+    log_data.append(f"Local MD5 manifest created: {local_md5}")
+
+    # Tar folder creation
+    utils.append_to_tar_log(local_log, f"Beginning TAR wrap now... {fullpath[0]}")
+    log_data.append("Beginning TAR wrap now")
+    tar_path = utils.tar_item(fullpath[0])
+    log_data.append("TAR wrap completed")
+    if tar_path is None:
+        log_data.append("TAR wrap FAILED! See local logs for details.")
+        utils.append_to_tar_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
+        arguments = (
+            ['status', 'TAR failure'],
+            ['error_message', 'TAR wrap failed to archive sequence']
+        )
+        return {
+            "sequence": seq,
+            "success": False,
+            "path": tar_path,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
+    # Print checksums for local / create and print for TAR log
+    utils.append_to_tar_log(local_log, "Checksums for local files (excluding images):")
+    for key, val in local_md5.items():
+        if not key.lower().endswith(('.dpx', '.tif', '.tiff', '.jp2', '.j2k', '.jpf', '.jpm', '.jpg2', '.j2c', '.jpc', '.jpx', '.mj2')):
+            data = f"{val} -- {key}"
+            utils.append_to_tar_log(local_log, f"\t{data}")
+    tar_content_md5 = utils.get_checksums(tar_path, tar_source)
+    utils.append_to_tar_log(local_log, "Checksums for TAR wrapped contents (excluding images):")
+    log_data.append("TAR MD5 manifest created (MD5s excluding images):")
+    for key, val in tar_content_md5.items():
+        if not key.lower().endswith(('.dpx', '.tif', '.tiff', '.jp2', '.j2k', '.jpf', '.jpm', '.jpg2', '.j2c', '.jpc', '.jpx', '.mj2')):
+            data = f"{val} -- {key}"
+            utils.append_to_tar_log(local_log, f"\t{data}")
+            log_data.append(data)
+
+    # Compare manifests
+    tar_fail = False
+    if local_md5 == tar_content_md5:
+        log_data.append("MD5 Manifests match, adding manifest to TAR file and moving to autoingest.")
+        md5_manifest = utils.make_manifest(tar_path, tar_content_md5)
+        if not md5_manifest:
+            log_data.append("WARNING: Failed to create checksum manifest.")
+            log_data.append(utils.move_to_failures(fullpath[0]))
+            log_data.append(utils.move_to_failures(tar_path))
+            arguments = (
+                ['status', 'TAR failure'],
+                ['error_message', 'Failed to create checksum manifest']
+            )
+            tar_fail = True
+        else:
+            log_data.append(f"TAR checksum manifest created. Adding to TAR file {tar_path}")
+            try:
+                arc_path = os.path.split(md5_manifest)
+                tar = tarfile.open(tar_path, 'a:')
+                tar.add(md5_manifest, arcname=f"{arc_path[1]}")
+                tar.close()
+                os.remove(md5_manifest)
+            except Exception as exc:
+                log_data.append(f"WARNING: Unable to add MD5 manifest to TAR file. Moving TAR file to failures folder.\n{exc}")
+                log_data.append(utils.move_to_failures(tar_path))
+                arguments = (
+                    ['status', 'TAR failure'],
+                    ['error_message', 'Failed to embed MD5 manifest into TAR file']
+                )
+                tar_fail = True
+
+    else:
+        log_data.append("MD5 checksum manifests did not match. Moving to failures")
+        utils.append_to_tar_log(local_log, "Checksum mismatch between TAR and source sequence. Moving to failures/")
+        log_data.append(utils.move_to_failures(fullpath[0]))
+        log_data.append(utils.move_to_failures(tar_path))
+        arguments = (
+            ['status', 'TAR failure'],
+            ['error_message', 'MD5 checksum mismatch between TAR and source']
+        )
+        tar_fail = True
+
+    if tar_fail is True:
+        utils.append_to_tar_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
+        return {
+            "sequence": seq,
+            "success": False,
+            "path": tar_path,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+    else:
+        ##### This section needs test / import of adlib #####
+        log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
+        ob_num = utils.get_object_number(seq)
+        priref, file_type, repro_ref = utils.get_file_type(ob_num)
+        if len(priref) > 0:
+            utils.append_to_tar_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
+            tar_file = os.path.split(tar_path)[1]
+
+            success = utils.write_to_cid(priref, tar_file)
+            if not success:
+                utils.append_to_tar_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
+
+        # Get complete size of file following TAR wrap
+        file_stats = os.stat(tar_path)
+        file_size = file_stats.st_size
+        data = utils.md5_hash(tar_path)
+        tar_log = os.path.join(LOG_PATH, f'tar_logs/{seq}_tar_wrap.log')
+        arguments = (
+            ['status', 'TAR wrap completed'],
+            ['encoding_complete', str(datetime.datetime.today())[:19]],
+            ['derivative_path', tar_path],
+            ['derivative_size', file_size],
+            ['derivative_md5', data],
+            ['encoding_log', tar_log],
+            ['encoding_retry', '0']
+        )
+        utils.append_to_tar_log(local_log, f"TAR wrap completed successfully. Updating database:\n{arguments}\n")
+        log_data.append("Cleaning up log folder")
+        shutil.move(local_log, tar_log)
+        log_data.append(f"==== Log actions complete: {fullpath[0]} ====")
+        return {
+            "sequence": seq,
+            "success": True,
+            "path": tar_path,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
+
+defs = dg.Definitions(assets=[create_tar])

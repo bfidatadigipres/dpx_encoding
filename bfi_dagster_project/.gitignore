@@ -1,0 +1,9 @@
+# Env vars
+.env
+
+# Database
+*.db
+
+# Pycache
+__pycache__
+temp*
