@@ -6,14 +6,13 @@ import functools
 import dagster as dg
 from multiprocessing import Pool
 from contextlib import contextmanager
-from dotenv import load_dotenv
 
 
 class ProcessPoolResource:
     def __init__(self, num_proc=2):
         self.num_proc = num_proc
         #self,_pool = None
- 
+
     @contextmanager
     def get_pool(self):
         pool = Pool(processes=self.num_proc)
@@ -34,15 +33,13 @@ def process_pool(init_context):
 
 
 # Load ENV for database
-load_dotenv()
 DATABASE = os.environ.get('DATABASE')
 
 
-def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0, 
+def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
                  retryable_exceptions=(sqlite3.OperationalError,)):
     """
     Decorator that implements retry logic with exponential backoff
-    
     Args:
         max_retries: Maximum number of retry attempts
         retry_delay: Initial delay between retries in seconds
@@ -54,13 +51,12 @@ def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
         def wrapper(self, context, *args, **kwargs):
             last_exception = None
             current_delay = retry_delay
-            
             for attempt in range(max_retries + 1):
                 try:
                     return func(self, context, *args, **kwargs)
                 except retryable_exceptions as e:
                     last_exception = e
-                    
+
                     # Check if this is a retryable error message
                     error_msg = str(e).lower()
                     if "database is locked" in error_msg or "unable to open database file" in error_msg:
@@ -79,11 +75,12 @@ def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
                         # Not a retryable error, re-raise immediately
                         context.log.error(f"Non-retryable SQLite error: {e}")
                         raise
-            
+
             # This should never be reached, but just in case
             raise last_exception
         return wrapper
     return decorator
+
 
 class SQLiteResource(dg.ConfigurableResource):
     filepath: str = DATABASE
@@ -105,11 +102,11 @@ class SQLiteResource(dg.ConfigurableResource):
             try:
                 conn = sqlite3.connect(self.filepath, timeout=self.timeout)
                 context.log.info("Connected to database: %s", self.filepath)
-                
+
                 # Set pragmas for better concurrency
                 conn.execute("PRAGMA journal_mode=WAL")
                 conn.execute(f"PRAGMA busy_timeout={int(self.timeout * 1000)}")
-                
+
                 try:
                     yield conn
                 finally:
@@ -123,16 +120,16 @@ class SQLiteResource(dg.ConfigurableResource):
                     finally:
                         conn.close()
                         context.log.info("Disconnected from database: %s", self.filepath)
-                        
+
                 # If we get here, everything worked so we break the retry loop
                 break
-                
+
             except sqlite3.OperationalError as e:
                 attempt += 1
                 if attempt > self.max_retries:
                     context.log.error(f"Failed to connect to database after {self.max_retries} attempts: {e}")
                     raise
-                
+
                 context.log.warning(
                     f"Failed to connect to database (attempt {attempt}/{self.max_retries}): {e}. "
                     f"Retrying in {current_delay:.2f}s..."
@@ -196,11 +193,11 @@ class SQLiteResource(dg.ConfigurableResource):
             cur = conn.cursor()
             context.log.info("Creating new ROW with cursor:")
             timestamp = str(datetime.datetime.today())[:19]
-            
+
             # Use parameterized query to prevent SQL injection
             query = """
-            INSERT INTO encoding_status 
-            (seq_id, folder_path, status, process_start, last_updated) 
+            INSERT INTO encoding_status
+            (seq_id, folder_path, status, process_start, last_updated)
             VALUES (?, ?, ?, ?, ?)
             """
             cur.execute(query, (seq_id, folder_path, status, timestamp, timestamp))
@@ -222,22 +219,22 @@ class SQLiteResource(dg.ConfigurableResource):
         column_names = [arg_pair[0] for arg_pair in arguments] + ["last_updated"]
         placeholders = ", ".join(["?" for _ in range(len(column_names))])
         set_clause = ", ".join([f"{col} = ?" for col in column_names])
-        
+
         # Prepare values
         values = [arg_pair[1] for arg_pair in arguments]
         values.append(str(datetime.datetime.today())[:19])  # Add current timestamp
-        
+
         # Build the final parameter list with seq_id at the end
         all_params = values + [seq_id]
-        
+
         with self.get_connection(context) as conn:
             cursor = conn.cursor()
-            
+
             # Use parameterized query
             query = f"UPDATE encoding_status SET {set_clause} WHERE seq_id = ?"
             context.log.info(f"Executing update query: {query}")
             cursor.execute(query, all_params)
-        
+
         # Return after retrieval to ensure we see the updated data
         return self.retrieve_seq_id_row(context, "SELECT * FROM encoding_status WHERE seq_id = ?", 'fetchone', (seq_id,))
 
@@ -250,10 +247,10 @@ class SQLiteResource(dg.ConfigurableResource):
         with self.get_connection(context) as conn:
             cur = conn.cursor()
             cur.execute(query, params)
-            
+
             if fetch_arg == 'fetchone':
                 return cur.fetchone()
-            return cur.fetchall()        
+            return cur.fetchall()
 
     @with_retries()
     def get_all_records(self, context: dg.AssetExecutionContext,):
@@ -264,7 +261,7 @@ class SQLiteResource(dg.ConfigurableResource):
             cur = conn.cursor()
             cur.execute("SELECT * FROM encoding_status")
             return cur.fetchall()
-        
+
     @with_retries()
     def diagnose_database(self, context: dg.AssetExecutionContext):
         """

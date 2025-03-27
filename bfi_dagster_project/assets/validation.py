@@ -7,11 +7,6 @@ from typing import List, Dict, Optional
 from ..resources import SQLiteResource, process_pool
 from . import utils
 
-# Glob vars
-load_dotenv()
-LOG_PATH = os.environ.get('LOGS')
-PROC_PATH = os.environ.get('IMG_PROC')
-
 
 def run_validate(fullpath):
     '''
@@ -22,17 +17,16 @@ def run_validate(fullpath):
 
     log_data.append(f"Received: {fullpath}")
     spath = fullpath[0]
-    fname = os.path.basename(spath)
+    sub_path, fname = os.path.split(spath)
     seq = fname.split('.')[0]
-    dpath = os.path.join(PROC_PATH, 'processing/', seq)
+    dpath = os.path.join(os.path.split(sub_path)[0], 'processing/', seq)
     log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
     folder_size = utils.get_folder_size(dpath)
     file_size = utils.get_folder_size(spath)
     log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
 
     if fname.endswith('.tar'):
-        log = os.path.join(LOG_PATH, f'tar_logs/{seq}_tar_wrap.log')
-        log_data.append(log)
+        log = os.path.join(os.path.split(sub_path)[0], f'tar_wrapping/{seq}_tar_wrap.log')
         validation = True
         if not os.path.isfile(spath):
             validation = False
@@ -63,7 +57,10 @@ def run_validate(fullpath):
             log_data.append(utils.move_to_failures(dpath))
 
             # Move log to failure
-            utils.move_log_to_failures(log)
+            log_data.append("Error: TAR file smaller than original folder size...")
+            for line in log_data:
+                utils.append_to_tar_log(log, line)
+            utils.move_log_to_dest(log, 'failures')
 
             arguments = (
                 ['status', 'TAR validation failure'],
@@ -71,7 +68,7 @@ def run_validate(fullpath):
                 ['validation_complete', str(datetime.datetime.today())[:19]],
                 ['error_message', ', '.join(errors)]
             )
-            log_data.append("Error: TAR file smaller than original folder size...")
+
             return {
                 "sequence": seq,
                 "success": validation,
@@ -94,6 +91,10 @@ def run_validate(fullpath):
                 auto_move = True
 
             log_data.append("TAR wrap validation completed successfully.")
+            for line in log_data:
+                utils.append_to_tar_log(log, line)
+            utils.move_log_to_dest(log, 'tar_logs')
+
             arguments = (
                 ['status', 'TAR validation complete'],
                 ['validation_complete', str(datetime.datetime.today())[:19]],
@@ -102,7 +103,7 @@ def run_validate(fullpath):
                 ['sequence_deleted', str(seq_del)],
                 ['moved_to_autoingest', str(auto_move)]
             )
-            log_data.append(f"Validation completed successfully.")
+
             return {
                 "sequence": seq,
                 "success": validation,
@@ -153,7 +154,9 @@ def run_validate(fullpath):
             log_data.append(f"WARNING: RAWcook MKV failed: {error_message}")
             utils.move_to_failures(spath)
             utils.move_to_failures(dpath)
-            utils.move_log_to_failures(log)
+            for line in log_data:
+                utils.append_to_tar_log(log, line)
+            utils.move_log_to_dest(log, 'failures')
 
             arguments = (
                 ['status', 'MKV validation failure'],
@@ -183,6 +186,10 @@ def run_validate(fullpath):
                 auto_move = 'True'
 
             log_data.append("RAWcooked validation completed.")
+            for line in log_data:
+                utils.append_to_tar_log(log, line)
+            utils.move_log_to_dest(log, 'transcode_logs')
+
             arguments = (
                 ['status', 'MKV validation complete'],
                 ['validation_complete', str(datetime.datetime.today())[:19]],
@@ -191,7 +198,7 @@ def run_validate(fullpath):
                 ['sequence_deleted', str(seq_del)],
                 ['moved_to_autoingest', str(auto_move)]
             )
-            log_data.append("Validation completed successfully.")
+
             return {
                 "sequence": seq,
                 "success": validation,

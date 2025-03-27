@@ -17,16 +17,15 @@ sys.path.append(os.environ['CODE'])
 import adlib_v3 as ad
 
 # Import paths
-load_dotenv()
+# TARGET = os.environ.get('DAG_STORAGE_1') How to pass this in project level?
 METADATA_PATH = os.environ.get('CID_MEDIAINFO')
-LOG_PATH = os.environ.get('LOGS')
-IMG_PROC = os.environ.get('IMG_PROC')
-AUTOINGEST = os.environ.get('AUTOINGEST')
-FAIL_PATH = os.environ.get('FAILS')
-CID_API = os.environ.get('CID_API')
+IMG_PROC = os.path.join(TARGET, os.environ.get('IMG_PROC'))
+AUTOINGEST = os.path.join(TARGET, os.environ.get('AUTOINGEST'))
+LOG_PATH = os.path.join(IMG_PROC, 'logs/')
+FAIL_PATH = os.path.join(IMG_PROC, 'failures/')
+CID_API = os.environ.get('CID_API4')
 
 
-# (fname: str) -> str | bool | None:
 def get_object_number(fname: str) -> Optional[str]:
     '''
     Extract object number from name formatted
@@ -384,7 +383,7 @@ def get_folder_size(
             byte_size += os.path.getsize(fpath)
 
     return byte_size
-    
+
 
 def move_to_failures(
     fpath: str
@@ -401,22 +400,19 @@ def move_to_failures(
         return f"Moved to failures folder: {dest_path}"
     except Exception as e:
         return f"Failed to move {os.path.basename(fpath)} to failures {dest_path}"
-       
 
 
-def move_log_to_failures(
-    lpath: str
-) -> None:
+def move_log_to_dest(lpath: str, arg: str) -> None:
     '''
     Move a file or sequence to the failures folder.
     '''
-    log_failures = '/Users/joanna/Desktop/automation/image_sequence_processing/logs/failures/'
-    # log_failures = os.path.join(os.getenv('LOGS'), 'failures')
+    root, log = os.path.split(lpath)
+    dest = os.path.join(os.path.split(root)[0], f'logs/{arg}/')
     try:
-        if not os.path.exists(log_failures):
-            os.makedirs(log_failures, exist_ok=True)
+        if not os.path.exists(dest):
+            os.makedirs(dest, exist_ok=True)
 
-        dest_path = os.path.join(log_failures, os.path.basename(lpath))
+        dest_path = os.path.join(dest, log)
         shutil.move(lpath, dest_path)
 
     except Exception as e:
@@ -430,10 +426,8 @@ def move_to_autoingest(
     Move a file to the new workflow folder.
     '''
 
-    autoingest = '/Users/joanna/Desktop/automation/autoingest/ingest/'
-    # autoingest = os.getenv("AUTOINGEST")
     try:
-        dest_path = os.path.join(autoingest, 'autodetect', os.path.basename(fpath))
+        dest_path = os.path.join(AUTOINGEST, 'autodetect', os.path.basename(fpath))
         shutil.move(fpath, dest_path)
     except Exception as e:
         print(e)
@@ -482,7 +476,7 @@ def tar_item(
         tarring.add(fullpath, arcname=f"{fname}")
         tarring.close()
         return tar_path
-    
+
     except Exception as exc:
         append_to_tar_log(local_log, f"ERROR TARRING FILE: {exc}")
         tarring.close()

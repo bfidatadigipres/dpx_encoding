@@ -2,14 +2,9 @@ import os
 import datetime
 import subprocess
 import dagster as dg
-from dotenv import load_dotenv
 from typing import Dict, List, Any
 from ..resources import SQLiteResource, process_pool
 from . import utils
-
-# Import env
-load_dotenv()
-TRANSCODES = os.path.join(os.environ.get('IMG_PROC'), 'ffv1_transcoding/')
 
 
 @dg.asset(
@@ -48,7 +43,7 @@ def transcode_ffv1(
             if 'WARNING' in log:
                 context.log.warning(log)
             else:
-                context.log.info(log)  
+                context.log.info(log)
 
     return completed_files
 
@@ -57,7 +52,8 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     ''' Complete transcodes in parallel '''
     log_data = []
 
-    seq = os.path.basename(fullpath[0])
+    processing, seq = os.path.split(fullpath[0])
+    transcodes_path = os.path.join(os.path.split(processing)[0], 'ffv1_transcoding/')
     log_data.append("Encoding choice is RAWcooked")
     if not os.path.exists(fullpath[0]):
         log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
@@ -74,9 +70,9 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         }
 
     log_data.append(f"File path identified: {fullpath[0]}")
-    ffv1_path = os.path.join(TRANSCODES, f"{seq}.mkv")
+    ffv1_path = os.path.join(transcodes_path, f"{seq}.mkv")
     log_data.append(f"Path for Matroska: {ffv1_path}")
-    log_path = os.path.join(TRANSCODES, f"{seq}.mkv.txt")
+    log_path = os.path.join(transcodes_path, f"{seq}.mkv.txt")
     log_data.append(f"Outputting log filet to {log_path}")
     log_data.append("Calling Encoder function")
 
@@ -87,7 +83,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "rawcooked", "-y", "--all",
             "--no-accept-gaps",
             "--output-version", "2",
-            "-s", "5281680", fullpath[0], 
+            "-s", "5281680", fullpath[0],
             "--output-name", ffv1_path,
             "&>", log_path
         ]
@@ -95,7 +91,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         cmd = [
             "rawcooked", "-y", "--all",
             "--no-accept-gaps",
-            "-s", "5281680", fullpath[0], 
+            "-s", "5281680", fullpath[0],
             "--output-name", ffv1_path,
             "&>", log_path
         ]
@@ -137,6 +133,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         ['derivative_md5', checksum_data]
     )
     log_data.append(f"RAWcook completed successfully. Updating database:\n{arguments}")
+
     return {
         "sequence": seq,
         "success": True,
@@ -144,4 +141,6 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         "db_arguments": arguments,
         "logs": log_data
     }
+
+
 defs = dg.Definitions(assets=[transcode_ffv1])

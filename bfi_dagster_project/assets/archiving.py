@@ -5,12 +5,7 @@ import tarfile
 import datetime
 import dagster as dg
 from typing import List, Dict, Optional, Any
-from dotenv import load_dotenv
 from . import utils
-
-# Global variables
-load_dotenv()
-LOG_PATH = os.environ.get('LOGS')
 
 
 @dg.asset(
@@ -29,6 +24,7 @@ def create_tar(
     to the validation asset.
     '''
     context.log.info("Received new encoding data: %s", assess_seqs)
+
     if not assess_seqs['TAR']:
         context.log.info("No TAR sequences to process at this time.")
         return []
@@ -195,7 +191,6 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         file_stats = os.stat(tar_path)
         file_size = file_stats.st_size
         data = utils.md5_hash(tar_path)
-        tar_log = os.path.join(LOG_PATH, f'tar_logs/{seq}_tar_wrap.log')
         arguments = (
             ['status', 'TAR wrap completed'],
             ['encoding_complete', str(datetime.datetime.today())[:19]],
@@ -205,10 +200,10 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             ['encoding_log', tar_log],
             ['encoding_retry', '0']
         )
+
         utils.append_to_tar_log(local_log, f"TAR wrap completed successfully. Updating database:\n{arguments}\n")
-        log_data.append("Cleaning up log folder")
-        shutil.move(local_log, tar_log)
         log_data.append(f"==== Log actions complete: {fullpath[0]} ====")
+
         return {
             "sequence": seq,
             "success": True,

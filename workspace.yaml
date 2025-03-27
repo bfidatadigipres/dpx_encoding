@@ -1,2 +1,15 @@
 load_from:
-  - python_module: bfi_dagster_project
+  # First module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project1_defs
+  # Second module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project2_defs
+  # Third module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project2_defs
+
+

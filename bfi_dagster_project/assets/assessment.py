@@ -48,7 +48,7 @@ def assess_sequence(
             assess_sequences['invalid'].append(image_dict['sequence'])
         else:
             assess_sequences[image_dict['encoding_choice']].append(image_dict['sequence'])
-    
+
     # Update log data
     context.log.info(f"Results: RAWcook={len(assess_sequences['RAWcook'])}, "
                      f"TAR={len(assess_sequences['TAR'])}, "
@@ -105,7 +105,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
-    '''
+
     priref, ftype, repro_ref = utils.get_file_type(seq)
     if len(repro_ref) > 0:
         if seq in str(repro_ref):
@@ -121,7 +121,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
                 "db_arguments": arguments,
                 "logs": log_data
             }
-            
+
     if ftype.lower() not in ['tif', 'tiff', 'dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (
@@ -135,7 +135,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
                 "db_arguments": arguments,
                 "logs": log_data
             }
-    '''
+
     folder_depth, file_path = utils.count_folder_depth(image_sequence)
     log_data.append(f"Folder depth is {folder_depth} folder to images")
     if folder_depth is None:
@@ -164,7 +164,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "encoding_choice": None,
             "db_arguments": arguments,
             "logs": log_data
-        }           
+        }
 
     first_image, last_image, missing = utils.gaps(image_sequence)
     log_data.append(f"Image data - first {first_image} - last {last_image} - missing: {len(missing)}")
@@ -276,7 +276,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         "encoding_choice": encoding_choice,
         "db_arguments": arguments,
         "logs": log_data
-    }  
+    }
 
 
 defs = dg.Definitions(assets=[assess_sequence])

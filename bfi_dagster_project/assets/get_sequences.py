@@ -1,12 +1,7 @@
 import os
 from typing import List
 import dagster as dg
-from dotenv import load_dotenv
 from .. import resources
-
-# Import path
-load_dotenv()
-TARGET = os.environ.get('IMG_PROC')
 
 
 @dg.asset(required_resource_keys={'database'})
@@ -17,11 +12,12 @@ def target_sequences(
     Look for new sequences in watch folder and update to database,
     and hand list of folderpaths to assessment asset.
     '''
-
-    if not os.path.exists(TARGET):
-        context.log.info("Unable to access target_path: %s", TARGET)
+    target_automation = context.resources.source_path
+    target = os.path.join(target_automation, 'image_sequence_processing/')
+    if not os.path.exists(target):
+        context.log.info("Unable to access target_path: %s", target)
         return None
-    seq_supply = os.path.join(TARGET, "processing")
+    seq_supply = os.path.join(target, "processing")
 
     context.resources.database.initialise_db(context)
     directories = [x for x in os.listdir(seq_supply) if os.path.isdir(os.path.join(seq_supply, x))]

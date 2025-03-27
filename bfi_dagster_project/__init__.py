@@ -5,20 +5,14 @@ from .assets import get_sequences, assessment, archiving, transcoding, validatio
 from .sensors import failed_encoding_retry_sensor
 from . import resources
 
-
-# Get environment variables from .env
-load_dotenv()
-PROJECT = os.environ.get("PROJECT")
-IMG_PROC = os.environ.get("IMG_PROC")
-AUTOINGEST = os.environ.get("AUTOINGEST")
+# Get environment variables from /etc/env
+PROJECT = os.environ.get("DAG_PROJECT")
 DATABASE = os.environ.get("DATABASE")
-LOGS = os.environ.get("LOGS")
-FAILS = os.environ.get("FAILS")
 CID_MEDIAINFO = os.environ.get("CID_MEDIAINFO")
 
 # Example validation at startup
 def validate_env_vars():
-    required_vars = ["PROJECT", "IMG_PROC", "AUTOINGEST", "DATABASE", "LOGS", "FAILS", "CID_MEDIAINFO"]
+    required_vars = ["PROJECT", "DATABASE", "CID_MEDIAINFO"]
     missing = [var for var in required_vars if not os.environ.get(var) and not os.path.exists(os.environ.get(var))]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
@@ -45,23 +39,61 @@ backfill_failed_encodings_job = dg.define_asset_job(
 # Define all assets job
 all_assets_job = dg.define_asset_job(name="launch_process", selection="*")
 
-# Schedule definition
-hourly_schedule = dg.ScheduleDefinition(
-    name="hourly_schedule",
+# Schedule definitions
+hourly_schedule1 = dg.ScheduleDefinition(
+    name="hourly_schedule1",
     job=all_assets_job,
-    cron_schedule="0 * * * *",
+    cron_schedule="0 */2 * * *",
 )
 
-# Def for resources
-resources = {
-    "database": resources.SQLiteResource(filepath=f"{DATABASE}"),
-    "process_pool": resources.process_pool.configured({"num_processes": 2})
-}
+hourly_schedule2 = dg.ScheduleDefinition(
+    name="hourly_schedule2",
+    job=all_assets_job,
+    cron_schedule="0 1-23/2 * * *",
+)
 
-defs = dg.Definitions(
+hourly_schedule3 = dg.ScheduleDefinition(
+    name="hourly_schedule3",
+    job=all_assets_job,
+    cron_schedule="30 */2 * * *",
+)
+
+
+# Project definitions, default project1
+project1_defs = dg.Definitions(
     assets=process_assets,
-    resources=resources,
+    resources={
+        "source_path": os.environ.get('TARGET1'),
+        "database": resources.SQLiteResource(filepath=f"{DATABASE}"),
+        "process_pool": resources.process_pool.configured({"num_processes": 2})
+    },
     sensors=[failed_encoding_retry_sensor],
     jobs=[all_assets_job, backfill_failed_encodings_job],
     schedules=[hourly_schedule]
 )
+
+project2_defs = dg.Definitions(
+    assets=process_assets,
+    resources={
+        "source_path": os.environ.get('TARGET2'),
+        "database": resources.SQLiteResource(filepath=f"{DATABASE}"),
+        "process_pool": resources.process_pool.configured({"num_processes": 2})
+    },
+    sensors=[failed_encoding_retry_sensor],
+    jobs=[all_assets_job, backfill_failed_encodings_job],
+    schedules=[hourly_schedule]
+)
+
+project3_defs = dg.Definitions(
+    assets=process_assets,
+    resources={
+        "source_path": os.environ.get('TARGET3'),
+        "database": resources.SQLiteResource(filepath=f"{DATABASE}"),
+        "process_pool": resources.process_pool.configured({"num_processes": 2})
+    },
+    sensors=[failed_encoding_retry_sensor],
+    jobs=[all_assets_job, backfill_failed_encodings_job],
+    schedules=[hourly_schedule]
+)
+
+defs = project1_defs
