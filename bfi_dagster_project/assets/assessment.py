@@ -73,7 +73,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     log_data = []
     arguments = []
 
-    seq = os.path.split(image_sequence)[-1]
+    seq = os.path.basename(image_sequence)
     log_data.append(f"Processing image sequence: {seq}")
     success = utils.check_fname(seq)
     if success is False:

@@ -59,12 +59,12 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
     '''
 
     log_data = []
-    root, seq = os.path.split(fullpath[0])
-    local_log = os.path.join(root, f'{seq}_tar_wrap.log')
+    root, tar_source = os.path.split(fullpath[0])
+    local_log = os.path.join(root, f'{tar_source}_tar_wrap.log')
     if not os.path.exists(fullpath[0]):
         log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
         return {
-            "sequence": seq,
+            "sequence": tar_source,
             "success": False,
             "path": None,
             "db_arguments": arguments,
@@ -72,7 +72,6 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         }
 
     log_data.append(f"==== New path for TAR wrap: {fullpath[0]} ====")
-    tar_source = os.path.split(fullpath[0])[-1]
 
     # Calculate checksum manifest for supplied fullpath
     local_md5 = {}
@@ -83,7 +82,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             if 'tar_wrap.log' in file:
                 continue
             rel_path = os.path.relpath(root, os.path.dirname(fullpath[0]))
-            if rel_path == seq or rel_path.startswith(seq + os.sep):
+            if rel_path == tar_source or rel_path.startswith(tar_source + os.sep):
                 dct = utils.get_checksum(os.path.join(root, file))
                 local_md5.update(dct)
     log_data.append(f"Local MD5 manifest created: {local_md5}")
@@ -101,7 +100,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             ['error_message', 'TAR wrap failed to archive sequence']
         )
         return {
-            "sequence": seq,
+            "sequence": tar_source,
             "success": False,
             "path": tar_path,
             "db_arguments": arguments,
@@ -168,7 +167,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
     if tar_fail is True:
         utils.append_to_tar_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
         return {
-            "sequence": seq,
+            "sequence": tar_source,
             "success": False,
             "path": tar_path,
             "db_arguments": arguments,
@@ -177,11 +176,11 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
     else:
         ##### This section needs test / import of adlib #####
         log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
-        ob_num = utils.get_object_number(seq)
+        ob_num = utils.get_object_number(tar_source)
         priref, file_type, repro_ref = utils.get_file_type(ob_num)
         if len(priref) > 0:
             utils.append_to_tar_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
-            tar_file = os.path.split(tar_path)[1]
+            tar_file = os.path.basename(tar_path)
 
             success = utils.write_to_cid(priref, tar_file)
             if not success:
@@ -205,7 +204,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         log_data.append(f"==== Log actions complete: {fullpath[0]} ====")
 
         return {
-            "sequence": seq,
+            "sequence": tar_source,
             "success": True,
             "path": tar_path,
             "db_arguments": arguments,

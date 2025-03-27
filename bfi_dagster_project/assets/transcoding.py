@@ -2,6 +2,7 @@ import os
 import datetime
 import subprocess
 import dagster as dg
+from pathlib import Path
 from typing import Dict, List, Any
 from ..resources import SQLiteResource, process_pool
 from . import utils
@@ -52,8 +53,8 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     ''' Complete transcodes in parallel '''
     log_data = []
 
-    processing, seq = os.path.split(fullpath[0])
-    transcodes_path = os.path.join(os.path.split(processing)[0], 'ffv1_transcoding/')
+    seq = os.path.basename(fullpath[0])
+    transcodes_path = os.path.join(str(Path(fullpath[0]).parents[1]), 'ffv1_transcoding/')
     log_data.append("Encoding choice is RAWcooked")
     if not os.path.exists(fullpath[0]):
         log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")

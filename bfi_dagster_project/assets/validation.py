@@ -2,7 +2,7 @@ import os
 import shutil
 import datetime
 import dagster as dg
-from dotenv import load_dotenv
+from pathlib import Path
 from typing import List, Dict, Optional
 from ..resources import SQLiteResource, process_pool
 from . import utils
@@ -17,16 +17,16 @@ def run_validate(fullpath):
 
     log_data.append(f"Received: {fullpath}")
     spath = fullpath[0]
-    sub_path, fname = os.path.split(spath)
+    fname = os.path.basename(spath)
     seq = fname.split('.')[0]
-    dpath = os.path.join(os.path.split(sub_path)[0], 'processing/', seq)
+    dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
     log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
     folder_size = utils.get_folder_size(dpath)
     file_size = utils.get_folder_size(spath)
     log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
 
     if fname.endswith('.tar'):
-        log = os.path.join(os.path.split(sub_path)[0], f'tar_wrapping/{seq}_tar_wrap.log')
+        log = os.path.join(str(Path(spath).parents[1]), f'tar_wrapping/{seq}_tar_wrap.log')
         validation = True
         if not os.path.isfile(spath):
             validation = False

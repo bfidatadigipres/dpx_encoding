@@ -19,7 +19,7 @@ def reencode_failed_asset(
         return []
 
     fullpath = context.op_config.get('sequence')
-    proc_path, seq = os.path.split(fullpath)
+    seq = os.path.basename(fullpath)
     context.log.info("Received new encoding data: %s", config)
 
     search = f"SELECT * FROM encoding_status WHERE seq_id=?"
@@ -41,7 +41,7 @@ def reencode_failed_asset(
         return []
     context.log.info("File path identified: %s", fullpath)
 
-    ffv1_path = os.path.join(os.path.split(proc_path)[0], f"ffv1_transcoding/{seq}.mkv")
+    ffv1_path = os.path.join(str(Path(fullpath).parents[1]), f"ffv1_transcoding/{seq}.mkv")
     if os.path.isfile(ffv1_path):
         context.log.info("Delete existing transcode attempt.")
         os.remove(ffv1_path)
