@@ -69,7 +69,7 @@ project1_defs = dg.Definitions(
     },
     sensors=[failed_encoding_retry_sensor],
     jobs=[all_assets_job, backfill_failed_encodings_job],
-    schedules=[hourly_schedule]
+    schedules=[hourly_schedule1]
 )
 
 project2_defs = dg.Definitions(
@@ -81,7 +81,7 @@ project2_defs = dg.Definitions(
     },
     sensors=[failed_encoding_retry_sensor],
     jobs=[all_assets_job, backfill_failed_encodings_job],
-    schedules=[hourly_schedule]
+    schedules=[hourly_schedule2]
 )
 
 project3_defs = dg.Definitions(
@@ -93,7 +93,7 @@ project3_defs = dg.Definitions(
     },
     sensors=[failed_encoding_retry_sensor],
     jobs=[all_assets_job, backfill_failed_encodings_job],
-    schedules=[hourly_schedule]
+    schedules=[hourly_schedule3]
 )
 
 defs = project1_defs

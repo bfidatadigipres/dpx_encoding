@@ -38,14 +38,14 @@ DATABASE = os.environ.get('DATABASE')
 
 def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
                  retryable_exceptions=(sqlite3.OperationalError,)):
-    """
+    '''
     Decorator that implements retry logic with exponential backoff
     Args:
         max_retries: Maximum number of retry attempts
         retry_delay: Initial delay between retries in seconds
         backoff_factor: Multiplier for delay on each subsequent retry
         retryable_exceptions: Tuple of exceptions that should trigger a retry
-    """
+    '''
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, context, *args, **kwargs):
@@ -93,9 +93,9 @@ class SQLiteResource(dg.ConfigurableResource):
         self,
         context: dg.AssetExecutionContext
     ):
-        """
+        '''
         Context manager for database connections to ensure proper closure
-        """
+        '''
         attempt = 0
         current_delay = self.retry_delay
         while True:
@@ -142,9 +142,9 @@ class SQLiteResource(dg.ConfigurableResource):
         self,
         context: dg.AssetExecutionContext
     ):
-        """
+        '''
         Initialize and maintain connection to SQLite database tracking encoding progress.
-        """
+        '''
         context.log.info("Initialising database")
         with self.get_connection(context) as conn:
             cursor = conn.cursor()
@@ -186,9 +186,9 @@ class SQLiteResource(dg.ConfigurableResource):
 
     @with_retries()
     def start_process(self, context: dg.AssetExecutionContext, seq_id: str, folder_path: str, status: str) -> list[tuple]:
-        """
+        '''
         Initializes a new process record with proper connection handling
-        """
+        '''
         with self.get_connection(context) as conn:
             cur = conn.cursor()
             context.log.info("Creating new ROW with cursor:")
@@ -212,9 +212,9 @@ class SQLiteResource(dg.ConfigurableResource):
         seq_id: str,
         arguments: str
     ):
-        """
+        '''
         Using seq_id field, indentify row and update with supplied argument string
-        """
+        '''
         # Prepare column names and placeholders
         column_names = [arg_pair[0] for arg_pair in arguments] + ["last_updated"]
         placeholders = ", ".join(["?" for _ in range(len(column_names))])
@@ -240,9 +240,9 @@ class SQLiteResource(dg.ConfigurableResource):
 
     @with_retries()
     def retrieve_seq_id_row(self, context: dg.AssetExecutionContext, query, fetch_arg, params=()):
-        """
+        '''
         Access database and retrieve requested entries
-        """
+        '''
         context.log.info("Retrieve seq id row() start")
         with self.get_connection(context) as conn:
             cur = conn.cursor()
@@ -254,9 +254,9 @@ class SQLiteResource(dg.ConfigurableResource):
 
     @with_retries()
     def get_all_records(self, context: dg.AssetExecutionContext,):
-        """
+        '''
         Retrieve all records from the database
-        """
+        '''
         with self.get_connection(context) as conn:
             cur = conn.cursor()
             cur.execute("SELECT * FROM encoding_status")
@@ -264,9 +264,9 @@ class SQLiteResource(dg.ConfigurableResource):
 
     @with_retries()
     def diagnose_database(self, context: dg.AssetExecutionContext):
-        """
+        '''
         Diagnostic function to check database state
-        """
+        '''
         context.log.info("Running database diagnostics on: %s", self.filepath)
 
         # Check file existence and size

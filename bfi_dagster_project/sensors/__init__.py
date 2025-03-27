@@ -13,7 +13,9 @@ import datetime
 def failed_encoding_retry_sensor(
     context: dg.SensorEvaluationContext,
 ):
-    """Detects failed encodings that need to be retried based on database records"""
+    '''
+    Detects failed encodings that need to be retried based on database records
+    '''
 
     last_check_time = context.cursor or datetime.datetime.now().isoformat()
     last_check = datetime.datetime.fromisoformat(last_check_time)
