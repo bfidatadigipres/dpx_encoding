@@ -9,6 +9,7 @@ import datetime
 import collections
 import subprocess
 import dagster as dg
+from pathlib import Path
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
 
@@ -17,9 +18,7 @@ sys.path.append(os.environ['CODE'])
 import adlib_v3 as ad
 
 # Import paths
-# TARGET = os.environ.get('DAG_STORAGE_1') How to pass this in project level?
 METADATA_PATH = os.environ.get('CID_MEDIAINFO')
-IMG_PROC = os.path.join(TARGET, os.environ.get('IMG_PROC'))
 AUTOINGEST = os.path.join(TARGET, os.environ.get('AUTOINGEST'))
 LOG_PATH = os.path.join(IMG_PROC, 'logs/')
 FAIL_PATH = os.path.join(IMG_PROC, 'failures/')
@@ -95,11 +94,10 @@ def metadata_dump(
     inclusion in CID digital media record
     '''
     command = command2 = []
-    fpath, file = os.path.split(file_path)
+    file = os.path.basename(file_path)
     directory = os.path.basename(dpath)
 
     if len(ext) == 0:
-        fpath = os.path.split(fpath)[0]
         outpath = os.path.join(dpath, f"{directory}_{file}_metadata.txt")
         command = [
             'mediainfo',
@@ -391,11 +389,12 @@ def move_to_failures(
     '''
     Move a file or sequence to the failures folder.
     '''
+    fail_path = os.path.join(str(Path(fpath).parents[1]), 'failures/')
     try:
-        if not os.path.exists(FAIL_PATH):
-            os.makedirs(FAIL_PATH, exist_ok=True)
+        if not os.path.exists(fail_path):
+            os.makedirs(fail_path, exist_ok=True)
 
-        dest_path = os.path.join(FAIL_PATH, os.path.basename(fpath))
+        dest_path = os.path.join(fail_path, os.path.basename(fpath))
         shutil.move(fpath, dest_path)
         return f"Moved to failures folder: {dest_path}"
     except Exception as e:
@@ -406,13 +405,13 @@ def move_log_to_dest(lpath: str, arg: str) -> None:
     '''
     Move a file or sequence to the failures folder.
     '''
-    root, log = os.path.split(lpath)
-    dest = os.path.join(os.path.split(root)[0], f'logs/{arg}/')
+    dest = os.path.join(str(Path(lpath).parents[1], f"logs/{arg}/")
+
     try:
         if not os.path.exists(dest):
             os.makedirs(dest, exist_ok=True)
 
-        dest_path = os.path.join(dest, log)
+        dest_path = os.path.join(dest, os.path.basename(lpath))
         shutil.move(lpath, dest_path)
 
     except Exception as e:
@@ -425,9 +424,9 @@ def move_to_autoingest(
     '''
     Move a file to the new workflow folder.
     '''
-
+    autoingest = os.path.join(str(Path(fpath).parent[2]), 'autoingest/ingest/autodetect/')
     try:
-        dest_path = os.path.join(AUTOINGEST, 'autodetect', os.path.basename(fpath))
+        dest_path = os.path.join(autoingest, os.path.basename(fpath))
         shutil.move(fpath, dest_path)
     except Exception as e:
         print(e)
@@ -464,9 +463,7 @@ def tar_item(
 
     fpath, fname = os.path.split(fullpath)
     local_log = os.path.join(fpath, f'{fname}_tar_wrap.log')
-    tfile = f"{fname}.tar"
-    tarring = os.path.join(IMG_PROC, 'tar_wrapping/')
-    tar_path = os.path.join(tarring, tfile)
+    tar_path = os.path.join(str(Path(fpath).parents[0]), f'tar_wrapping/{fname}.tar')
     if os.path.exists(tar_path):
         append_to_tar_log(local_log, "Exiting. File already exists: {tar_path}")
         return None
@@ -739,7 +736,9 @@ def check_file(
         logs = file.readlines()
     for line in logs:
         if 'Reversibility was checked, no issue detected.' in line:
-            shutil.move(log, os.path.join(LOG_PATH, 'check_logs/'))
+            log_path = os.path.join(str(Path(root).parents[0]), 'logs/check_logs/')
+            shutil.move(log, log_path)
             return True
-    move_log_to_failures(log)
+
+    move_log_to_dest(log, 'failures')
     return False

@@ -1,14 +1,9 @@
 import os
 import datetime
 import dagster as dg
-from dotenv import load_dotenv
 from typing import List
 from . import utils
 
-# Import paths
-load_dotenv()
-TRANSCODING = os.path.join(os.environ.get('IMG_PROC'), 'ffv1_transcoding/')
-LOG_PATH = os.environ.get('LOGS')
 
 @dg.asset(required_resource_keys={'database'})
 def reencode_failed_asset(
@@ -24,9 +19,9 @@ def reencode_failed_asset(
         return []
 
     fullpath = context.op_config.get('sequence')
-    seq = os.path.basename(fullpath)
+    proc_path, seq = os.path.split(fullpath)
     context.log.info("Received new encoding data: %s", config)
-  
+
     search = f"SELECT * FROM encoding_status WHERE seq_id=?"
     data = context.resources.database.retrieve_seq_id_row(context, search, 'fetchone', (seq,))
     context.log.info(f"Row retrieved: {data}")
@@ -46,13 +41,13 @@ def reencode_failed_asset(
         return []
     context.log.info("File path identified: %s", fullpath)
 
-    ffv1_path = os.path.join(TRANSCODING, f"{seq}.mkv")
+    ffv1_path = os.path.join(os.path.split(proc_path)[0], f"ffv1_transcoding/{seq}.mkv")
     if os.path.isfile(ffv1_path):
         context.log.info("Delete existing transcode attempt.")
         os.remove(ffv1_path)
     context.log.info("Path for Matroska: %s", ffv1_path)
-    log_path = os.path.join(LOG_PATH, f"{seq}.mkv.txt")
-    context.log.info("Outputting log filet to %s", log_path)
+    log_path = f"{ffv1_path}.txt")
+    context.log.info("Outputting log file to %s", log_path)
     context.log.info("Calling Encoder function")
     output_path = utils.encoder(fullpath, ffv1_path, log_path)
 
@@ -62,7 +57,7 @@ def reencode_failed_asset(
             context.log.warning("Cannot find file, moving to failures folder")
             utils.move_to_failures(ffv1_path)
         utils.move_to_failures(fullpath)
-        utils.move_log_to_failures(log_path)
+        utils.move_log_to_dest(log_path, 'failures')
         arguments = (
             ['status', 'RAWcook failed'],
             ['encoding_complete', str(datetime.datetime.today())[:19]]

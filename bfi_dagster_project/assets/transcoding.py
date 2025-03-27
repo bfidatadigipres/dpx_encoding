@@ -108,7 +108,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             log_data.append("WARNING: Cannot find file, moving to failures folder")
             utils.move_to_failures(ffv1_path)
         utils.move_to_failures(fullpath[0])
-        utils.move_log_to_failures(log_path)
+        utils.move_log_to_dest(log_path, 'failures')
         arguments = (
             ['status', 'RAWcook failed'],
             ['encoding_complete', str(datetime.datetime.today())[:19]]
