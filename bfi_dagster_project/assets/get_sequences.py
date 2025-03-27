@@ -29,7 +29,7 @@ def target_sequences(
         dpath = os.path.join(seq_supply, dr)
         context.log.info("Directory path: %s", dpath)
 
-        search = f"SELECT status FROM encoding_status WHERE seq_id=?"
+        search = "SELECT status FROM encoding_status WHERE seq_id=?"
         result = context.resources.database.retrieve_seq_id_row(context, search, 'fetchall', (dr,))
         context.log.info(result)
 
@@ -51,4 +51,3 @@ def target_sequences(
 
     context.log.info("Files being handed to assessment:\n%s", current_files)
     return current_files
-

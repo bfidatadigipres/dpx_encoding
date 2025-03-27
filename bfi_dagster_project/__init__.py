@@ -5,17 +5,21 @@ from .assets import get_sequences, assessment, archiving, transcoding, validatio
 from .sensors import failed_encoding_retry_sensor
 from . import resources
 
-# Get environment variables from /etc/env
+# Global paths
 PROJECT = os.environ.get("DAG_PROJECT")
 DATABASE = os.environ.get("DATABASE")
 CID_MEDIAINFO = os.environ.get("CID_MEDIAINFO")
 
-# Example validation at startup
+
 def validate_env_vars():
+    '''
+    Check environmental variables are live before launch
+    '''
     required_vars = ["PROJECT", "DATABASE", "CID_MEDIAINFO"]
     missing = [var for var in required_vars if not os.environ.get(var) and not os.path.exists(os.environ.get(var))]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+
 validate_env_vars()
 
 process_assets = dg.load_assets_from_modules([

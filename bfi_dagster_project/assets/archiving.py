@@ -1,6 +1,4 @@
 import os
-import sys
-import shutil
 import tarfile
 import datetime
 import dagster as dg
@@ -63,6 +61,10 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
     local_log = os.path.join(root, f'{tar_source}_tar_wrap.log')
     if not os.path.exists(fullpath[0]):
         log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
+        arguments = (
+            ['status', 'TAR failure'],
+            ['error_message', f'Path failed: {fullpath[0]}']
+        )
         return {
             "sequence": tar_source,
             "success": False,
@@ -175,13 +177,12 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         }
     else:
         ##### This section needs test / import of adlib #####
-        log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
         ob_num = utils.get_object_number(tar_source)
-        priref, file_type, repro_ref = utils.get_file_type(ob_num)
+        priref, _, _ = utils.get_file_type(ob_num)
+        log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
         if len(priref) > 0:
             utils.append_to_tar_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
             tar_file = os.path.basename(tar_path)
-
             success = utils.write_to_cid(priref, tar_file)
             if not success:
                 utils.append_to_tar_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
@@ -196,7 +197,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             ['derivative_path', tar_path],
             ['derivative_size', file_size],
             ['derivative_md5', data],
-            ['encoding_log', tar_log],
+            ['encoding_log', local_log],
             ['encoding_retry', '0']
         )
 

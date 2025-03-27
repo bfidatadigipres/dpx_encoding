@@ -11,5 +11,3 @@ load_from:
   - python_module:
       module_name: bfi_dagster_project
       attribute: project2_defs
-
-

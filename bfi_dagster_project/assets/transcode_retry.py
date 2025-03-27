@@ -1,5 +1,6 @@
 import os
 import datetime
+from pathlib import Path
 import dagster as dg
 from typing import List
 from . import utils
@@ -22,12 +23,12 @@ def reencode_failed_asset(
     seq = os.path.basename(fullpath)
     context.log.info("Received new encoding data: %s", config)
 
-    search = f"SELECT * FROM encoding_status WHERE seq_id=?"
+    search = "SELECT * FROM encoding_status WHERE seq_id=?"
     data = context.resources.database.retrieve_seq_id_row(context, search, 'fetchone', (seq,))
     context.log.info(f"Row retrieved: {data}")
     status = data[2]
     choice = data[15]
-    context.log.info(fullpath, f"==== Retry RAWcook encoding: %s ====", fullpath)
+    context.log.info(fullpath, "==== Retry RAWcook encoding: %s ====", fullpath)
     if status != "Pending retry":
         context.log.error("Sequence not suitable for retry. Exiting.")
         return []
@@ -46,7 +47,7 @@ def reencode_failed_asset(
         context.log.info("Delete existing transcode attempt.")
         os.remove(ffv1_path)
     context.log.info("Path for Matroska: %s", ffv1_path)
-    log_path = f"{ffv1_path}.txt")
+    log_path = f"{ffv1_path}.txt"
     context.log.info("Outputting log file to %s", log_path)
     context.log.info("Calling Encoder function")
     output_path = utils.encoder(fullpath, ffv1_path, log_path)
@@ -62,7 +63,7 @@ def reencode_failed_asset(
             ['status', 'RAWcook failed'],
             ['encoding_complete', str(datetime.datetime.today())[:19]]
         )
-        context.log.info(f"RAWcooked encoding failed. Updating database:\n%s", arguments)
+        context.log.info(f"RAWcooked encoding failed. Updating database:\n{arguments}")
         entry = context.resources.database.append_to_database(context, seq, arguments)
         context.log.info(entry)
         return []

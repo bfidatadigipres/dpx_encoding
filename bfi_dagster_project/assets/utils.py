@@ -8,10 +8,8 @@ import hashlib
 import datetime
 import collections
 import subprocess
-import dagster as dg
 from pathlib import Path
-from typing import List, Dict, Optional
-from dotenv import load_dotenv
+from typing import List, Dict, Optional, Final
 
 # Local library
 sys.path.append(os.environ['CODE'])
@@ -19,10 +17,18 @@ import adlib_v3 as ad
 
 # Import paths
 METADATA_PATH = os.environ.get('CID_MEDIAINFO')
-AUTOINGEST = os.path.join(TARGET, os.environ.get('AUTOINGEST'))
-LOG_PATH = os.path.join(IMG_PROC, 'logs/')
-FAIL_PATH = os.path.join(IMG_PROC, 'failures/')
 CID_API = os.environ.get('CID_API4')
+PREFIX: Final = [
+    'N',
+    'C',
+    'PD',
+    'SPD',
+    'PBS',
+    'PBM',
+    'PBL',
+    'SCR',
+    'CA'
+]
 
 
 def get_object_number(fname: str) -> Optional[str]:
@@ -38,6 +44,31 @@ def get_object_number(fname: str) -> Optional[str]:
     except Exception:
         object_number = None
     return object_number
+
+
+def accepted_file_type(ext):
+    '''
+    Receive extension and returnc
+    matching accepted file_type
+    '''
+    ftype = {'avi': 'avi',
+             'imp': 'mxf, xml',
+             'tar': 'dpx, dcp, dcdm, wav',
+             'mxf': 'mxf, 50i, imp',
+             'mkv': 'mkv, dpx, dcdm',
+             'wav': 'wav',
+             'tif': 'tif, tiff',
+             'tiff': 'tif, tiff',
+             'jpg': 'jpg, jpeg',
+             'jpeg': 'jpg, jpeg'
+    }
+
+    ext = ext.lower()
+    for key, val in ftype.items():
+        if key == ext:
+            return val
+
+    return None
 
 
 def get_metadata(
@@ -76,7 +107,7 @@ def write_dir_tree(
         '-o', fpath
     ]
     try:
-        success = subprocess.run(cmd, text=True, check=True, shell=False)
+        subprocess.run(cmd, text=True, check=True, shell=False)
         return fpath
     except Exception as err:
         print(err)
@@ -102,7 +133,7 @@ def metadata_dump(
         command = [
             'mediainfo',
             '--Full', '--Details=0',
-            f'--Output=TEXT',
+            '--Output=TEXT',
             f'--LogFile={outpath}',
             file_path
         ]
@@ -119,7 +150,7 @@ def metadata_dump(
         command = [
             'mediainfo',
             '--Full',
-            f'--Output=JSON',
+            '--Output=JSON',
             f'--LogFile={outpath}',
             file_path
         ]
@@ -285,6 +316,7 @@ def get_file_type(
     ftype = ad.retrieve_field_name(rec[0], 'file_type')
     priref = ad.retrieve_field_name(rec[0], 'priref')
     repro_ref = ad.retrieve_field_name(rec[0], 'reproduction.reference')
+
     return priref, ftype, repro_ref
 
 
@@ -397,15 +429,15 @@ def move_to_failures(
         dest_path = os.path.join(fail_path, os.path.basename(fpath))
         shutil.move(fpath, dest_path)
         return f"Moved to failures folder: {dest_path}"
-    except Exception as e:
-        return f"Failed to move {os.path.basename(fpath)} to failures {dest_path}"
+    except Exception as err:
+        return f"Failed to move {os.path.basename(fpath)} to failures {dest_path} {err}"
 
 
 def move_log_to_dest(lpath: str, arg: str) -> None:
     '''
     Move a file or sequence to the failures folder.
     '''
-    dest = os.path.join(str(Path(lpath).parents[1], f"logs/{arg}/")
+    dest = os.path.join(str(Path(lpath).parents[1]), f"logs/{arg}/")
 
     try:
         if not os.path.exists(dest):
@@ -424,7 +456,7 @@ def move_to_autoingest(
     '''
     Move a file to the new workflow folder.
     '''
-    autoingest = os.path.join(str(Path(fpath).parent[2]), 'autoingest/ingest/autodetect/')
+    autoingest = os.path.join(str(Path(fpath).parents[2]), 'autoingest/ingest/autodetect/')
     try:
         dest_path = os.path.join(autoingest, os.path.basename(fpath))
         shutil.move(fpath, dest_path)
@@ -506,6 +538,7 @@ def get_checksums(
         try:
             f = tar.extractfile(item)
         except Exception as exc:
+            print(exc)
             continue
 
         hash_md5 = hashlib.md5()
@@ -727,7 +760,7 @@ def check_file(
         "&>", log
     ]
     try:
-        subprocess.run(' '.join(cmd), shell=True)
+        subprocess.run(' '.join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err

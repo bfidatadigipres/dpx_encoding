@@ -1,9 +1,8 @@
 import os
-import shutil
 import datetime
 import dagster as dg
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Optional
 from ..resources import SQLiteResource, process_pool
 from . import utils
 
@@ -112,7 +111,7 @@ def run_validate(fullpath):
             }
 
     elif fname.endswith('.mkv'):
-        log = os.path.join(LOG_PATH, f'transcode_logs/{seq}.mkv.txt')
+        log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
         validation = True
         if not os.path.isfile(spath):
             log_data.append(f"WARNING: Filepath not found: {spath}")
@@ -124,7 +123,7 @@ def run_validate(fullpath):
             log_data.append(result[1])
             log_data.append(f"WARNING: MKV file failed Mediaconch policy: {result[-1]}")
             validation = False
-            error_message = f'MKV policy failed, see validation log for details.'
+            error_message = 'MKV policy failed, see validation log for details.'
         log_data.append(f"MKV passed policy check: \n{result[1]}")
 
         # Check log for success statement

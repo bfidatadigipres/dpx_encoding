@@ -98,7 +98,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         ]
 
     try:
-        subprocess.run(" ".join(cmd), shell=True, timeout=300)
+        subprocess.run(" ".join(cmd), shell=True, check=True, timeout=300)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err

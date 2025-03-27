@@ -106,7 +106,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
-    priref, ftype, repro_ref = utils.get_file_type(seq)
+    _, ftype, repro_ref = utils.get_file_type(seq)
     if len(repro_ref) > 0:
         if seq in str(repro_ref):
             log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {repro_ref}")
@@ -125,16 +125,16 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     if ftype.lower() not in ['tif', 'tiff', 'dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (
-                ['status', 'Assessment failed'],
-                ['error_message', f'File type incorrect for sequence: {seq}}']
-            )
-            return {
-                "sequence": image_sequence,
-                "success": False,
-                "encoding_choice": None,
-                "db_arguments": arguments,
-                "logs": log_data
-            }
+            ['status', 'Assessment failed'],
+            ['error_message', f'File type incorrect for sequence: {seq}']
+        )
+        return {
+            "sequence": image_sequence,
+            "success": False,
+            "encoding_choice": None,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
 
     folder_depth, file_path = utils.count_folder_depth(image_sequence)
     log_data.append(f"Folder depth is {folder_depth} folder to images")
