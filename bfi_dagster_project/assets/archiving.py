@@ -12,7 +12,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
     '''
     
     # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "create_tar"] if key_prefix else "create_tar"
+    asset_key = [f"{key_prefix}", "create_tar"] if key_prefix else ["create_tar"]
     
     # Build input keys with prefix if needed
     ins_dict = {}

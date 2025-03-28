@@ -12,12 +12,12 @@ def build_validation_asset(key_prefix: Optional[str] = None):
     '''
 
     # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "validate_output"] if key_prefix else "validate_output"
+    asset_key = [f"{key_prefix}", "validate_output"] if key_prefix else ["validate_output"]
     
     # Build the input assets with prefixes if needed
-    ffv1_input = f"{key_prefix}/transcode_ffv1" if key_prefix else "transcode_ffv1"
-    tar_input = f"{key_prefix}/create_tar" if key_prefix else "create_tar"
-    retry_input = f"{key_prefix}/reencode_failed_asset" if key_prefix else "reencode_failed_asset"
+    ffv1_input = f"{key_prefix}/transcode_ffv1" if key_prefix else ["transcode_ffv1"]
+    tar_input = f"{key_prefix}/create_tar" if key_prefix else ["create_tar"]
+    retry_input = f"{key_prefix}/reencode_failed_asset" if key_prefix else ["reencode_failed_asset"]
 
     @dg.asset(
         key=asset_key,
@@ -52,7 +52,7 @@ def build_validation_asset(key_prefix: Optional[str] = None):
         context.log.info(f"{log_prefix}Received: %s", all_results)
 
         # Configure parallel validation
-        validation_tasks = [(folder,) for folder in all_results]
+        validation_tasks = [(folder.split('/')[-1],) for folder in all_results]
         results = context.resources.process_pool.map(run_validate, validation_tasks)
         validated_files = {
             "valid": [r['sequence'] for r in results if r['success'] is not False],
