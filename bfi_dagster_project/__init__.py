@@ -30,28 +30,6 @@ def validate_env_vars():
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
     
-    # Create a utility job that can run any asset
-    all_job = dg.define_asset_job(
-        name="run_all_assets",
-        selection="*"
-    )
-    all_jobs.append(all_job)
-    
-    # Define resources
-    resource_defs = {
-        "database": resources.SQLiteResource(filepath=DATABASE),
-        "process_pool": resources.process_pool.configured({"num_processes": 2})
-    }
-    
-    # Return a single Definitions object with everything
-    return dg.Definitions(
-        assets=all_assets,
-        sensors=all_sensors,
-        jobs=all_jobs,
-        schedules=all_schedules,
-        resources=resource_defs
-    )
-
 
 # For individual project deployment (used when deploying a single project)
 def build_project_definitions(project_id: str, cron_schedule: str):
@@ -59,6 +37,8 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     Build complete Definitions object for a specific project
     For use when deploying a single project rather than the full repository
     '''
+    validate_env_vars()
+
     # Directly create assets for this project
     target_seq_asset = build_target_sequences_asset(project_id)
     assess_seq_asset = build_assess_sequence_asset(project_id)
