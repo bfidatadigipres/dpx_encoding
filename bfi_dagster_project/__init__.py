@@ -81,10 +81,10 @@ def create_project_retry_job(project_id: str, retry_asset=None):
     job_name = f"{project_id}_retry_job" if project_id else "backfill_failed_encodings_job"
     
     if retry_asset:
-        # If we have a specific asset, select it
+        # Use AssetSelection.assets() with the asset key
         return dg.define_asset_job(
             name=job_name,
-            selection=[retry_asset]  # Use the asset object directly
+            selection=dg.AssetSelection.assets(retry_asset.key)
         )
     else:
         # For the default case with no prefix
