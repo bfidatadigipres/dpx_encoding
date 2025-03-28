@@ -13,7 +13,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
     '''
     
     # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "transcode_ffv1"] if key_prefix else ["transcode_ffv1"]
+    asset_key = [f"{key_prefix}", "transcode_ffv1"]
     
     # Build input keys with prefix if needed
     ins_dict = {}

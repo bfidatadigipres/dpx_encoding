@@ -11,8 +11,7 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
     '''
     
     # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "assess_sequence"] if key_prefix else "assess_sequence"
-    
+    asset_key = [f"{key_prefix}", "assess_sequence"]
     # Handle the input dependency with prefixing
     ins_dict = {}
     if key_prefix:

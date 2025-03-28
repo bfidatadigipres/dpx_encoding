@@ -10,17 +10,17 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
     '''
 
     # Get the appropriate asset based on prefix
-    asset = build_transcode_retry_asset(key_prefix) if key_prefix else reencode_failed_asset
+    asset = build_transcode_retry_asset(key_prefix)
 
     # Define the job with the appropriate asset / prefix
-    job_name = f"{key_prefix}_backfill_failed_encodings_job" if key_prefix else "backfill_failed_encodings_job"
+    job_name = f"{key_prefix}_backfill_failed_encodings_job"
     job = dg.define_asset_job(name=job_name, selection=[asset])
 
     # Determine the asset key for run config
-    asset_key_str = f"{key_prefix}/reencode_failed_asset" if key_prefix else "reencode_failed_asset"
+    asset_key_str = f"{key_prefix}/reencode_failed_asset"
 
     # Set sensor name with optional prefix
-    sensor_name = f"{key_prefix}_failed_encoding_retry_sensor" if key_prefix else "failed_encoding_retry_sensor"
+    sensor_name = f"{key_prefix}_failed_encoding_retry_sensor"
 
     @dg.sensor(
         name=sensor_name,
@@ -36,7 +36,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
         '''
 
         # Add prefix to logging for clarity in multi-project setups
-        log_prefix = f"[{key_prefix}] " if key_prefix else ""
+        log_prefix = f"[{key_prefix}] "
 
         last_check_time = context.cursor or datetime.datetime.now().isoformat()
         last_check = datetime.datetime.fromisoformat(last_check_time)
@@ -85,7 +85,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
             context.log.info(f"{log_prefix}Row updated: {entry}")
 
             # Create a run request for this sequence with proper asset key
-            run_key = f"{key_prefix}_retry_{seq_id}_{int(retry_count) + 1}" if key_prefix else f"retry_{seq_id}_{int(retry_count) + 1}"
+            run_key = f"{key_prefix}_retry_{seq_id}_{int(retry_count) + 1}"
 
             yield dg.RunRequest(
                 run_key=run_key,
@@ -98,7 +98,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
                 },
                 tags={
                     "retry_attempt": str(retry_count + 1),
-                    "project": key_prefix if key_prefix else "default"
+                    "project": key_prefix
                 }
             )
 
