@@ -61,7 +61,7 @@ def create_project_schedule(project_id: str, cron_schedule: str, project_assets)
     # Select all assets with this project's prefix using a list instead of keys_by_prefix
     job = dg.define_asset_job(
         name=job_name,
-        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets if asset is not None])
     )
     
     # Create schedule with the job
@@ -127,7 +127,7 @@ def bfi_repository():
     default_jobs = [
         dg.define_asset_job(
             name="default_process_job", 
-            selection=dg.AssetSelection.assets(*[asset.key for asset in default_assets])
+            selection=dg.AssetSelection.assets(*[asset.key for asset in default_assets if asset is not None])
         ),
         create_project_retry_job("")  # Empty string for no prefix
     ]
@@ -198,13 +198,21 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     
     process_job = dg.define_asset_job(
         name=f"{project_id}_process_job",
-        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets if asset is not None])
     )
     
-    retry_job = dg.define_asset_job(
-        name=f"{project_id}_retry_job",
-        selection=dg.AssetSelection.assets(retry_asset.key)
-    )
+    # For retry_job with a single asset
+    if retry_asset is not None:
+        retry_job = dg.define_asset_job(
+            name=f"{project_id}_retry_job",
+            selection=dg.AssetSelection.assets(retry_asset.key)
+        )
+    else:
+        # Create a fallback or empty job, or handle the absence of the retry asset
+        retry_job = dg.define_asset_job(
+            name=f"{project_id}_retry_job",
+            selection=dg.AssetSelection.assets()
+        )
     
     return dg.Definitions(
         assets=project_assets,
