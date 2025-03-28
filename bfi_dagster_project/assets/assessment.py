@@ -1,71 +1,89 @@
 import os
 import datetime
 import dagster as dg
-from typing import List, Dict, Any
-from ..resources import SQLiteResource, process_pool
+from typing import List, Dict, Any, Optional
 from . import utils
 
 
-@dg.asset(
-    ins={"folder_list": dg.AssetIn("target_sequences")},
-    required_resource_keys={'database', 'process_pool'}
-)
-def assess_sequence(
-    context: dg.AssetExecutionContext,
-    folder_list: List[str],
-) -> Dict[str, List[str]]:
+def build_assess_sequence_asset(key_prefix: Optional[str] = None):
     '''
-    Receives list of sequences and runs series of assessments against the
-    image sequences to decide on encoding path. Updates database with results
-    and passes RAWcook and TAR list to encoding assets.
+    Factory function that returns the asset with optional key prefix.
     '''
-    # Get folder_name from AssetIn
-    if folder_list == []:
-        context.log.info("Run input is empty. Closing.")
-        return {'ffmpeg': [], 'tar': [], 'invalid': []}
-    context.log.info("Folder list received: %s", folder_list)
+    
+    # Build the asset key with optional prefix
+    asset_key = [f"{key_prefix}", "assess_sequence"] if key_prefix else "assess_sequence"
+    
+    # Handle the input dependency with prefixing
+    ins_dict = {}
+    if key_prefix:
+        # If prefixed, reference the prefixed input asset
+        ins_dict["folder_list"] = dg.AssetIn([key_prefix, "target_sequences"])
+    else:
+        # Default case without prefix
+        ins_dict["folder_list"] = dg.AssetIn("target_sequences")
 
-    # Change assessment status
-    arg = (
-        ['status', 'Assessment started'],
+    @dg.asset(
+        key=asset_key,
+        ins=ins_dict,
+        required_resource_keys={'database', 'process_pool'}
     )
-    for folder in folder_list:
-        seq = os.path.basename(folder)
-        context.log.info("Updating assessment started:\n%s", arg)
-        entry = context.resources.database.append_to_database(context, seq, arg)
-        context.log.info("Updated database status: Assessment started %s.", entry)
+    def assess_sequence(
+        context: dg.AssetExecutionContext,
+        folder_list: List[str],
+    ) -> Dict[str, List[str]]:
+        '''
+        Receives list of sequences and runs series of assessments against the
+        image sequences to decide on encoding path. Updates database with results
+        and passes RAWcook and TAR list to encoding assets.
+        '''
+        # Get folder_name from AssetIn
+        if folder_list == []:
+            context.log.info("Run input is empty. Closing.")
+            return {'ffmpeg': [], 'tar': [], 'invalid': []}
+        context.log.info("Folder list received: %s", folder_list)
 
-    results = context.resources.process_pool.map(run_assessment, folder_list)
-    print(f"Pool map returned results: {results}")
+        # Change assessment status
+        arg = (
+            ['status', 'Assessment started'],
+        )
+        for folder in folder_list:
+            seq = os.path.basename(folder)
+            context.log.info("Updating assessment started:\n%s", arg)
+            entry = context.resources.database.append_to_database(context, seq, arg)
+            context.log.info("Updated database status: Assessment started %s.", entry)
 
-    assess_sequences = {
-        "RAWcook": [],
-        "TAR": [],
-        "invalid": []
-    }
-    for image_dict in results:
-        if not image_dict['encoding_choice']:
-            assess_sequences['invalid'].append(image_dict['sequence'])
-        else:
-            assess_sequences[image_dict['encoding_choice']].append(image_dict['sequence'])
+        results = context.resources.process_pool.map(run_assessment, folder_list)
+        print(f"Pool map returned results: {results}")
 
-    # Update log data
-    context.log.info(f"Results: RAWcook={len(assess_sequences['RAWcook'])}, "
-                     f"TAR={len(assess_sequences['TAR'])}, "
-                     f"Invalid={len(assess_sequences['invalid'])}")
-
-    for item in results:
-        seq_id = os.path.basename(item['sequence'])
-        args = item['db_arguments']
-        entry = context.resources.database.append_to_database(context, seq_id, args)
-        context.log.info("Updated database status: Assessment started %s.", entry)
-        for log in item['logs']:
-            if 'WARNING' in str(log):
-                context.log.warning(log)
+        assess_sequences = {
+            "RAWcook": [],
+            "TAR": [],
+            "invalid": []
+        }
+        for image_dict in results:
+            if not image_dict['encoding_choice']:
+                assess_sequences['invalid'].append(image_dict['sequence'])
             else:
-                context.log.info(log)
+                assess_sequences[image_dict['encoding_choice']].append(image_dict['sequence'])
 
-    return assess_sequences
+        # Update log data
+        context.log.info(f"Results: RAWcook={len(assess_sequences['RAWcook'])}, "
+                        f"TAR={len(assess_sequences['TAR'])}, "
+                        f"Invalid={len(assess_sequences['invalid'])}")
+
+        for item in results:
+            seq_id = os.path.basename(item['sequence'])
+            args = item['db_arguments']
+            entry = context.resources.database.append_to_database(context, seq_id, args)
+            context.log.info("Updated database status: Assessment started %s.", entry)
+            for log in item['logs']:
+                if 'WARNING' in str(log):
+                    context.log.warning(log)
+                else:
+                    context.log.info(log)
+
+        return assess_sequences
+    return assess_sequence
 
 
 def run_assessment(image_sequence: str) -> Dict[str, Any]:
@@ -277,3 +295,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         "db_arguments": arguments,
         "logs": log_data
     }
+
+
+# Default asset without prefix for backward compatibility
+assess_sequence = build_assess_sequence_asset()

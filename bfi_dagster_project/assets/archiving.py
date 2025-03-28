@@ -6,49 +6,66 @@ from typing import List, Dict, Optional, Any
 from . import utils
 
 
-@dg.asset(
-    ins={"assess_seqs": dg.AssetIn("assess_sequence")},
-    required_resource_keys={'database', 'process_pool'}
-)
-def create_tar(
-    context: dg.AssetExecutionContext,
-    assess_seqs: Dict[str, List[str]],
-) -> List[Optional[str]]:
+def build_archiving_asset(key_prefix: Optional[str] = None):
     '''
-    Receive dictionary of folder paths, selects those suitable for TAR wrap.
-    Builds MD5 manifest of sequence contents, TAR wraps file then compares
-    manifest with internal TAR checksums. Updates CID record with Python
-    tar file statement, updates database and passes list of TAR filepaths
-    to the validation asset.
+    New factory function that returns the asset with optional key prefix.
     '''
-    context.log.info("Received new encoding data: %s", assess_seqs)
+    
+    # Build the asset key with optional prefix
+    asset_key = [f"{key_prefix}", "create_tar"] if key_prefix else "create_tar"
+    
+    # Build input keys with prefix if needed
+    ins_dict = {}
+    if key_prefix:
+        ins_dict["assess_seqs"] = dg.AssetIn([f"{key_prefix}", "assess_sequence"])
+    else:
+        ins_dict["assess_seqs"] = dg.AssetIn("assess_sequence")
 
-    if not assess_seqs['TAR']:
-        context.log.info("No TAR sequences to process at this time.")
-        return []
+    @dg.asset(
+        key=asset_key,
+        ins=ins_dict,
+        required_resource_keys={'database', 'process_pool'}
+    )
+    def create_tar(
+        context: dg.AssetExecutionContext,
+        assess_seqs: Dict[str, List[str]],
+    ) -> List[Optional[str]]:
+        '''
+        Receive dictionary of folder paths, selects those suitable for TAR wrap.
+        Builds MD5 manifest of sequence contents, TAR wraps file then compares
+        manifest with internal TAR checksums. Updates CID record with Python
+        tar file statement, updates database and passes list of TAR filepaths
+        to the validation asset.
+        '''
+        context.log.info("Received new encoding data: %s", assess_seqs)
 
-    tar_tasks = [(folder,) for folder in assess_seqs['TAR']]
+        if not assess_seqs['TAR']:
+            context.log.info("No TAR sequences to process at this time.")
+            return []
 
-    results = context.resources.process_pool.map(tar_wrap, tar_tasks)
-    completed_files = [r['path'] for r in results if r['success'] is not False]
-    context.log.info(f"Successfully completed {len(completed_files)} TAR archives: \n{results}")
+        tar_tasks = [(folder,) for folder in assess_seqs['TAR']]
 
-    success_list = []
-    for data in results:
-        context.log.info(data)
-        seq = data['sequence']
-        if data['success'] is True:
-            success_list.append(data['path'])
-        args = data['db_arguments']
-        entry = context.resources.database.append_to_database(context, seq, args)
-        context.log.info(f"Written to Database: {entry}")
-        for log in data['logs']:
-            if 'WARNING' in log:
-                context.log.warning(log)
-            else:
-                context.log.info(log)
+        results = context.resources.process_pool.map(tar_wrap, tar_tasks)
+        completed_files = [r['path'] for r in results if r['success'] is not False]
+        context.log.info(f"Successfully completed {len(completed_files)} TAR archives: \n{results}")
 
-    return success_list
+        success_list = []
+        for data in results:
+            context.log.info(data)
+            seq = data['sequence']
+            if data['success'] is True:
+                success_list.append(data['path'])
+            args = data['db_arguments']
+            entry = context.resources.database.append_to_database(context, seq, args)
+            context.log.info(f"Written to Database: {entry}")
+            for log in data['logs']:
+                if 'WARNING' in log:
+                    context.log.warning(log)
+                else:
+                    context.log.info(log)
+
+        return success_list
+    return create_tar
 
 
 def tar_wrap(fullpath: str) -> Dict[str, Any]:
@@ -211,3 +228,6 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
+
+# Default asset without prefix for backward compatibility
+create_tar = build_archiving_asset()

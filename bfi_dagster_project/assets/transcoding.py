@@ -4,7 +4,6 @@ import subprocess
 import dagster as dg
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from ..resources import SQLiteResource, process_pool
 from . import utils
 
 
@@ -64,6 +63,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                     context.log.info(log)
 
         return completed_files
+    return transcode_ffv1
 
 
 def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
@@ -159,6 +159,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         "db_arguments": arguments,
         "logs": log_data
     }
+
 
 # Default asset without prefix for backward compatibility
 transcode_ffv1 = build_transcode_ffv1_asset()

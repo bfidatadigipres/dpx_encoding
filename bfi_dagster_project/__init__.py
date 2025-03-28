@@ -1,118 +1,202 @@
 import os
 import dagster as dg
-from dotenv import load_dotenv
-from .assets import get_sequences, assessment, archiving, transcoding, validation, transcode_retry
-from .sensors import failed_encoding_retry_sensor
+from typing import List, Dict, Optional
+
+# Asset imports
+from .assets.get_sequences import target_sequences, build_target_sequences_asset
+from .assets.assessment import assess_sequence, build_assess_sequence_asset
+from .assets.archiving import create_tar, build_archiving_asset
+from .assets.transcoding import transcode_ffv1, build_transcode_ffv1_asset
+from .assets.validation import validate_output, build_validation_asset
+from .assets.transcode_retry import reencode_failed_asset, build_transcode_retry_asset
+
+# Sensor imports
+from .sensors import failed_encoding_retry_sensor, build_failed_encoding_retry_sensor
+
+# Resource imports
 from . import resources
 
-# Global paths
-PROJECT = dg.EnvVar("DAG_PROJECT")
+# Global environment variables
 DATABASE = dg.EnvVar("DATABASE")
 CID_MEDIAINFO = dg.EnvVar("CID_MEDIAINFO")
 
 
 def validate_env_vars():
     '''
-    Check environmental variables are live before launch
+    Check that required environment variables are defined
     '''
-    required_vars = ["PROJECT", "DATABASE", "CID_MEDIAINFO"]
-    missing = [var for var in required_vars if not dg.EnvVar(var) and not os.path.exists(dg.EnvVar(var))]
+    required_vars = ["DATABASE", "CID_MEDIAINFO", "TARGET1", "TARGET2", "TARGET3"]
+    missing = [var for var in required_vars if not os.environ.get(var)]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
 
-validate_env_vars()
 
-process_assets1 = dg.load_assets_from_modules([
-    get_sequences,
-    assessment,
-    archiving,
-    transcoding,
-    validation,
-    transcode_retry
-])
+def create_project_definitions(project_id: str):
+    '''
+    Create a set of assets and sensors with project-specific prefixes
+    '''
+    assets = [
+        build_target_sequences_asset(project_id),
+        build_assess_sequence_asset(project_id),
+        build_archiving_asset(project_id),
+        build_transcode_ffv1_asset(project_id),
+        build_validation_asset(project_id),
+        build_transcode_retry_asset(project_id)
+    ]
 
-process_assets2 = dg.load_assets_from_modules([
-    get_sequences,
-    assessment,
-    archiving,
-    transcoding,
-    validation,
-    transcode_retry
-])
+    sensors = [
+        build_failed_encoding_retry_sensor(project_id)
+    ]
+    
+    return assets, sensors
 
-process_assets3 = dg.load_assets_from_modules([
-    get_sequences,
-    assessment,
-    archiving,
-    transcoding,
-    validation,
-    transcode_retry
-])
-# Select just the encoding asset(s) that need retrying
-encoding_assets = dg.AssetSelection.assets("reencode_failed_asset")
 
-# Create a dedicated job for retrying failed encodings
-backfill_failed_encodings_job = dg.define_asset_job(
+def create_project_schedule(project_id: str, cron_schedule: str):
+    '''
+    Create a schedule for a specific project
+    '''
+    # Create job for all assets with this project's prefix
+    job_name = f"{project_id}_process_job"
+    job = dg.define_asset_job(
+        name=job_name,
+        selection=dg.AssetSelection.keys_by_prefix(project_id)
+    )
+    
+    # Create schedule with the job
+    return dg.ScheduleDefinition(
+        name=f"{project_id}_schedule",
+        job=job,
+        cron_schedule=cron_schedule,
+    )
+
+
+def create_project_retry_job(project_id: str):
+    '''
+    Create a job for retrying failed encodings for a specific project
+    '''
+    # Select just the retry asset for this project
+    retry_asset_key = f"{project_id}/reencode_failed_asset" if project_id else "reencode_failed_asset"
+    job_name = f"{project_id}_retry_job" if project_id else "backfill_failed_encodings_job"
+    
+    return dg.define_asset_job(
+        name=job_name,
+        selection=dg.AssetSelection.keys(retry_asset_key)
+    )
+
+
+@dg.repository
+def bfi_repository():
+    '''
+    Repository definition with all assets, sensors, jobs, and schedules
+    '''
+    # Validate environment variables
+    validate_env_vars()
+    
+    # Project configuration
+    projects = [
+        {"id": "TARGET1", "cron": "0 */2 * * *"},
+        {"id": "TARGET2", "cron": "0 1-23/2 * * *"},
+        {"id": "TARGET3", "cron": "30 */2 * * *"}
+    ]
+    
+    # Default assets (without prefixes)
+    default_assets = [
+        target_sequences,
+        assess_sequence,
+        create_tar,
+        transcode_ffv1,
+        validate_output,
+        reencode_failed_asset
+    ]
+    
+    # Default sensor
+    default_sensors = [
+        failed_encoding_retry_sensor
+    ]
+    
+    # Default jobs
+    default_jobs = [
+        dg.define_asset_job(name="default_process_job", selection="*"),
+        create_project_retry_job("")  # Empty string for no prefix
+    ]
+    
+    # Project-specific components
+    project_assets = []
+    project_sensors = []
+    project_jobs = []
+    project_schedules = []
+    
+    for project in projects:
+        project_id = project["id"]
+        cron = project["cron"]
+        
+        # Create assets and sensors for this project
+        assets, sensors = create_project_definitions(project_id)
+        project_assets.extend(assets)
+        project_sensors.extend(sensors)
+        
+        # Create jobs and schedules for this project
+        project_jobs.append(create_project_retry_job(project_id))
+        project_schedules.append(create_project_schedule(project_id, cron))
+    
+    # Resource definitions
+    resource_defs = {
+        "database": resources.SQLiteResource(filepath=DATABASE),
+        "process_pool": resources.process_pool.configured({"num_processes": 2}),
+        # Dynamic source path will be set per job run
+    }
+    
+    # Create and return all definitions
+    return [
+        *default_assets,
+        *project_assets,
+        *default_sensors,
+        *project_sensors,
+        *default_jobs,
+        *project_jobs,
+        *project_schedules,
+        resource_defs
+    ]
+
+
+# For backwards compatibility and direct imports
+# These are maintained separately from the repository definition
+default_retry_job = dg.define_asset_job(
     name="backfill_failed_encodings_job",
-    selection=encoding_assets
+    selection=dg.AssetSelection.assets("reencode_failed_asset")
 )
 
-# Define all assets job
-all_assets_job = dg.define_asset_job(name="launch_process", selection="*")
-
-# Schedule definitions
-hourly_schedule1 = dg.ScheduleDefinition(
-    name="hourly_schedule1",
-    job=all_assets_job,
-    cron_schedule="0 */2 * * *",
+default_all_job = dg.define_asset_job(
+    name="launch_process", 
+    selection="*"
 )
 
-hourly_schedule2 = dg.ScheduleDefinition(
-    name="hourly_schedule2",
-    job=all_assets_job,
-    cron_schedule="0 1-23/2 * * *",
-)
+# Individual project definitions can be used directly if needed
+def build_project_definitions(project_id: str, cron_schedule: str):
+    '''
+    Build complete Definitions object for a specific project
+    '''
+    project_assets, project_sensors = create_project_definitions(project_id)
+    
+    return dg.Definitions(
+        assets=project_assets,
+        resources={
+            "source_path": dg.EnvVar(project_id),
+            "database": resources.SQLiteResource(filepath=DATABASE),
+            "process_pool": resources.process_pool.configured({"num_processes": 2})
+        },
+        sensors=project_sensors,
+        jobs=[
+            create_project_retry_job(project_id),
+            dg.define_asset_job(
+                name=f"{project_id}_process_job",
+                selection=dg.AssetSelection.keys_by_prefix(project_id)
+            )
+        ],
+        schedules=[create_project_schedule(project_id, cron_schedule)]
+    )
 
-hourly_schedule3 = dg.ScheduleDefinition(
-    name="hourly_schedule3",
-    job=all_assets_job,
-    cron_schedule="30 */2 * * *",
-)
-
-
-# Project definitions, default project1
-project1_defs = dg.Definitions(
-    assets=process_assets1,
-    resources={
-        "source_path": dg.EnvVar('TARGET1'),
-        "database": resources.SQLiteResource(filepath=dg.EnvVar('DATABASE')),
-        "process_pool": resources.process_pool.configured({"num_processes": 2})
-    },
-    sensors=[failed_encoding_retry_sensor],
-    jobs=[all_assets_job, backfill_failed_encodings_job],
-    schedules=[hourly_schedule1]
-)
-
-project2_defs = dg.Definitions(
-    assets=process_assets2,
-    resources={
-        "source_path": dg.EnvVar('TARGET2'),
-        "database": resources.SQLiteResource(filepath=dg.EnvVar('DATABASE')),
-        "process_pool": resources.process_pool.configured({"num_processes": 2})
-    },
-    sensors=[failed_encoding_retry_sensor],
-    jobs=[all_assets_job, backfill_failed_encodings_job],
-    schedules=[hourly_schedule2]
-)
-
-project3_defs = dg.Definitions(
-    assets=process_assets3,
-    resources={
-        "source_path": dg.EnvVar('TARGET3'),
-        "database": resources.SQLiteResource(filepath=dg.EnvVar('DATABASE')),
-        "process_pool": resources.process_pool.configured({"num_processes": 2})
-    },
-    sensors=[failed_encoding_retry_sensor],
-    jobs=[all_assets_job, backfill_failed_encodings_job],
-    schedules=[hourly_schedule3]
-)
+# Pre-built project definitions for direct use
+project1_defs = build_project_definitions("TARGET1", "0 */2 * * *")
+project2_defs = build_project_definitions("TARGET2", "0 1-23/2 * * *")
+project3_defs = build_project_definitions("TARGET3", "30 */2 * * *")
