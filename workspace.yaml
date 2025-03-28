@@ -12,5 +12,5 @@ load_from:
   # Third module instance
   - python_module:
       module_name: bfi_dagster_project
-      attribute: project2_defs
+      attribute: project3_defs
       location_name: bfi_dagster_project3

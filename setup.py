@@ -11,4 +11,3 @@ setup(
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
-
