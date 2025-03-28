@@ -32,10 +32,6 @@ def process_pool(init_context):
     return ProcessPoolResource(num_proc=init_context.resource_config.get("num_processes", 2))
 
 
-# Load ENV for database
-DATABASE = os.environ.get('DATABASE')
-
-
 def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
                  retryable_exceptions=(sqlite3.OperationalError,)):
     '''
@@ -83,7 +79,7 @@ def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
 
 
 class SQLiteResource(dg.ConfigurableResource):
-    filepath: str = DATABASE
+    filepath: str = dg.EnvVar('DATABASE')
     max_retries: int = 5
     retry_delay: float = 1.0
     timeout: float = 300.0

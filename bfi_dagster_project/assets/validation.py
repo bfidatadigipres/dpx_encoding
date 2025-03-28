@@ -207,7 +207,6 @@ def run_validate(fullpath):
 
 
 @dg.asset(
-    deps=['transcode_ffv1', 'create_tar', 'reencode_failed_asset'],
     ins={"ffv1_result": dg.AssetIn("transcode_ffv1"),
          "tar_result": dg.AssetIn("create_tar"),
          "ffv1_retry": dg.AssetIn("reencode_failed_asset")},
@@ -264,6 +263,3 @@ def validate_output(
             "failed_items": len(validated_files['invalid'])
         }
     )
-
-
-defs = dg.Definitions(assets=[validate_output])

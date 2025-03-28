@@ -81,6 +81,3 @@ def reencode_failed_asset(
     entry = context.resources.database.append_to_database(context, seq, arguments)
     context.log.info(f"Row data written: {entry}")
     return [ffv1_path]
-
-
-defs = dg.Definitions(assets=[reencode_failed_asset])

@@ -277,6 +277,3 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         "db_arguments": arguments,
         "logs": log_data
     }
-
-
-defs = dg.Definitions(assets=[assess_sequence])

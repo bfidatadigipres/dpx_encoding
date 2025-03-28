@@ -142,6 +142,3 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         "db_arguments": arguments,
         "logs": log_data
     }
-
-
-defs = dg.Definitions(assets=[transcode_ffv1])

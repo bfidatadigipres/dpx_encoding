@@ -3,11 +3,14 @@ load_from:
   - python_module:
       module_name: bfi_dagster_project
       attribute: project1_defs
+      location_name: bfi_dagster_project1
   # Second module instance
   - python_module:
       module_name: bfi_dagster_project
       attribute: project2_defs
+      location_name: bfi_dasgter_project2
   # Third module instance
   - python_module:
       module_name: bfi_dagster_project
       attribute: project2_defs
+      location_name: bfi_dagster_project3

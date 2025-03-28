@@ -211,6 +211,3 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
-
-
-defs = dg.Definitions(assets=[create_tar])
