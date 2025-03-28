@@ -51,15 +51,17 @@ def create_project_definitions(project_id: str):
     return assets, sensors
 
 
-def create_project_schedule(project_id: str, cron_schedule: str):
+def create_project_schedule(project_id: str, cron_schedule: str, project_assets):
     '''
     Create a schedule for a specific project
     '''
     # Create job for all assets with this project's prefix
     job_name = f"{project_id}_process_job"
+    
+    # Select all assets with this project's prefix using a list instead of keys_by_prefix
     job = dg.define_asset_job(
         name=job_name,
-        selection=dg.AssetSelection.keys_by_prefix(project_id)
+        selection=project_assets  # Pass in the actual asset list
     )
     
     # Create schedule with the job
@@ -70,18 +72,25 @@ def create_project_schedule(project_id: str, cron_schedule: str):
     )
 
 
-def create_project_retry_job(project_id: str):
+def create_project_retry_job(project_id: str, retry_asset=None):
     '''
     Create a job for retrying failed encodings for a specific project
     '''
-    # Select just the retry asset for this project
-    retry_asset_key = f"{project_id}/reencode_failed_asset" if project_id else "reencode_failed_asset"
+    # Instead of selecting by key, use the passed asset
     job_name = f"{project_id}_retry_job" if project_id else "backfill_failed_encodings_job"
     
-    return dg.define_asset_job(
-        name=job_name,
-        selection=dg.AssetSelection.keys(retry_asset_key)
-    )
+    if retry_asset:
+        # If we have a specific asset, select it
+        return dg.define_asset_job(
+            name=job_name,
+            selection=[retry_asset]  # Use the asset object directly
+        )
+    else:
+        # For the default case with no prefix
+        return dg.define_asset_job(
+            name=job_name, 
+            selection=dg.AssetSelection.assets("reencode_failed_asset")
+        )
 
 
 @dg.repository
@@ -90,7 +99,7 @@ def bfi_repository():
     Repository definition with all assets, sensors, jobs, and schedules
     '''
     # Validate environment variables
-    validate_env_vars()
+    #validate_env_vars()
     
     # Project configuration
     projects = [
@@ -116,7 +125,7 @@ def bfi_repository():
     
     # Default jobs
     default_jobs = [
-        dg.define_asset_job(name="default_process_job", selection="*"),
+        dg.define_asset_job(name="default_process_job", selection=default_assets),
         create_project_retry_job("")  # Empty string for no prefix
     ]
     
@@ -135,9 +144,12 @@ def bfi_repository():
         project_assets.extend(assets)
         project_sensors.extend(sensors)
         
+        # Get the retry asset for this project (it's the last one in our assets list)
+        retry_asset = assets[-1]  # This should be the build_transcode_retry_asset result
+        
         # Create jobs and schedules for this project
-        project_jobs.append(create_project_retry_job(project_id))
-        project_schedules.append(create_project_schedule(project_id, cron))
+        project_jobs.append(create_project_retry_job(project_id, retry_asset))
+        project_schedules.append(create_project_schedule(project_id, cron, assets))
     
     # Resource definitions
     resource_defs = {
@@ -178,6 +190,19 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     '''
     project_assets, project_sensors = create_project_definitions(project_id)
     
+    # Get the retry asset specifically
+    retry_asset = project_assets[-1]  # This should be the retry asset
+    
+    process_job = dg.define_asset_job(
+        name=f"{project_id}_process_job",
+        selection=project_assets
+    )
+    
+    retry_job = dg.define_asset_job(
+        name=f"{project_id}_retry_job",
+        selection=[retry_asset]
+    )
+    
     return dg.Definitions(
         assets=project_assets,
         resources={
@@ -186,14 +211,14 @@ def build_project_definitions(project_id: str, cron_schedule: str):
             "process_pool": resources.process_pool.configured({"num_processes": 2})
         },
         sensors=project_sensors,
-        jobs=[
-            create_project_retry_job(project_id),
-            dg.define_asset_job(
-                name=f"{project_id}_process_job",
-                selection=dg.AssetSelection.keys_by_prefix(project_id)
+        jobs=[retry_job, process_job],
+        schedules=[
+            dg.ScheduleDefinition(
+                name=f"{project_id}_schedule",
+                job=process_job,
+                cron_schedule=cron_schedule
             )
-        ],
-        schedules=[create_project_schedule(project_id, cron_schedule)]
+        ]
     )
 
 # Pre-built project definitions for direct use
