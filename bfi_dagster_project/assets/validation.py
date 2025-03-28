@@ -47,7 +47,7 @@ def build_validation_asset(key_prefix: Optional[str] = None):
         all_results = ffv1_result + tar_result + ffv1_retry_paths
         if not all_results:
             context.log.info(f"{log_prefix}No files handed to validation script")
-            return None
+            return dg.Output(value={}, metadata={})
 
         context.log.info(f"{log_prefix}Received: %s", all_results)
 
