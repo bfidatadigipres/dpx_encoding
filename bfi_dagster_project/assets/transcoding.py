@@ -14,7 +14,10 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
     # Build the asset key with optional prefix
     asset_key = [f"{key_prefix}", "transcode_ffv1"]
     ins_dict = {}
-    ins_dict["assessment"] = dg.AssetIn([key_prefix, "assess_sequence"])
+    if key_prefix:
+        ins_dict["assessment"] = dg.AssetIn([f"{key_prefix}", "assess_sequence"])
+    else:
+        ins_dict["assessment"] = dg.AssetIn("assess_sequence")
 
     @dg.asset(
         key=asset_key,
