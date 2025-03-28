@@ -6,6 +6,85 @@ from typing import List, Optional
 from . import utils
 
 
+def build_validation_asset(key_prefix: Optional[str] = None):
+    '''
+    Factory function that returns the validation asset with optional key prefix.
+    '''
+
+    # Build the asset key with optional prefix
+    asset_key = [f"{key_prefix}", "validate_output"] if key_prefix else "validate_output"
+    
+    # Build the input assets with prefixes if needed
+    ffv1_input = f"{key_prefix}/transcode_ffv1" if key_prefix else "transcode_ffv1"
+    tar_input = f"{key_prefix}/create_tar" if key_prefix else "create_tar"
+    retry_input = f"{key_prefix}/reencode_failed_asset" if key_prefix else "reencode_failed_asset"
+
+    @dg.asset(
+        key=asset_key,
+        ins={
+            "ffv1_result": dg.AssetIn(ffv1_input),
+            "tar_result": dg.AssetIn(tar_input),
+            "ffv1_retry": dg.AssetIn(retry_input)
+        },
+        required_resource_keys={'database', 'process_pool'}
+    )
+    def validate_output(
+        context: dg.AssetExecutionContext,
+        ffv1_result: List[str],
+        tar_result: List[str],
+        ffv1_retry: Optional[List[str]] = None,
+    ) -> dg.Output:
+        '''
+        Validation asset receives list of folder paths from three
+        assets (ffv1, tar and ffv1 retry assets). Depending on ext
+        type runs a series of validation checks, before passing or
+        failing the files and updating database.
+        '''
+        # Add prefix for logging clarity
+        log_prefix = f"[{key_prefix}] " if key_prefix else ""
+
+        ffv1_retry_paths = ffv1_retry or []
+        all_results = ffv1_result + tar_result + ffv1_retry_paths
+        if not all_results:
+            context.log.info(f"{log_prefix}No files handed to validation script")
+            return None
+
+        context.log.info(f"{log_prefix}Received: %s", all_results)
+
+        # Configure parallel validation
+        validation_tasks = [(folder,) for folder in all_results]
+        results = context.resources.process_pool.map(run_validate, validation_tasks)
+        validated_files = {
+            "valid": [r['sequence'] for r in results if r['success'] is not False],
+            "invalid": [r['sequence'] for r in results if r['success'] is False]
+        }
+        context.log.info(f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
+                        f"Invalid={len(validated_files['invalid'])}")
+
+        # Write data to log / db
+        for data in results:
+            seq = data['sequence']
+            args = data['db_arguments']
+            entry = context.resources.database.append_to_database(context, seq, args)
+            context.log.info(f"{log_prefix}Written to Database: {entry}")
+            for log in data['logs']:
+                if 'WARNING' in log:
+                    context.log.warning(f"{log_prefix} {log}")
+                else:
+                    context.log.info(f"{log_prefix} {log}")
+
+        return dg.Output(
+            value={
+                "validated_files": validated_files['valid'],
+                "invalid_files": validated_files['invalid']
+            },
+            metadata={
+                "successfully_complete": len(validated_files['valid']),
+                "failed_items": len(validated_files['invalid'])
+            }
+        )
+
+
 def run_validate(fullpath):
     '''
     Run validation checks against TAR
@@ -203,85 +282,6 @@ def run_validate(fullpath):
                 "db_arguments": arguments,
                 "logs": log_data
             }
-
-
-def build_validation_asset(key_prefix: Optional[str] = None):
-    '''
-    Factory function that returns the validation asset with optional key prefix.
-    '''
- 
-    # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "validate_output"] if key_prefix else "validate_output"
-    
-    # Build the input assets with prefixes if needed
-    ffv1_input = f"{key_prefix}/transcode_ffv1" if key_prefix else "transcode_ffv1"
-    tar_input = f"{key_prefix}/create_tar" if key_prefix else "create_tar"
-    retry_input = f"{key_prefix}/reencode_failed_asset" if key_prefix else "reencode_failed_asset"
-
-    @dg.asset(
-        key=asset_key,
-        ins={
-            "ffv1_result": dg.AssetIn(ffv1_input),
-            "tar_result": dg.AssetIn(tar_input),
-            "ffv1_retry": dg.AssetIn(retry_input)
-        },
-        required_resource_keys={'database', 'process_pool'}
-    )
-    def validate_output(
-        context: dg.AssetExecutionContext,
-        ffv1_result: List[str],
-        tar_result: List[str],
-        ffv1_retry: Optional[List[str]] = None,
-    ) -> dg.Output:
-        '''
-        Validation asset receives list of folder paths from three
-        assets (ffv1, tar and ffv1 retry assets). Depending on ext
-        type runs a series of validation checks, before passing or
-        failing the files and updating database.
-        '''
-        # Add prefix for logging clarity
-        log_prefix = f"[{key_prefix}] " if key_prefix else ""
-
-        ffv1_retry_paths = ffv1_retry or []
-        all_results = ffv1_result + tar_result + ffv1_retry_paths
-        if not all_results:
-            context.log.info(f"{log_prefix}No files handed to validation script")
-            return None
-
-        context.log.info(f"{log_prefix}Received: %s", all_results)
-
-        # Configure parallel validation
-        validation_tasks = [(folder,) for folder in all_results]
-        results = context.resources.process_pool.map(run_validate, validation_tasks)
-        validated_files = {
-            "valid": [r['sequence'] for r in results if r['success'] is not False],
-            "invalid": [r['sequence'] for r in results if r['success'] is False]
-        }
-        context.log.info(f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
-                        f"Invalid={len(validated_files['invalid'])}")
-
-        # Write data to log / db
-        for data in results:
-            seq = data['sequence']
-            args = data['db_arguments']
-            entry = context.resources.database.append_to_database(context, seq, args)
-            context.log.info(f"{log_prefix}Written to Database: {entry}")
-            for log in data['logs']:
-                if 'WARNING' in log:
-                    context.log.warning(f"{log_prefix} {log}")
-                else:
-                    context.log.info(f"{log_prefix} {log}")
-
-        return dg.Output(
-            value={
-                "validated_files": validated_files['valid'],
-                "invalid_files": validated_files['invalid']
-            },
-            metadata={
-                "successfully_complete": len(validated_files['valid']),
-                "failed_items": len(validated_files['invalid'])
-            }
-        )
 
 
 # Create the default validation asset (no prefix) for backward compatibility
