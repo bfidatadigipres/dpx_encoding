@@ -3,15 +3,15 @@ import dagster as dg
 from typing import List, Dict, Optional
 
 # Asset imports
-from .assets.get_sequences import target_sequences, build_target_sequences_asset
-from .assets.assessment import assess_sequence, build_assess_sequence_asset
-from .assets.archiving import create_tar, build_archiving_asset
-from .assets.transcoding import transcode_ffv1, build_transcode_ffv1_asset
-from .assets.validation import validate_output, build_validation_asset
-from .assets.transcode_retry import reencode_failed_asset, build_transcode_retry_asset
+from .assets.get_sequences import build_target_sequences_asset
+from .assets.assessment import build_assess_sequence_asset
+from .assets.archiving import build_archiving_asset
+from .assets.transcoding import build_transcode_ffv1_asset
+from .assets.validation import build_validation_asset
+from .assets.transcode_retry import build_transcode_retry_asset
 
 # Sensor imports
-from .sensors import failed_encoding_retry_sensor, build_failed_encoding_retry_sensor
+from .sensors import build_failed_encoding_retry_sensor
 
 # Resource imports
 from . import resources
@@ -98,38 +98,11 @@ def bfi_repository():
     '''
     Repository definition with all assets, sensors, jobs, and schedules
     '''
-    # Validate environment variables
-    #validate_env_vars()
-    
     # Project configuration
     projects = [
         {"id": "TARGET1", "cron": "0 */2 * * *"},
         {"id": "TARGET2", "cron": "0 1-23/2 * * *"},
         {"id": "TARGET3", "cron": "30 */2 * * *"}
-    ]
-    
-    # Default assets (without prefixes)
-    default_assets = [
-        target_sequences,
-        assess_sequence,
-        create_tar,
-        transcode_ffv1,
-        validate_output,
-        reencode_failed_asset
-    ]
-    
-    # Default sensor
-    default_sensors = [
-        failed_encoding_retry_sensor
-    ]
-    
-    # Default jobs
-    default_jobs = [
-        dg.define_asset_job(
-            name="default_process_job", 
-            selection=dg.AssetSelection.assets(*[asset.key for asset in default_assets if asset is not None])
-        ),
-        create_project_retry_job("")  # Empty string for no prefix
     ]
     
     # Project-specific components
@@ -148,30 +121,53 @@ def bfi_repository():
         project_sensors.extend(sensors)
         
         # Get the retry asset for this project (it's the last one in our assets list)
-        retry_asset = assets[-1]  # This should be the build_transcode_retry_asset result
+        retry_asset = next((asset for asset in reversed(assets) if asset is not None), None)
         
-        # Create jobs and schedules for this project
-        project_jobs.append(create_project_retry_job(project_id, retry_asset))
-        project_schedules.append(create_project_schedule(project_id, cron, assets))
+        # Only create retry job if we have a valid retry asset
+        if retry_asset is not None:
+            project_jobs.append(
+                dg.define_asset_job(
+                    name=f"{project_id}_retry_job",
+                    selection=dg.AssetSelection.assets(retry_asset.key)
+                )
+            )
+        
+        # Create schedule with all valid assets for this project
+        valid_assets = [asset for asset in assets if asset is not None]
+        if valid_assets:
+            process_job = dg.define_asset_job(
+                name=f"{project_id}_process_job",
+                selection=dg.AssetSelection.assets(*[asset.key for asset in valid_assets])
+            )
+            project_jobs.append(process_job)
+            project_schedules.append(
+                dg.ScheduleDefinition(
+                    name=f"{project_id}_schedule",
+                    job=process_job,
+                    cron_schedule=cron
+                )
+            )
     
     # Resource definitions
     resource_defs = {
         "database": resources.SQLiteResource(filepath=DATABASE),
-        "process_pool": resources.process_pool.configured({"num_processes": 2}),
-        # Dynamic source path will be set per job run
+        "process_pool": resources.process_pool.configured({"num_processes": 2})
     }
     
+    # Optional: Create a single utility job that can run any asset
+    all_job = dg.define_asset_job(
+        name="run_all_assets",
+        selection="*"
+    )
+    
     # Create and return all definitions
-    return [
-        *default_assets,
-        *project_assets,
-        *default_sensors,
-        *project_sensors,
-        *default_jobs,
-        *project_jobs,
-        *project_schedules,
-        resource_defs
-    ]
+    return dg.Definitions(
+        assets=project_assets,
+        sensors=project_sensors,
+        jobs=[*project_jobs, all_job],
+        schedules=project_schedules,
+        resources=resource_defs
+    )
 
 
 # For backwards compatibility and direct imports
