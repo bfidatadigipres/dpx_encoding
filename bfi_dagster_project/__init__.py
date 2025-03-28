@@ -57,11 +57,12 @@ def create_project_schedule(project_id: str, cron_schedule: str, project_assets)
     '''
     # Create job for all assets with this project's prefix
     job_name = f"{project_id}_process_job"
-    
+
     # Select all assets with this project's prefix using a list instead of keys_by_prefix
+    selection = dg.AssetSelection.assets(*[asset.key for asset in project_assets])
     job = dg.define_asset_job(
         name=job_name,
-        selection=project_assets  # Pass in the actual asset list
+        selection=selection
     )
     
     # Create schedule with the job
