@@ -73,7 +73,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     # Create process job for all assets
     process_job = dg.define_asset_job(
         name=f"{project_id}_process_job",
-        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets is asset not None])
     )
     
     # Create retry job if retry asset exists
