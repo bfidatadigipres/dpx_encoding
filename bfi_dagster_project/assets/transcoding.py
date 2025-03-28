@@ -12,8 +12,9 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
     New factory function that returns the asset with optional key prefix.
     '''
     # Build the asset key with optional prefix
-    asset_key = [key_prefix, "transcode_ffv1"]
-    ins_dict = {"assessment": dg.AssetIn([key_prefix, "assess_sequence"])}
+    asset_key = [f"{key_prefix}", "transcode_ffv1"]
+    ins_dict = {}
+    ins_dict["assessment"] = dg.AssetIn([key_prefix, "assess_sequence"])
 
     @dg.asset(
         key=asset_key,
