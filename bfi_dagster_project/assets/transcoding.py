@@ -3,50 +3,67 @@ import datetime
 import subprocess
 import dagster as dg
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from ..resources import SQLiteResource, process_pool
 from . import utils
 
 
-@dg.asset(
-    ins={"assessment": dg.AssetIn("assess_sequence")},
-    required_resource_keys={'database', 'process_pool'}
-)
-def transcode_ffv1(
-    context: dg.AssetExecutionContext,
-    assessment: Dict[str, List[str]],
-) -> List[str]:
+def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
     '''
-    Receive AssetIn data from the assessment asset. Select RAWcook
-    items, retrieve row information for file from database. Using
-    ParallelExecution, launch maximum of four parallel encodings.
-    Update database if successfully encoded or failed.
+    New factory function that returns the asset with optional key prefix.
     '''
-    context.log.info("Received new encoding data: %s", assessment)
-    if not assessment['RAWcook']:
-        context.log.info("No RAWcook sequences to process at this time.")
-        return []
+    
+    # Build the asset key with optional prefix
+    asset_key = [f"{key_prefix}", "transcode_ffv1"] if key_prefix else "transcode_ffv1"
+    
+    # Build input keys with prefix if needed
+    ins_dict = {}
+    if key_prefix:
+        ins_dict["assessment"] = dg.AssetIn([f"{key_prefix}", "assess_sequence"])
+    else:
+        ins_dict["assessment"] = dg.AssetIn("assess_sequence")
 
-    # Create/execute parallel transcodes
-    transcode_tasks = [(folder,) for folder in assessment['RAWcook']]
-    results = context.resources.process_pool.map(transcode, transcode_tasks)
+    @dg.asset(
+        #ins={"assessment": dg.AssetIn("assess_sequence")},
+        key=asset_key,
+        ins=ins_dict,
+        required_resource_keys={"database", "process_pool"}
+    )
+    def transcode_ffv1(
+        context: dg.AssetExecutionContext,
+        assessment: Dict[str, List[str]],
+    ) -> List[str]:
+        '''
+        Receive AssetIn data from the assessment asset. Select RAWcook
+        items, retrieve row information for file from database. Using
+        ParallelExecution, launch maximum of four parallel encodings.
+        Update database if successfully encoded or failed.
+        '''
+        context.log.info("Received new encoding data: %s", assessment)
+        if not assessment['RAWcook']:
+            context.log.info("No RAWcook sequences to process at this time.")
+            return []
 
-    # Filter out None vals
-    completed_files = [r['path'] for r in results if r['success'] is not None]
-    context.log.info(f"Completed {len(completed_files)} RAWcooked transcodes.")
+        # Create/execute parallel transcodes
+        transcode_tasks = [(folder,) for folder in assessment['RAWcook']]
+        results = context.resources.process_pool.map(transcode, transcode_tasks)
 
-    for data in results:
-        seq = data['sequence']
-        arg = data["db_arguments"]
-        entry = context.resources.database.append_to_database(context, seq, arg)
-        context.log.info(f"Written to Database: {entry}")
-        for log in data['logs']:
-            if 'WARNING' in log:
-                context.log.warning(log)
-            else:
-                context.log.info(log)
+        # Filter out None vals
+        completed_files = [r['path'] for r in results if r['success'] is not None]
+        context.log.info(f"Completed {len(completed_files)} RAWcooked transcodes.")
 
-    return completed_files
+        for data in results:
+            seq = data['sequence']
+            arg = data["db_arguments"]
+            entry = context.resources.database.append_to_database(context, seq, arg)
+            context.log.info(f"Written to Database: {entry}")
+            for log in data['logs']:
+                if 'WARNING' in log:
+                    context.log.warning(log)
+                else:
+                    context.log.info(log)
+
+        return completed_files
 
 
 def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
@@ -142,3 +159,6 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         "db_arguments": arguments,
         "logs": log_data
     }
+
+# Default asset without prefix for backward compatibility
+transcode_ffv1 = build_transcode_ffv1_asset()
