@@ -59,10 +59,9 @@ def create_project_schedule(project_id: str, cron_schedule: str, project_assets)
     job_name = f"{project_id}_process_job"
 
     # Select all assets with this project's prefix using a list instead of keys_by_prefix
-    selection = dg.AssetSelection.assets(*[asset.key for asset in project_assets])
     job = dg.define_asset_job(
         name=job_name,
-        selection=selection
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
     )
     
     # Create schedule with the job
@@ -81,10 +80,10 @@ def create_project_retry_job(project_id: str, retry_asset=None):
     job_name = f"{project_id}_retry_job" if project_id else "backfill_failed_encodings_job"
     
     if retry_asset:
-        # If we have a specific asset, select it
+        # Use AssetSelection.assets() with the asset key
         return dg.define_asset_job(
             name=job_name,
-            selection=[retry_asset]  # Use the asset object directly
+            selection=dg.AssetSelection.assets(retry_asset.key)
         )
     else:
         # For the default case with no prefix
@@ -126,7 +125,10 @@ def bfi_repository():
     
     # Default jobs
     default_jobs = [
-        dg.define_asset_job(name="default_process_job", selection=default_assets),
+        dg.define_asset_job(
+            name="default_process_job", 
+            selection=dg.AssetSelection.assets(*[asset.key for asset in default_assets])
+        ),
         create_project_retry_job("")  # Empty string for no prefix
     ]
     
@@ -196,12 +198,12 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     
     process_job = dg.define_asset_job(
         name=f"{project_id}_process_job",
-        selection=project_assets
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
     )
     
     retry_job = dg.define_asset_job(
         name=f"{project_id}_retry_job",
-        selection=[retry_asset]
+        selection=dg.AssetSelection.assets(retry_asset.key)
     )
     
     return dg.Definitions(
