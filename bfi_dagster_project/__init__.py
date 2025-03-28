@@ -26,189 +26,171 @@ def validate_env_vars():
     Check that required environment variables are defined
     '''
     required_vars = ["DATABASE", "CID_MEDIAINFO", "TARGET1", "TARGET2", "TARGET3"]
-    missing = [var for var in required_vars if not dg.EnvVar(var)]
+    missing = [var for var in required_vars if not os.environ.get(var)]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
-
-
-def create_project_definitions(project_id: str):
-    '''
-    Create a set of assets and sensors with project-specific prefixes
-    '''
-    assets = [
-        build_target_sequences_asset(project_id),
-        build_assess_sequence_asset(project_id),
-        build_archiving_asset(project_id),
-        build_transcode_ffv1_asset(project_id),
-        build_validation_asset(project_id),
-        build_transcode_retry_asset(project_id)
-    ]
-
-    sensors = [
-        build_failed_encoding_retry_sensor(project_id)
-    ]
-    
-    return assets, sensors
-
-
-def create_project_schedule(project_id: str, cron_schedule: str, project_assets):
-    '''
-    Create a schedule for a specific project
-    '''
-    # Create job for all assets with this project's prefix
-    job_name = f"{project_id}_process_job"
-
-    # Select all assets with this project's prefix using a list instead of keys_by_prefix
-    job = dg.define_asset_job(
-        name=job_name,
-        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets if asset is not None])
-    )
-    
-    # Create schedule with the job
-    return dg.ScheduleDefinition(
-        name=f"{project_id}_schedule",
-        job=job,
-        cron_schedule=cron_schedule,
-    )
-
-
-def create_project_retry_job(project_id: str, retry_asset=None):
-    '''
-    Create a job for retrying failed encodings for a specific project
-    '''
-    # Instead of selecting by key, use the passed asset
-    job_name = f"{project_id}_retry_job" if project_id else "backfill_failed_encodings_job"
-    
-    if retry_asset:
-        # Use AssetSelection.assets() with the asset key
-        return dg.define_asset_job(
-            name=job_name,
-            selection=dg.AssetSelection.assets(retry_asset.key)
-        )
-    else:
-        # For the default case with no prefix
-        return dg.define_asset_job(
-            name=job_name, 
-            selection=dg.AssetSelection.assets("reencode_failed_asset")
-        )
 
 
 @dg.repository
 def bfi_repository():
     '''
-    Repository definition with all assets, sensors, jobs, and schedules
+    Repository definition with direct creation of all assets, jobs, and schedules
     '''
-    # Project configuration
-    projects = [
+    # Optional: Validate environment variables
+    # validate_env_vars()
+    
+    all_assets = []
+    all_jobs = []
+    all_schedules = []
+    all_sensors = []
+    
+    # Define project configurations
+    project_configs = [
         {"id": "TARGET1", "cron": "0 */2 * * *"},
         {"id": "TARGET2", "cron": "0 1-23/2 * * *"},
         {"id": "TARGET3", "cron": "30 */2 * * *"}
     ]
     
-    # Project-specific components
-    project_assets = []
-    project_sensors = []
-    project_jobs = []
-    project_schedules = []
-    
-    for project in projects:
-        project_id = project["id"]
-        cron = project["cron"]
+    # Create assets, jobs, and schedules for each project
+    for config in project_configs:
+        project_id = config["id"]
+        cron_schedule = config["cron"]
         
-        # Create assets and sensors for this project
-        assets, sensors = create_project_definitions(project_id)
-        project_assets.extend(assets)
-        project_sensors.extend(sensors)
+        # Directly create all assets for this project
+        target_seq_asset = build_target_sequences_asset(project_id)
+        assess_seq_asset = build_assess_sequence_asset(project_id)
+        archive_asset = build_archiving_asset(project_id)
+        transcode_asset = build_transcode_ffv1_asset(project_id)
+        validate_asset = build_validation_asset(project_id)
+        retry_asset = build_transcode_retry_asset(project_id)
         
-        # Get the retry asset for this project (it's the last one in our assets list)
-        retry_asset = next((asset for asset in reversed(assets) if asset is not None), None)
+        # Add all valid assets to our collection
+        project_assets = []
+        if target_seq_asset is not None:
+            project_assets.append(target_seq_asset)
+            all_assets.append(target_seq_asset)
         
-        # Only create retry job if we have a valid retry asset
+        if assess_seq_asset is not None:
+            project_assets.append(assess_seq_asset)
+            all_assets.append(assess_seq_asset)
+        
+        if archive_asset is not None:
+            project_assets.append(archive_asset)
+            all_assets.append(archive_asset)
+        
+        if transcode_asset is not None:
+            project_assets.append(transcode_asset)
+            all_assets.append(transcode_asset)
+        
+        if validate_asset is not None:
+            project_assets.append(validate_asset)
+            all_assets.append(validate_asset)
+        
         if retry_asset is not None:
-            project_jobs.append(
-                dg.define_asset_job(
-                    name=f"{project_id}_retry_job",
-                    selection=dg.AssetSelection.assets(retry_asset.key)
-                )
+            project_assets.append(retry_asset)
+            all_assets.append(retry_asset)
+            
+            # Create retry job (only if retry asset exists)
+            retry_job = dg.define_asset_job(
+                name=f"{project_id}_retry_job",
+                selection=dg.AssetSelection.assets(retry_asset.key)
             )
+            all_jobs.append(retry_job)
         
-        # Create schedule with all valid assets for this project
-        valid_assets = [asset for asset in assets if asset is not None]
-        if valid_assets:
+        # Create sensor for this project
+        retry_sensor = build_failed_encoding_retry_sensor(project_id)
+        if retry_sensor is not None:
+            all_sensors.append(retry_sensor)
+        
+        # Create process job (runs all assets for this project)
+        if project_assets:  # Only create job if we have assets
+            asset_keys = [asset.key for asset in project_assets]
             process_job = dg.define_asset_job(
                 name=f"{project_id}_process_job",
-                selection=dg.AssetSelection.assets(*[asset.key for asset in valid_assets])
+                selection=dg.AssetSelection.assets(*asset_keys)
             )
-            project_jobs.append(process_job)
-            project_schedules.append(
-                dg.ScheduleDefinition(
-                    name=f"{project_id}_schedule",
-                    job=process_job,
-                    cron_schedule=cron
-                )
+            all_jobs.append(process_job)
+            
+            # Create schedule for the process job
+            schedule = dg.ScheduleDefinition(
+                name=f"{project_id}_schedule",
+                job=process_job,
+                cron_schedule=cron_schedule
             )
+            all_schedules.append(schedule)
     
-    # Resource definitions
+    # Create a utility job that can run any asset
+    all_job = dg.define_asset_job(
+        name="run_all_assets",
+        selection="*"
+    )
+    all_jobs.append(all_job)
+    
+    # Define resources
     resource_defs = {
         "database": resources.SQLiteResource(filepath=DATABASE),
         "process_pool": resources.process_pool.configured({"num_processes": 2})
     }
     
-    # Optional: Create a single utility job that can run any asset
-    all_job = dg.define_asset_job(
-        name="run_all_assets",
-        selection="*"
-    )
-    
-    # Create and return all definitions
+    # Return a single Definitions object with everything
     return dg.Definitions(
-        assets=project_assets,
-        sensors=project_sensors,
-        jobs=[*project_jobs, all_job],
-        schedules=project_schedules,
+        assets=all_assets,
+        sensors=all_sensors,
+        jobs=all_jobs,
+        schedules=all_schedules,
         resources=resource_defs
     )
 
 
-# For backwards compatibility and direct imports
-# These are maintained separately from the repository definition
-default_retry_job = dg.define_asset_job(
-    name="backfill_failed_encodings_job",
-    selection=dg.AssetSelection.assets("reencode_failed_asset")
-)
-
-default_all_job = dg.define_asset_job(
-    name="launch_process", 
-    selection="*"
-)
-
-# Individual project definitions can be used directly if needed
+# For individual project deployment (used when deploying a single project)
 def build_project_definitions(project_id: str, cron_schedule: str):
     '''
     Build complete Definitions object for a specific project
+    For use when deploying a single project rather than the full repository
     '''
-    project_assets, project_sensors = create_project_definitions(project_id)
+    # Directly create assets for this project
+    target_seq_asset = build_target_sequences_asset(project_id)
+    assess_seq_asset = build_assess_sequence_asset(project_id)
+    archive_asset = build_archiving_asset(project_id)
+    transcode_asset = build_transcode_ffv1_asset(project_id)
+    validate_asset = build_validation_asset(project_id)
+    retry_asset = build_transcode_retry_asset(project_id)
     
-    # Get the retry asset specifically
-    retry_asset = project_assets[-1]  # This should be the retry asset
+    # Collect valid assets
+    project_assets = []
+    if target_seq_asset is not None:
+        project_assets.append(target_seq_asset)
+    if assess_seq_asset is not None:
+        project_assets.append(assess_seq_asset)
+    if archive_asset is not None:
+        project_assets.append(archive_asset)
+    if transcode_asset is not None:
+        project_assets.append(transcode_asset)
+    if validate_asset is not None:
+        project_assets.append(validate_asset)
+    if retry_asset is not None:
+        project_assets.append(retry_asset)
     
+    # Create process job for all assets
     process_job = dg.define_asset_job(
         name=f"{project_id}_process_job",
-        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets if asset is not None])
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
     )
     
-    # For retry_job with a single asset
+    # Create retry job if retry asset exists
+    jobs = [process_job]
     if retry_asset is not None:
         retry_job = dg.define_asset_job(
             name=f"{project_id}_retry_job",
             selection=dg.AssetSelection.assets(retry_asset.key)
         )
-    else:
-        # Create a fallback or empty job, or handle the absence of the retry asset
-        retry_job = dg.define_asset_job(
-            name=f"{project_id}_retry_job",
-            selection=dg.AssetSelection.assets()
-        )
+        jobs.append(retry_job)
+    
+    # Create sensor
+    sensors = []
+    retry_sensor = build_failed_encoding_retry_sensor(project_id)
+    if retry_sensor is not None:
+        sensors.append(retry_sensor)
     
     return dg.Definitions(
         assets=project_assets,
@@ -217,8 +199,8 @@ def build_project_definitions(project_id: str, cron_schedule: str):
             "database": resources.SQLiteResource(filepath=DATABASE),
             "process_pool": resources.process_pool.configured({"num_processes": 2})
         },
-        sensors=project_sensors,
-        jobs=[retry_job, process_job],
+        sensors=sensors,
+        jobs=jobs,
         schedules=[
             dg.ScheduleDefinition(
                 name=f"{project_id}_schedule",
@@ -227,6 +209,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
             )
         ]
     )
+
 
 # Pre-built project definitions for direct use
 project1_defs = build_project_definitions("TARGET1", "0 */2 * * *")
