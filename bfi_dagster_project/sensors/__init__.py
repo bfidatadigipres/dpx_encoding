@@ -1,6 +1,6 @@
 import dagster as dg
 from typing import Optional, List, Callable
-from ..assets.transcode_retry import reencode_failed_asset, build_reencode_failed_asset
+from ..assets.transcode_retry import reencode_failed_asset, build_transcode_retry_asset
 import datetime
 
 
@@ -10,7 +10,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
     '''
     
     # Get the appropriate asset based on prefix
-    asset = build_reencode_failed_asset(key_prefix) if key_prefix else reencode_failed_asset
+    asset = build_transcode_retry_asset(key_prefix) if key_prefix else reencode_failed_asset
     
     # Define the job with the appropriate asset / prefix
     job_name = f"{key_prefix}_backfill_failed_encodings_job" if key_prefix else "backfill_failed_encodings_job"
