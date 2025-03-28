@@ -12,12 +12,12 @@ def build_validation_asset(key_prefix: Optional[str] = None):
     '''
 
     # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "validate_output"]
+    asset_key = [key_prefix, "validate_output"]
     
     # Build the input assets with prefixes if needed
-    ffv1_input = "transcode_ffv1"
-    tar_input = "create_tar"
-    retry_input = "reencode_failed_asset"
+    ffv1_input = [key_prefix, "transcode_ffv1"]
+    tar_input = [key_prefix, "create_tar"]
+    retry_input = [key_prefix, "reencode_failed_asset"]
 
     @dg.asset(
         key=asset_key,
