@@ -34,7 +34,8 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         ParallelExecution, launch maximum of four parallel encodings.
         Update database if successfully encoded or failed.
         '''
-        context.log.info("Received new encoding data: %s", assessment)
+        log_prefix = f"[{key_prefix}] " if key_prefix else ""
+        context.log.info(f"{log_prefix}Received new encoding data: {assessment}")
         if not assessment['RAWcook']:
             context.log.info("No RAWcook sequences to process at this time.")
             return []
@@ -51,14 +52,45 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
             seq = data['sequence']
             arg = data["db_arguments"]
             entry = context.resources.database.append_to_database(context, seq, arg)
-            context.log.info(f"Written to Database: {entry}")
+            context.log.info(f"{log_prefix}Written to Database: {entry}")
             for log in data['logs']:
                 if 'WARNING' in log:
-                    context.log.warning(log)
+                    context.log.warning(f"{log_prefix}{log}")
                 else:
-                    context.log.info(log)
+                    context.log.info(f"{log_prefix}{log}")
 
-        return completed_files
+        # Validate in function
+        validation_tasks = [(folder.split('/')[-1],) for folder in completed_files]
+        results = context.resources.process_pool.map(ffv1_validate, validation_tasks)
+        validated_files = {
+            "valid": [r['sequence'] for r in results if r['success'] is not False],
+            "invalid": [r['sequence'] for r in results if r['success'] is False]
+        }
+        context.log.info(f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
+                        f"Invalid={len(validated_files['invalid'])}")
+
+        # Write data to log / db
+        for data in results:
+            seq = data['sequence']
+            args = data['db_arguments']
+            entry = context.resources.database.append_to_database(context, seq, args)
+            context.log.info(f"{log_prefix}Written to Database: {entry}")
+            for log in data['logs']:
+                if 'WARNING' in log:
+                    context.log.warning(f"{log_prefix} {log}")
+                else:
+                    context.log.info(f"{log_prefix} {log}")
+
+        return dg.Output(
+            value={
+                "validated_files": validated_files['valid'],
+                "invalid_files": validated_files['invalid']
+            },
+            metadata={
+                "successfully_complete": len(validated_files['valid']),
+                "failed_items": len(validated_files['invalid'])
+            }
+        )
     return transcode_ffv1
 
 
@@ -157,5 +189,114 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     }
 
 
-# Default asset without prefix for backward compatibility
-#transcode_asset = build_transcode_ffv1_asset()
+def ffv1_validate(fullpath):
+    '''
+    Run validation checks against TAR
+    '''
+    log_data = []
+    error_message = []
+
+    log_data.append(f"Received: {fullpath}")
+    spath = fullpath[0]
+    fname = os.path.basename(spath)
+    seq = fname.split('.')[0]
+    dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
+    log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
+    folder_size = utils.get_folder_size(dpath)
+    file_size = utils.get_folder_size(spath)
+    log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
+
+    log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
+
+    validation = True
+    if not os.path.isfile(spath):
+        log_data.append(f"WARNING: Filepath not found: {spath}")
+        validation = False
+        error_message = 'RAWcook file not found'
+
+    result = utils.mediaconch_mkv(spath)
+    if result[0] != "Pass":
+        log_data.append(result[1])
+        log_data.append(f"WARNING: MKV file failed Mediaconch policy: {result[-1]}")
+        validation = False
+        error_message = 'MKV policy failed, see validation log for details.'
+    log_data.append(f"MKV passed policy check: \n{result[1]}")
+
+    # Check log for success statement
+    success = utils.check_mkv_log(log)
+    if success is False:
+        validation = False
+        log_data.append("WARNING: MKV log file returned Error warning")
+        error_message = 'Error found in RAWcooked log'
+    log_data.append("Log for MKV passed checks")
+
+    # Run RAWcook check pass
+    success = utils.check_file(spath)
+    if success is False:
+        validation = False
+        log_data.append("WARNING: Matroska failed --check pass")
+        error_message = 'FFV1 MKV failed --check pass'
+    log_data.append("MKV file passed --check test")
+
+    # Check MKV not smaller than source folder
+    if file_size > folder_size:
+        log_data.append(f"WARNING: Directory size is not smaller that folder: {file_size} <= {folder_size}")
+        validation = False
+        error_message = 'MKV file larger than original folder size'
+
+    if validation is False:
+        # Move files/logs to failure path
+        log_data.append(f"WARNING: RAWcook MKV failed: {error_message}")
+        utils.move_to_failures(spath)
+        utils.move_to_failures(dpath)
+        for line in log_data:
+            utils.append_to_tar_log(log, line)
+        utils.move_log_to_dest(log, 'failures')
+
+        arguments = (
+            ['status', 'MKV validation failure'],
+            ['validation_success', 'False'],
+            ['validation_complete', str(datetime.datetime.today())[:19]],
+            ['error_message', error_message]
+        )
+        return {
+            "sequence": seq,
+            "success": validation,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
+    else:
+        # Move image sequence to_delete and delete
+        success = utils.delete_sequence(dpath)
+        seq_del = False
+        if success:
+            seq_del = True
+
+        # Move file to ingest
+        success = utils.move_to_autoingest(spath)
+        if not success:
+            auto_move = 'False'
+        else:
+            auto_move = 'True'
+
+        log_data.append("RAWcooked validation completed.")
+        for line in log_data:
+            utils.append_to_tar_log(log, line)
+        utils.move_log_to_dest(log, 'transcode_logs')
+
+        arguments = (
+            ['status', 'MKV validation complete'],
+            ['validation_complete', str(datetime.datetime.today())[:19]],
+            ['validation_success', 'True'],
+            ['error_message', 'None'],
+            ['sequence_deleted', str(seq_del)],
+            ['moved_to_autoingest', str(auto_move)]
+        )
+
+        return {
+            "sequence": seq,
+            "success": validation,
+            "db_arguments": arguments,
+            "logs": log_data
+        }

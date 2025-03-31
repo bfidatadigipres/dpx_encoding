@@ -35,11 +35,12 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
         image sequences to decide on encoding path. Updates database with results
         and passes RAWcook and TAR list to encoding assets.
         '''
+        log_prefix = f"[{key_prefix}] " if key_prefix else ""
         # Get folder_name from AssetIn
         if folder_list == []:
-            context.log.info("Run input is empty. Closing.")
+            context.log.info(f"{log_prefix}Run input is empty. Closing.")
             return {'ffmpeg': [], 'tar': [], 'invalid': []}
-        context.log.info("Folder list received: %s", folder_list)
+        context.log.info(f"{log_prefix}Folder list received: {folder_list}")
 
         # Change assessment status
         arg = (
@@ -47,9 +48,9 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
         )
         for folder in folder_list:
             seq = os.path.basename(folder)
-            context.log.info("Updating assessment started:\n%s", arg)
+            context.log.info(f"{log_prefix}Updating assessment started: {arg}")
             entry = context.resources.database.append_to_database(context, seq, arg)
-            context.log.info("Updated database status: Assessment started %s.", entry)
+            context.log.info(f"{log_prefix}Updated database status: Assessment started {entry}")
 
         results = context.resources.process_pool.map(run_assessment, folder_list)
         print(f"Pool map returned results: {results}")
@@ -74,12 +75,12 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
             seq_id = os.path.basename(item['sequence'])
             args = item['db_arguments']
             entry = context.resources.database.append_to_database(context, seq_id, args)
-            context.log.info("Updated database status: Assessment started %s.", entry)
+            context.log.info(f"{log_prefix}Updated database status: Assessment started {entry}")
             for log in item['logs']:
                 if 'WARNING' in str(log):
-                    context.log.warning(log)
+                    context.log.warning(f"{log_prefix}{log}")
                 else:
-                    context.log.info(log)
+                    context.log.info(f"{log_prefix}{log}")
 
         return assess_sequences
     return assess_sequence

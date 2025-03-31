@@ -2,6 +2,7 @@ import os
 import tarfile
 import datetime
 import dagster as dg
+from pathlib import Path
 from typing import List, Dict, Optional, Any
 from . import utils
 
@@ -39,17 +40,18 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
         tar file statement, updates database and passes list of TAR filepaths
         to the validation asset.
         '''
-        context.log.info("Received new encoding data: %s", assess_seqs)
+        log_prefix = f"[{key_prefix}] " if key_prefix else ""
+        context.log.info(f"{log_prefix}Received new encoding data: {assess_seqs}")
 
         if not assess_seqs['TAR']:
-            context.log.info("No TAR sequences to process at this time.")
+            context.log.info(f"{log_prefix}No TAR sequences to process at this time.")
             return []
 
         tar_tasks = [(folder,) for folder in assess_seqs['TAR']]
 
         results = context.resources.process_pool.map(tar_wrap, tar_tasks)
         completed_files = [r['path'] for r in results if r['success'] is not False]
-        context.log.info(f"Successfully completed {len(completed_files)} TAR archives: \n{results}")
+        context.log.info(f"{log_prefix}Successfully completed {len(completed_files)} TAR archives: \n{results}")
 
         success_list = []
         for data in results:
@@ -59,14 +61,45 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
                 success_list.append(data['path'])
             args = data['db_arguments']
             entry = context.resources.database.append_to_database(context, seq, args)
-            context.log.info(f"Written to Database: {entry}")
+            context.log.info(f"{log_prefix}Written to Database: {entry}")
             for log in data['logs']:
                 if 'WARNING' in log:
-                    context.log.warning(log)
+                    context.log.warning(f"{log_prefix} {log}")
                 else:
-                    context.log.info(log)
+                    context.log.info(f"{log_prefix} {log}")
 
-        return success_list
+        # Validate in function
+        validation_tasks = [(folder.split('/')[-1],) for folder in success_list]
+        results = context.resources.process_pool.map(tar_validate, validation_tasks)
+        validated_files = {
+            "valid": [r['sequence'] for r in results if r['success'] is not False],
+            "invalid": [r['sequence'] for r in results if r['success'] is False]
+        }
+        context.log.info(f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
+                        f"Invalid={len(validated_files['invalid'])}")
+
+        # Write data to log / db
+        for data in results:
+            seq = data['sequence']
+            args = data['db_arguments']
+            entry = context.resources.database.append_to_database(context, seq, args)
+            context.log.info(f"{log_prefix}Written to Database: {entry}")
+            for log in data['logs']:
+                if 'WARNING' in log:
+                    context.log.warning(f"{log_prefix} {log}")
+                else:
+                    context.log.info(f"{log_prefix} {log}")
+
+        return dg.Output(
+            value={
+                "validated_files": validated_files['valid'],
+                "invalid_files": validated_files['invalid']
+            },
+            metadata={
+                "successfully_complete": len(validated_files['valid']),
+                "failed_items": len(validated_files['invalid'])
+            }
+        )
     return create_tar
 
 
@@ -195,7 +228,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             "logs": log_data
         }
     else:
-        ##### This section needs test / import of adlib #####
+        ## This section needs test / import of adlib ##
         ob_num = utils.get_object_number(tar_source)
         priref, _, _ = utils.get_file_type(ob_num)
         log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
@@ -231,5 +264,71 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
-# Default asset without prefix for backward compatibility
-#archive_asset = build_archiving_asset()
+
+def tar_validate(fullpath):
+    '''
+    Run validation checks against TAR
+    '''
+    log_data = []
+    errors = []
+
+    log_data.append(f"Received: {fullpath}")
+    spath = fullpath[0]
+    fname = os.path.basename(spath)
+    seq = fname.split('.')[0]
+    dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
+    log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
+    folder_size = utils.get_folder_size(dpath)
+    file_size = utils.get_folder_size(spath)
+    log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
+
+    if fname.endswith('.tar'):
+        log = os.path.join(str(Path(spath).parents[1]), f'tar_wrapping/{seq}_tar_wrap.log')
+        validation = True
+        if not os.path.isfile(spath):
+            validation = False
+            log_data.append(f"Filepath supplied does not exist: {spath}")
+            errors.append('TAR file not found')
+
+        if file_size < folder_size:
+            validation = False
+            log_data.append("TAR file is smaller than source. Failing TAR file.")
+            errors.append('TAR file smaller than sequence')
+
+        diff = file_size - folder_size
+        if diff > 107374100:
+            validation = False
+            log_data.append(f"Size difference between source folder/TAR > 100MB. {diff} size - failing TAR.")
+            errors.append("TAR file over 100MB larger than sequence.")
+
+        # Check logs contain success statement
+        success = utils.check_tar_log(log)
+        if success is False:
+            validation = False
+            log_data.append("Logs contain error message, failing this TAR")
+            errors.append('Error message found in log')
+
+        if validation is False:
+            # Move files to failure path
+            log_data.append(utils.move_to_failures(spath))
+            log_data.append(utils.move_to_failures(dpath))
+
+            # Move log to failure
+            log_data.append("Error: TAR file smaller than original folder size...")
+            for line in log_data:
+                utils.append_to_tar_log(log, line)
+            utils.move_log_to_dest(log, 'failures')
+
+            arguments = (
+                ['status', 'TAR validation failure'],
+                ['validation_success', 'False'],
+                ['validation_complete', str(datetime.datetime.today())[:19]],
+                ['error_message', ', '.join(errors)]
+            )
+
+            return {
+                "sequence": seq,
+                "success": validation,
+                "db_arguments": arguments,
+                "logs": log_data
+            }
