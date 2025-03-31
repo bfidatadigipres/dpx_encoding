@@ -12,9 +12,9 @@ def build_validation_asset(key_prefix: Optional[str] = None):
     '''
     # Correct asset key
     if key_prefix:
-        asset_key = [key_prefix, "validate_output"]
+        asset_key = dg.AssetIn([key_prefix, "validate_output"])
     else:
-        asset_key = "validate_output"
+        asset_key = dg.AssetIn("validate_output")
     
     # Correct input keys with prefix
     ffv1_input = [key_prefix, "transcode_ffv1"] if key_prefix else "transcode_ffv1"  
