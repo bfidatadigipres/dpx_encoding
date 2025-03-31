@@ -22,6 +22,7 @@ def build_validation_asset(key_prefix: Optional[str] = None):
     retry_input = [key_prefix, "reencode_failed_asset"] if key_prefix else "reencode_failed_asset"
 
     @dg.asset(
+        deps=['transcode_ffv1', 'create_tar', 'reencode_failed_asset'],
         key=asset_key,
         ins={
             "ffv1_result": dg.AssetIn(ffv1_input),
