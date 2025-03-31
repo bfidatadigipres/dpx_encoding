@@ -17,16 +17,17 @@ def build_validation_asset(key_prefix: Optional[str] = None):
         asset_key = "validate_output"
     
     # Correct input keys with prefix
-    ffv1_input = dg.AssetIn([key_prefix, "transcode_ffv1"] if key_prefix else "transcode_ffv1")
-    tar_input = dg.AssetIn([key_prefix, "create_tar"] if key_prefix else "create_tar")
-    retry_input = dg.AssetIn([key_prefix, "reencode_failed_asset"] if key_prefix else "reencode_failed_asset")
+    ffv1_input = [key_prefix, "transcode_ffv1"] if key_prefix else "transcode_ffv1"  
+    tar_input = [key_prefix, "create_tar"] if key_prefix else "create_tar"
+    retry_input = [key_prefix, "reencode_failed_asset"] if key_prefix else "reencode_failed_asset"
 
     @dg.asset(
         key=asset_key,
         ins={
-            ffv1_input,
-            tar_input,
-            retry_input},
+            "ffv1_result": dg.AssetIn(ffv1_input),
+            "tar_result": dg.AssetIn(tar_input),
+            "ffv1_retry": dg.AssetIn(retry_input)
+        },
         required_resource_keys={'database', 'process_pool'}
     )
     def validate_output(
