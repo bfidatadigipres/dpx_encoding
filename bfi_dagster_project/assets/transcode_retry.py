@@ -30,17 +30,14 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
     )
     def reencode_failed_asset(
         context: dg.AssetExecutionContext,
-    ) -> dg.Output[List[str]]:
+    ) -> List[str]:
         '''
         Receive context op_config containting folder path for failed transcode
         attempt, retrieves database row data and begins re-encode attempt.
         List containing filepath is passed to validation asset.
         '''
         if not context.op_config.get('sequence'):
-            return dg.Output(
-                {'value': []},
-                {'metadata': 0}
-            )
+            return []
 
         fullpath = context.op_config.get('sequence')
         seq = os.path.basename(fullpath)
@@ -54,24 +51,15 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.info(fullpath, "==== Retry RAWcook encoding: %s ====", fullpath)
         if status != "Pending retry":
             context.log.error("Sequence not suitable for retry. Exiting.")
-            return dg.Output(
-                {'value': []},
-                {'metadata': 0}
-            )
+            return []
         context.log.info("Status indicates selected for retry successful")
         if choice != "RAWcook":
             context.log.error("Sequence not suitable for RAWcooked re-encoding. Exiting.")
-            return dg.Output(
-                {'value': []},
-                {'metadata': 0}
-            )
+            return []
         context.log.info("Encoding choice is RAWcooked")
         if not os.path.exists(fullpath):
             context.log.error(f"Failed to find path {fullpath}. Exiting.")
-            return dg.Output(
-                {'value': []},
-                {'metadata': 0}
-            )
+            return []
         context.log.info("File path identified: %s", fullpath)
 
         ffv1_path = os.path.join(str(Path(fullpath).parents[1]), f"ffv1_transcoding/{seq}.mkv")
@@ -98,10 +86,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             context.log.info(f"RAWcooked encoding failed. Updating database:\n{arguments}")
             entry = context.resources.database.append_to_database(context, seq, arguments)
             context.log.info(entry)
-            return dg.Output(
-                {'value': []},
-                {'metadata': 0}
-            )
+            return []
         context.log.info("RAWcooked encoding completed. Ready for validation checks")
         checksum_data = utils.get_checksum(ffv1_path)
         context.log.info("Checksum: %s", data[f"{seq}.mkv"])
@@ -115,10 +100,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.info("RAWcook completed successfully. Updating database:\n%s", arguments)
         entry = context.resources.database.append_to_database(context, seq, arguments)
         context.log.info(f"Row data written: {entry}")
-        return dg.Output(
-            {'value': [ffv1_path]},
-            {'metadata': 1}
-        )
+        return [ffv1_path]
     return reencode_failed_asset
 
 

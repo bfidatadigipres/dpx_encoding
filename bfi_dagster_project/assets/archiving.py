@@ -29,7 +29,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
     def create_tar(
         context: dg.AssetExecutionContext,
         assess_seqs: Dict[str, List[str]],
-    )  -> dg.Output[List[str]]:
+    )  -> List[str]:
         '''
         Receive dictionary of folder paths, selects those suitable for TAR wrap.
         Builds MD5 manifest of sequence contents, TAR wraps file then compares
@@ -41,10 +41,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
 
         if not assess_seqs['TAR']:
             context.log.info("No TAR sequences to process at this time.")
-            return dg.Output(
-                {'value': []},
-                {'metadata': 0}
-            )
+            return []
 
         tar_tasks = [(folder,) for folder in assess_seqs['TAR']]
 
@@ -67,10 +64,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
                 else:
                     context.log.info(log)
 
-        return dg.Output(
-            {'value': success_list},
-            {'metadata': len(completed_files)}
-        )
+        return success_list
     return create_tar
 
 
