@@ -27,7 +27,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
     def transcode_ffv1(
         context: dg.AssetExecutionContext,
         assessment: Dict[str, List[str]],
-    ) -> List[str]:
+    )  -> dg.Output[List[str]]:
         '''
         Receive AssetIn data from the assessment asset. Select RAWcook
         items, retrieve row information for file from database. Using
@@ -37,7 +37,10 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         context.log.info("Received new encoding data: %s", assessment)
         if not assessment['RAWcook']:
             context.log.info("No RAWcook sequences to process at this time.")
-            return []
+            return dg.Output(
+                {'value': []},
+                {'metadata': 0}
+            )
 
         # Create/execute parallel transcodes
         transcode_tasks = [(folder,) for folder in assessment['RAWcook']]
@@ -58,7 +61,10 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                 else:
                     context.log.info(log)
 
-        return completed_files
+        return dg.Output(
+            {'value': completed_files},
+            {'metadata': len(completed_files)}
+        )
     return transcode_ffv1
 
 

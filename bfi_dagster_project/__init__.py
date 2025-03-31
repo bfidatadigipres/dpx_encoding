@@ -48,15 +48,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     retry_asset = build_transcode_retry_asset(project_id)
     
     # Collect valid assets
-    project_assets = [
-        target_seq_asset,
-        assess_seq_asset,
-        archive_asset,
-        transcode_asset,
-        validate_asset,
-        retry_asset
-    ]
-    '''
+    project_assets = []
     if target_seq_asset is not None:
         project_assets.append(target_seq_asset)
     if assess_seq_asset is not None:
@@ -69,11 +61,11 @@ def build_project_definitions(project_id: str, cron_schedule: str):
         project_assets.append(validate_asset)
     if retry_asset is not None:
         project_assets.append(retry_asset)
-    '''
+
     # Create process job for all assets
     process_job = dg.define_asset_job(
         name=f"{project_id}_process_job",
-        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets if asset not None])
+        selection=dg.AssetSelection.assets(*[asset.key for asset in project_assets])
     )
     
     # Create retry job if retry asset exists
