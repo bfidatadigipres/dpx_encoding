@@ -158,4 +158,4 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
 
 
 # Default asset without prefix for backward compatibility
-transcode_asset = build_transcode_ffv1_asset()
+#transcode_asset = build_transcode_ffv1_asset()
