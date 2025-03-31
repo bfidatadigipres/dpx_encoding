@@ -288,4 +288,4 @@ def run_validate(fullpath):
 
 
 # Create the default validation asset (no prefix) for backward compatibility
-validate_output = build_validation_asset()
+validate_asset = build_validation_asset()
