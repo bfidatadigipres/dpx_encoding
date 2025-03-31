@@ -7,7 +7,7 @@ from .assets.get_sequences import build_target_sequences_asset
 from .assets.assessment import build_assess_sequence_asset
 from .assets.archiving import build_archiving_asset
 from .assets.transcoding import build_transcode_ffv1_asset
-from .assets.validation import build_validation_asset
+#from .assets.validation import build_validation_asset
 from .assets.transcode_retry import build_transcode_retry_asset
 
 # Sensor imports
@@ -44,7 +44,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     assess_seq_asset = build_assess_sequence_asset(project_id)
     archive_asset = build_archiving_asset(project_id)
     transcode_asset = build_transcode_ffv1_asset(project_id)
-    validate_asset = build_validation_asset(project_id)
+    #validate_asset = build_validation_asset(project_id)
     retry_asset = build_transcode_retry_asset(project_id)
     
     # Collect valid assets
@@ -57,8 +57,8 @@ def build_project_definitions(project_id: str, cron_schedule: str):
         project_assets.append(archive_asset)
     if transcode_asset is not None:
         project_assets.append(transcode_asset)
-    if validate_asset is not None:
-        project_assets.append(validate_asset)
+    #if validate_asset is not None:
+    #    project_assets.append(validate_asset)
     if retry_asset is not None:
         project_assets.append(retry_asset)
 
