@@ -250,3 +250,6 @@ def ffv1_validate(fullpath):
             "db_arguments": arguments,
             "logs": log_data
         }
+
+# Import note
+reencode_failed_asset = build_transcode_retry_asset()
