@@ -24,10 +24,9 @@ def build_validation_asset(key_prefix: Optional[str] = None):
     @dg.asset(
         key=asset_key,
         ins={
-            "ffv1_result": dg.AssetIn(ffv1_input),
-            "tar_result": dg.AssetIn(tar_input),
-            "ffv1_retry": dg.AssetIn(retry_input)
-        },
+            ffv1_input,
+            tar_input,
+            retry_input},
         required_resource_keys={'database', 'process_pool'}
     )
     def validate_output(
