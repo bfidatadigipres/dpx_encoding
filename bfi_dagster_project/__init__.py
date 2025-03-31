@@ -48,7 +48,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     retry_asset = build_transcode_retry_asset(project_id)
     
     # Collect valid assets
-    project_assets = []
+    project_assets = [validate_asset]
     if target_seq_asset is not None:
         project_assets.append(target_seq_asset)
     if assess_seq_asset is not None:
