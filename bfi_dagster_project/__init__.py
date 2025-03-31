@@ -57,10 +57,9 @@ def build_project_definitions(project_id: str, cron_schedule: str):
         project_assets.append(archive_asset)
     if transcode_asset is not None:
         project_assets.append(transcode_asset)
-    if validate_asset is not None:
-        project_assets.append(validate_asset)
     if retry_asset is not None:
         project_assets.append(retry_asset)
+    project_assets.append(validate_asset)
 
     # Create process job for all assets
     process_job = dg.define_asset_job(
