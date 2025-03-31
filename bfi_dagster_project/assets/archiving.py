@@ -17,8 +17,10 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
     # Build input keys with prefix if needed
     ins_dict = {}
     if key_prefix:
+        asset_key = [f"{key_prefix}", "create_tar"]
         ins_dict["assess_seqs"] = dg.AssetIn([f"{key_prefix}", "assess_sequence"])
     else:
+        asset_key = "create_tar"
         ins_dict["assess_seqs"] = dg.AssetIn("assess_sequence")
 
     @dg.asset(

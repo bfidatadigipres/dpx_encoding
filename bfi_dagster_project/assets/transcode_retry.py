@@ -12,7 +12,10 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
     '''
 
     # Build the asset key with optional prefix
-    asset_key = [f"{key_prefix}", "reencode_failed_asset"]
+    if key_prefix:
+        asset_key = [f"{key_prefix}", "reencode_failed_asset"]
+    else:
+        asset_key = "reencode_failed_asset"
     
     # Define config schema
     config_schema = {

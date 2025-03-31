@@ -65,7 +65,9 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     if not project_assets:
         raise ValueError(f"No valid assets found for project {project_id}")
 
-    print("All asset keys:", [a.key.to_user_string() for a in project_assets])
+    print("\n=== Final Project Assets ===")
+    for asset in project_assets:
+        print(f" - {asset.key}")
 
     # Create process job for all assets
     process_job = dg.define_asset_job(
