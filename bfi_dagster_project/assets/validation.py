@@ -17,9 +17,9 @@ def build_validation_asset(key_prefix: Optional[str] = None):
         asset_key = "validate_output"
     
     # Correct input keys with prefix
-    ffv1_input = [key_prefix, "transcode_ffv1"] if key_prefix else ["transcode_ffv1"]
-    tar_input = [key_prefix, "create_tar"] if key_prefix else ["create_tar"]
-    retry_input = [key_prefix, "reencode_failed_asset"] if key_prefix else ["reencode_failed_asset"]
+    ffv1_input = [key_prefix, "transcode_ffv1"] if key_prefix else "transcode_ffv1"  
+    tar_input = [key_prefix, "create_tar"] if key_prefix else "create_tar"
+    retry_input = [key_prefix, "reencode_failed_asset"] if key_prefix else "reencode_failed_asset"
 
     @dg.asset(
         key=asset_key,

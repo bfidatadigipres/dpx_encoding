@@ -236,4 +236,4 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         }
 
 # Default asset without prefix for backward compatibility
-create_tar = build_archiving_asset()
+archive_asset = build_archiving_asset()
