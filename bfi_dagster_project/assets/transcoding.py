@@ -41,7 +41,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
             return []
 
         # Create/execute parallel transcodes
-        context.log.info(f"{log_prefix}Launcing RAWcooked multiprocessing encoding:\n{transcode_tasks}")
+        context.log.info(f"{log_prefix}Launcing RAWcooked multiprocessing encoding")
         transcode_tasks = [(folder,) for folder in assessment['RAWcook']]
         results = context.resources.process_pool.map(transcode, transcode_tasks)
 
