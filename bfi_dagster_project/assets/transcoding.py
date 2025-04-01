@@ -150,7 +150,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "&>>", f"{log_path}"
         ]
 
-    log_data(f"Calling RAWcooked with command: {' '.join(cmd)}")
+    log_data.append(f"Calling RAWcooked with command: {' '.join(cmd)}")
     try:
         subprocess.run(cmd, shell=False, check=True)
     except subprocess.CalledProcessError as err:
