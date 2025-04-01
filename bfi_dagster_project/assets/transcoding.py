@@ -60,6 +60,13 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                     context.log.info(f"{log_prefix}{log}")
 
         # Validate in function
+        if not completed_files:
+            return dg.Output(
+                value={[]},
+                metadata={
+                    "successfully_complete": '0'
+                })
+
         validation_tasks = [(folder.split('/')[-1],) for folder in completed_files]
         results = context.resources.process_pool.map(ffv1_validate, validation_tasks)
         validated_files = {
@@ -143,6 +150,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         ]
 
     try:
+        log_data(f"Calling RAWcooked with command: {cmd}")
         subprocess.run(" ".join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
