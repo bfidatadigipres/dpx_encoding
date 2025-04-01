@@ -312,7 +312,8 @@ def get_file_type(
         ob_num = '-'.join(seq.split('_')[:3])
 
     search = f'object_number={ob_num}'
-    rec = ad.retrieve_record(CID_API, 'items', search, '1', ['priref', 'file_type', 'reproduction.reference'])
+    rec = ad.retrieve_record(CID_API, 'items', search, '1', ['priref', 'file_type', 'reproduction.reference'])[-1]
+    print(rec)
     ftype = ad.retrieve_field_name(rec[0], 'file_type')
     priref = ad.retrieve_field_name(rec[0], 'priref')
     repro_ref = ad.retrieve_field_name(rec[0], 'reproduction.reference')
