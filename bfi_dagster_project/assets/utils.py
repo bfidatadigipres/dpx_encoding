@@ -313,9 +313,10 @@ def get_file_type(
     print(hits, rec)
     if rec is None:
         return None, None, None
-    ftype = ad.retrieve_field_name(rec[0], 'file_type')
-    priref = ad.retrieve_field_name(rec[0], 'priref')
-    repro_ref = ad.retrieve_field_name(rec[0], 'reproduction.reference')
+
+    ftype = ad.retrieve_field_name(rec[0], 'file_type')[0]
+    priref = ad.retrieve_field_name(rec[0], 'priref')[0]
+    repro_ref = ad.retrieve_field_name(rec[0], 'reproduction.reference')[0]
 
     return priref, ftype, repro_ref
 
