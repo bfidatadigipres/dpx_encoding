@@ -20,7 +20,8 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
         and hand list of folderpaths to assessment asset.
         '''
         target_automation = context.resources.source_path
-        tpath = dg.EnvVar(f"{target_automation}")
+        print(target_automation)
+        tpath = dg.EnvVar(target_automation)
         print(tpath)
         target = os.path.join(tpath, 'image_sequence_processing/')
         if not os.path.exists(target):
