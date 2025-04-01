@@ -85,9 +85,9 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
             context.log.info(f"{log_prefix}Written to Database: {entry}")
             for log in data['logs']:
                 if 'WARNING' in log:
-                    context.log.warning(f"{log_prefix} {log}")
+                    context.log.warning(f"{log_prefix}{log}")
                 else:
-                    context.log.info(f"{log_prefix} {log}")
+                    context.log.info(f"{log_prefix}{log}")
 
         return dg.Output(
             value={
@@ -139,7 +139,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "--output-version", "2",
             "-s", "5281680", f"{fullpath[0]}",
             "-o", f"{ffv1_path}",
-            "&>>", f"{log_path}"
+            "--log-name", f"{log_path}"
         ]
     else:
         cmd = [
@@ -147,7 +147,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "--no-accept-gaps",
             "-s", "5281680", f"{fullpath[0]}",
             "-o", f"{ffv1_path}",
-            "&>>", f"{log_path}"
+            "--log-name", f"{log_path}"
         ]
 
     log_data.append(f"Calling RAWcooked with command: {' '.join(cmd)}")
