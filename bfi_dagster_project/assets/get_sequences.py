@@ -20,10 +20,10 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
         and hand list of folderpaths to assessment asset.
         '''
         target_automation = context.resources.source_path
-        target = os.path.join(target_automation, 'image_sequence_processing/')
+        target = os.path.join(os.environ.get(target_automation), 'image_sequence_processing/')
         if not os.path.exists(target):
             context.log.info("Unable to access target_path: %s", target)
-            return None
+            return ['']
         seq_supply = os.path.join(target, "processing")
 
         context.resources.database.initialise_db(context)
