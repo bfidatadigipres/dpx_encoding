@@ -41,6 +41,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
             return []
 
         # Create/execute parallel transcodes
+        context.log.info(f"{log_prefix}Launcing RAWcooked multiprocessing encoding:\n{transcode_tasks}")
         transcode_tasks = [(folder,) for folder in assessment['RAWcook']]
         results = context.resources.process_pool.map(transcode, transcode_tasks)
 
@@ -149,9 +150,9 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "&>>", f"{log_path}"
         ]
 
+    log_data(f"Calling RAWcooked with command: {' '.join(cmd)}")
     try:
-        log_data(f"Calling RAWcooked with command: {cmd}")
-        subprocess.run(" ".join(cmd), shell=True, check=True)
+        subprocess.run(cmd, shell=False, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err
