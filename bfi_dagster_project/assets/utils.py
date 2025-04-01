@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Dict, Optional, Final
 
 # Local library
-sys.path.append(os.environ['CODE'])
+sys.path.append(os.environ.get('CODE'))
 import adlib_v3 as ad
 
 # Import paths
@@ -305,12 +305,8 @@ def get_file_type(
     Call up CID with fname
     and check item file-type
     '''
-    f = seq.split('_')
-    if len(f) == 3:
-        ob_num = '-'.join(seq.split('_')[:2])
-    elif len(f) == 4:
-        ob_num = '-'.join(seq.split('_')[:3])
-
+    print(CID_API)
+    ob_num = get_object_number(seq)
     search = f'object_number={ob_num}'
     print(search)
     rec = ad.retrieve_record(CID_API, 'items', search, '1', ['priref', 'file_type', 'reproduction.reference'])[-1]
