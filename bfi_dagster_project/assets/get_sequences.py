@@ -21,7 +21,7 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
         '''
         target_automation = context.resources.source_path
         print(target_automation)
-        tpath = dg.EnvVar(target_automation)
+        tpath = dg.EnvVar(target_automation).get_value()
         print(tpath)
         target = os.path.join(tpath, 'image_sequence_processing/')
         if not os.path.exists(target):

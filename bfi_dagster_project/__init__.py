@@ -17,8 +17,8 @@ from .sensors import build_failed_encoding_retry_sensor
 from . import resources
 
 # Global environment variables
-DATABASE = dg.EnvVar("DATABASE")
-CID_MEDIAINFO = dg.EnvVar("CID_MEDIAINFO")
+DATABASE = dg.EnvVar("DATABASE").get_value()
+CID_MEDIAINFO = dg.EnvVar("CID_MEDIAINFO").get_value()
 
 
 def validate_env_vars():
@@ -26,7 +26,7 @@ def validate_env_vars():
     Check that required environment variables are defined
     '''
     required_vars = ["DATABASE", "CID_MEDIAINFO", "TARGET1", "TARGET2", "TARGET3"]
-    missing = [var for var in required_vars if not dg.EnvVar(var)]
+    missing = [var for var in required_vars if not dg.EnvVar(var).get_value()]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
     
@@ -89,7 +89,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
     return dg.Definitions(
         assets=project_assets,
         resources={
-            "source_path": dg.EnvVar(project_id),
+            "source_path": dg.EnvVar(project_id).get_value(),
             "database": resources.SQLiteResource(filepath=DATABASE),
             "process_pool": resources.process_pool.configured({"num_processes": 2})
         },
