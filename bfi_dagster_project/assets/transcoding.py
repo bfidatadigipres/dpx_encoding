@@ -62,7 +62,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         # Validate in function
         if not completed_files:
             return dg.Output(
-                value={[]},
+                value={},
                 metadata={
                     "successfully_complete": '0'
                 })

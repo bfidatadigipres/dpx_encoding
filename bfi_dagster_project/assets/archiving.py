@@ -69,6 +69,13 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
                     context.log.info(f"{log_prefix} {log}")
 
         # Validate in function
+        if success_list is None:
+            return dg.Output(
+                value={},
+                metadata={
+                    "successfully_complete": '0'
+                }
+            )
         validation_tasks = [(folder,) for folder in success_list]
         results = context.resources.process_pool.map(tar_validate, validation_tasks)
         validated_files = {
