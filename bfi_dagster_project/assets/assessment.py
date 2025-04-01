@@ -124,7 +124,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
-    _priref, ftype, repro_ref = utils.get_file_type(seq)
+    _priref, ftype, rec = utils.get_file_type(seq)
     if _priref is None or ftype is None:
         log_data.append(f"WARNING: Unable to match sequence to CID Item record {seq}")
         arguments = (
@@ -138,20 +138,19 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
-    elif len(repro_ref) > 0:
-        if seq in str(repro_ref):
-            log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {repro_ref}")
-            arguments = (
-                ['status', 'Assessment failed'],
-                ['error_message', f'Digital file ingested for this CID item already: {repro_ref}']
-            )
-            return {
-                "sequence": image_sequence,
-                "success": False,
-                "encoding_choice": None,
-                "db_arguments": arguments,
-                "logs": log_data
-            }
+    elif seq in str(rec) > 0:
+        log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {repro_ref}")
+        arguments = (
+            ['status', 'Assessment failed'],
+            ['error_message', f'Digital file ingested for this CID item already: {repro_ref}']
+        )
+        return {
+            "sequence": image_sequence,
+            "success": False,
+            "encoding_choice": None,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
     if ftype.lower() not in ['tif', 'tiff', 'dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (
