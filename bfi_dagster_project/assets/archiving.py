@@ -69,7 +69,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
                     context.log.info(f"{log_prefix} {log}")
 
         # Validate in function
-        validation_tasks = [(folder.split('/')[-1],) for folder in success_list]
+        validation_tasks = [(folder,) for folder in success_list]
         results = context.resources.process_pool.map(tar_validate, validation_tasks)
         validated_files = {
             "valid": [r['sequence'] for r in results if r['success'] is not False],
