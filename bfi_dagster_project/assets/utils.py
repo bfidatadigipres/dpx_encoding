@@ -317,7 +317,7 @@ def get_file_type(
     ftype = ad.retrieve_field_name(rec[0], 'file_type')[0]
     priref = ad.retrieve_field_name(rec[0], 'priref')[0]
     repro_ref = ad.retrieve_field_name(rec[0], 'reproduction.reference')[0]
-
+    print(priref, ftype, repro_ref)
     return priref, ftype, repro_ref
 
 

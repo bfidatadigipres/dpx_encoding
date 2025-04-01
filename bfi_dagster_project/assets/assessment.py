@@ -125,7 +125,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         }
 
     _priref, ftype, repro_ref = utils.get_file_type(seq)
-    if _priref is None:
+    if _priref is None or ftype is None:
         log_data.append(f"WARNING: Unable to match sequence to CID Item record {seq}")
         arguments = (
             ['status', 'Assessment failed'],
@@ -152,7 +152,6 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
                 "db_arguments": arguments,
                 "logs": log_data
             }
-
     if ftype.lower() not in ['tif', 'tiff', 'dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (
