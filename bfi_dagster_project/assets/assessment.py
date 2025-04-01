@@ -52,6 +52,7 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
             entry = context.resources.database.append_to_database(context, seq, arg)
             context.log.info(f"{log_prefix}Updated database status: Assessment started {entry}")
 
+        context.log.info(f"{log_prefix}Launching run assessment {seq}, mediaconch checks and metadata generation...")
         results = context.resources.process_pool.map(run_assessment, folder_list)
         print(f"Pool map returned results: {results}")
 
