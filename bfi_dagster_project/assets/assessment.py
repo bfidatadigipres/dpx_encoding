@@ -124,7 +124,21 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
-    _, ftype, repro_ref = utils.get_file_type(seq)
+    _priref, ftype, repro_ref = utils.get_file_type(seq)
+    if _priref is None:
+        log_data.append(f"WARNING: Unable to match sequence to CID Item record {seq}")
+        arguments = (
+            ['status', 'Assessment failed'],
+            ['error_message', f'Could not match sequence to CID item record: {seq}']
+        )
+        return {
+            "sequence": image_sequence,
+            "success": False,
+            "encoding_choice": None,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
     if len(repro_ref) > 0:
         if seq in str(repro_ref):
             log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {repro_ref}")
