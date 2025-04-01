@@ -129,17 +129,17 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "rawcooked", "-y", "--all",
             "--no-accept-gaps",
             "--output-version", "2",
-            "-s", "5281680", fullpath[0],
-            "-o", ffv1_path,
-            "&>>", log_path
+            "-s", "5281680", f"{fullpath[0]}",
+            "-o", f"{ffv1_path}",
+            "&>>", f"{log_path}"
         ]
     else:
         cmd = [
             "rawcooked", "-y", "--all",
             "--no-accept-gaps",
-            "-s", "5281680", fullpath[0],
-            "-o", ffv1_path,
-            "&>>", log_path
+            "-s", "5281680", f"{fullpath[0]}",
+            "-o", f"{ffv1_path}",
+            "&>>", f"{log_path}"
         ]
 
     try:
