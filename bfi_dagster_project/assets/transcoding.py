@@ -130,20 +130,20 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "--no-accept-gaps",
             "--output-version", "2",
             "-s", "5281680", fullpath[0],
-            "--output-name", ffv1_path,
-            "&>", log_path
+            "-o", ffv1_path,
+            "&>>", log_path
         ]
     else:
         cmd = [
             "rawcooked", "-y", "--all",
             "--no-accept-gaps",
             "-s", "5281680", fullpath[0],
-            "--output-name", ffv1_path,
-            "&>", log_path
+            "-o", ffv1_path,
+            "&>>", log_path
         ]
 
     try:
-        subprocess.run(" ".join(cmd), shell=True, check=True, timeout=300)
+        subprocess.run(" ".join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err
