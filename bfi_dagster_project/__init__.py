@@ -26,7 +26,7 @@ def validate_env_vars():
     Check that required environment variables are defined
     '''
     required_vars = ["DATABASE", "CID_MEDIAINFO", "TARGET1", "TARGET2", "TARGET3"]
-    missing = [var for var in required_vars if not dg.EnvVar(var).get_value()]
+    missing = [var for var in required_vars if not dg.EnvVar(var)]
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
     
