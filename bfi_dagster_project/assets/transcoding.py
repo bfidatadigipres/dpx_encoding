@@ -67,7 +67,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                     "successfully_complete": '0'
                 })
 
-        validation_tasks = [(folder.split('/')[-1],) for folder in completed_files]
+        validation_tasks = [(folder,) for folder in completed_files]
         results = context.resources.process_pool.map(ffv1_validate, validation_tasks)
         validated_files = {
             "valid": [r['sequence'] for r in results if r['success'] is not False],
