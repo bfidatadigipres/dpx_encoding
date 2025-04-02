@@ -88,7 +88,7 @@ def get_metadata(
         dpath
     ]
 
-    meta = subprocess.check_output(cmd)
+    meta = subprocess.run(cmd, shell=False, check=True)
     return meta.decode('utf-8').rstrip('\n')
 
 
@@ -192,8 +192,8 @@ def mediaconch(
     ]
 
     try:
-        result = subprocess.check_output(' '.join(cmd), shell=True).decode()
-        if str(result).startswith("pass!"):
+        result = subprocess.check_output(cmd, shell=False).decode()
+        if str(result).startswith(f"pass! {ipath}"):
             return ['Pass', str(result)]
         else:
             return ['Fail', str(result)]
@@ -215,8 +215,8 @@ def mediaconch_mkv(
     ]
 
     try:
-        result = subprocess.check_output(' '.join(cmd), shell=True).decode()
-        if str(result).startswith("pass!"):
+        result = subprocess.check_output(cmd, shell=False).decode()
+        if str(result).startswith("pass! {dpath}"):
             return ['Pass', result]
         return 'Fail', result
     except Exception as err:
@@ -761,7 +761,7 @@ def check_file(
         "&>", log
     ]
     try:
-        subprocess.run(' '.join(cmd), shell=True, check=True)
+        subprocess.run(cmd, shell=False, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err

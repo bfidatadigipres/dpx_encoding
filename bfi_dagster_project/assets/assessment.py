@@ -140,10 +140,10 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
     elif seq in str(rec) > 0:
-        log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {repro_ref}")
+        log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {rec}")
         arguments = (
             ['status', 'Assessment failed'],
-            ['error_message', f'Digital file ingested for this CID item already: {repro_ref}']
+            ['error_message', f'Digital file ingested for this CID item already: {rec}']
         )
         return {
             "sequence": image_sequence,

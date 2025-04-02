@@ -139,7 +139,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "--output-version", "2",
             "-s", "5281680", f"{fullpath[0]}",
             "-o", f"{ffv1_path}",
-            "--log-name", f"{log_path}"
+            ">>", f"{log_path}", "2>&1"
         ]
     else:
         cmd = [
@@ -147,12 +147,12 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "--no-accept-gaps",
             "-s", "5281680", f"{fullpath[0]}",
             "-o", f"{ffv1_path}",
-            "--log-name", f"{log_path}"
+            ">>", f"{log_path}", "2>&1"
         ]
 
     log_data.append(f"Calling RAWcooked with command: {' '.join(cmd)}")
     try:
-        subprocess.run(cmd, shell=False, check=True)
+        subprocess.run(" ".join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err
