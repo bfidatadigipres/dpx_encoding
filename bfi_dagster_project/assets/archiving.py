@@ -347,14 +347,14 @@ def tar_validate(fullpath):
             seq_del = False
             if success:
                 seq_del = True
-
+            '''
             # Move file to ingest
             success = utils.move_to_autoingest(spath)
             if not success:
                 auto_move = False
             else:
                 auto_move = True
-            '''
+
             seq_del = "Turned off for test"
             auto_move = "Turned off for test"
             log_data.append("TAR wrap validation completed successfully.")

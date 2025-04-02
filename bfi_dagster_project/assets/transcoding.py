@@ -286,12 +286,11 @@ def ffv1_validate(fullpath):
             seq_del = True
 
         # Move file to ingest
-        # success = utils.move_to_autoingest(spath)
-        # if not success:
-        #    auto_move = 'False'
-        # else:
-        #    auto_move = 'True'
-        auto_move = 'No move in test'
+        success = utils.move_to_autoingest(spath)
+        if not success:
+           auto_move = 'False'
+        else:
+           auto_move = 'True'
         log_data.append("RAWcooked validation completed.")
         for line in log_data:
             utils.append_to_log(log, line)
