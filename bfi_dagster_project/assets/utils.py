@@ -204,7 +204,7 @@ def mediaconch(
 
 def mediaconch_mkv(
     dpath: str
-) -> tuple[str, str]:
+) -> List:
     '''
     Check FFV1 MKV against policy
     '''
@@ -215,10 +215,10 @@ def mediaconch_mkv(
     ]
 
     try:
-        result = subprocess.check_output(" ".join(cmd), shell=True).decode()
+        result = subprocess.check_output(cmd, shell=False).decode()
         if str(result).startswith(f"pass! {dpath}"):
             return ['Pass', result]
-        return 'Fail', result
+        return ['Fail', result]
     except Exception as err:
         print(err)
         raise

@@ -32,7 +32,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
     def create_tar(
         context: dg.AssetExecutionContext,
         assess_seqs: Dict[str, List[str]],
-    )  -> List[str]:
+    )  -> dg.Output:
         '''
         Receive dictionary of folder paths, selects those suitable for TAR wrap.
         Builds MD5 manifest of sequence contents, TAR wraps file then compares
