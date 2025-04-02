@@ -495,8 +495,8 @@ def tar_item(
     '''
 
     fpath, fname = os.path.split(fullpath)
-    local_log = os.path.join(fpath, f'{fname}_tar_wrap.log')
     tar_path = os.path.join(str(Path(fpath).parents[0]), f'tar_wrapping/{fname}.tar')
+    local_log = os.path.join(tar_path, f'{fname}_tar_wrap.log')
     if os.path.exists(tar_path):
         append_to_tar_log(local_log, "Exiting. File already exists: {tar_path}")
         return None
