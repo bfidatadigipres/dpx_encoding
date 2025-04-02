@@ -498,7 +498,7 @@ def tar_item(
     tar_path = os.path.join(str(Path(fpath).parents[0]), f'tar_wrapping/{fname}.tar')
     local_log = os.path.join(tar_path, f'{fname}_tar_wrap.log')
     if os.path.exists(tar_path):
-        append_to_tar_log(local_log, "Exiting. File already exists: {tar_path}")
+        append_to_log(local_log, "Exiting. File already exists: {tar_path}")
         return None
 
     try:
@@ -508,7 +508,7 @@ def tar_item(
         return tar_path
 
     except Exception as exc:
-        append_to_tar_log(local_log, f"ERROR TARRING FILE: {exc}")
+        append_to_log(local_log, f"ERROR TARRING FILE: {exc}")
         tarring.close()
         return None
 
@@ -613,7 +613,7 @@ def md5_hash(
         return None
 
 
-def append_to_tar_log(
+def append_to_log(
     local_log: str,
     data: str
 ) -> None:

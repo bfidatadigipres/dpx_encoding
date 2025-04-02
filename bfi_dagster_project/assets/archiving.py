@@ -149,13 +149,13 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
     log_data.append(f"Local MD5 manifest created: {local_md5}")
 
     # Tar folder creation
-    utils.append_to_tar_log(local_log, f"Beginning TAR wrap now... {fullpath[0]}")
+    utils.append_to_log(local_log, f"Beginning TAR wrap now... {fullpath[0]}")
     log_data.append("Beginning TAR wrap now")
     tar_path = utils.tar_item(fullpath[0])
     log_data.append("TAR wrap completed")
     if tar_path is None:
         log_data.append("TAR wrap FAILED! See local logs for details.")
-        utils.append_to_tar_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
+        utils.append_to_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
         arguments = (
             ['status', 'TAR failure'],
             ['error_message', 'TAR wrap failed to archive sequence']
@@ -169,18 +169,18 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         }
 
     # Print checksums for local / create and print for TAR log
-    utils.append_to_tar_log(local_log, "Checksums for local files (excluding images):")
+    utils.append_to_log(local_log, "Checksums for local files (excluding images):")
     for key, val in local_md5.items():
         if not key.lower().endswith(('.dpx', '.tif', '.tiff', '.jp2', '.j2k', '.jpf', '.jpm', '.jpg2', '.j2c', '.jpc', '.jpx', '.mj2')):
             data = f"{val} -- {key}"
-            utils.append_to_tar_log(local_log, f"\t{data}")
+            utils.append_to_log(local_log, f"\t{data}")
     tar_content_md5 = utils.get_checksums(tar_path, tar_source)
-    utils.append_to_tar_log(local_log, "Checksums for TAR wrapped contents (excluding images):")
+    utils.append_to_log(local_log, "Checksums for TAR wrapped contents (excluding images):")
     log_data.append("TAR MD5 manifest created (MD5s excluding images):")
     for key, val in tar_content_md5.items():
         if not key.lower().endswith(('.dpx', '.tif', '.tiff', '.jp2', '.j2k', '.jpf', '.jpm', '.jpg2', '.j2c', '.jpc', '.jpx', '.mj2')):
             data = f"{val} -- {key}"
-            utils.append_to_tar_log(local_log, f"\t{data}")
+            utils.append_to_log(local_log, f"\t{data}")
             log_data.append(data)
 
     # Compare manifests
@@ -216,7 +216,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
 
     else:
         log_data.append("MD5 checksum manifests did not match. Moving to failures")
-        utils.append_to_tar_log(local_log, "Checksum mismatch between TAR and source sequence. Moving to failures/")
+        utils.append_to_log(local_log, "Checksum mismatch between TAR and source sequence. Moving to failures/")
         log_data.append(utils.move_to_failures(fullpath[0]))
         log_data.append(utils.move_to_failures(tar_path))
         arguments = (
@@ -226,7 +226,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         tar_fail = True
 
     if tar_fail is True:
-        utils.append_to_tar_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
+        utils.append_to_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
         return {
             "sequence": tar_source,
             "success": False,
@@ -239,13 +239,13 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         priref, _, _ = utils.get_file_type(tar_source)
         log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
         if not priref:
-            utils.append_to_tar_log(local_log, f"Cannot find Priref associated with file: {tar_file}. Please add manually.")
+            utils.append_to_log(local_log, f"Cannot find Priref associated with file: {tar_file}. Please add manually.")
         if len(priref) > 0:
-            utils.append_to_tar_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
+            utils.append_to_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
             tar_file = os.path.basename(tar_path)
             # success = utils.write_to_cid(priref, tar_file)
             #if not success:
-            #    utils.append_to_tar_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
+            #    utils.append_to_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
 
         # Get complete size of file following TAR wrap
         file_stats = os.stat(tar_path)
@@ -261,7 +261,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
             ['encoding_retry', '0']
         )
 
-        utils.append_to_tar_log(local_log, f"TAR wrap completed successfully. Updating database:\n{arguments}\n")
+        utils.append_to_log(local_log, f"TAR wrap completed successfully. Updating database:\n{arguments}\n")
         log_data.append(f"==== Log actions complete: {fullpath[0]} ====")
 
         return {
@@ -324,7 +324,7 @@ def tar_validate(fullpath):
             # Move log to failure
             log_data.append("Error: TAR file smaller than original folder size...")
             for line in log_data:
-                utils.append_to_tar_log(log, line)
+                utils.append_to_log(log, line)
             utils.move_log_to_dest(log, 'failures')
 
             arguments = (
@@ -359,7 +359,7 @@ def tar_validate(fullpath):
             auto_move = "Turned off for test"
             log_data.append("TAR wrap validation completed successfully.")
             for line in log_data:
-                utils.append_to_tar_log(log, line)
+                utils.append_to_log(log, line)
             utils.move_log_to_dest(log, 'tar_logs')
 
             arguments = (

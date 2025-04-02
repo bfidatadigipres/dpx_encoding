@@ -234,6 +234,7 @@ def ffv1_validate(fullpath):
     log_data.append(f"MKV passed policy check: \n{result[1]}")
 
     # Check log for success statement
+    log = f"{fullpath}.txt"
     success = utils.check_mkv_log(log)
     if success is False:
         validation = False
@@ -261,7 +262,7 @@ def ffv1_validate(fullpath):
         utils.move_to_failures(spath)
         utils.move_to_failures(dpath)
         for line in log_data:
-            utils.append_to_tar_log(log, line)
+            utils.append_to_log(log, line)
         utils.move_log_to_dest(log, 'failures')
 
         arguments = (
@@ -293,7 +294,7 @@ def ffv1_validate(fullpath):
         auto_move = 'No move in test'
         log_data.append("RAWcooked validation completed.")
         for line in log_data:
-            utils.append_to_tar_log(log, line)
+            utils.append_to_log(log, line)
         utils.move_log_to_dest(log, 'transcode_logs')
 
         arguments = (
