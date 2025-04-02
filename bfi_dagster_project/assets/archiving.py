@@ -236,9 +236,10 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         }
     else:
         ## This section needs test / import of adlib ##
-        ob_num = utils.get_object_number(tar_source)
-        priref, _, _ = utils.get_file_type(ob_num)
+        priref, _, _ = utils.get_file_type(tar_source)
         log_data.append("TAR wrap completed successfully. Updating CID item record with TAR wrap method")
+        if not priref:
+            utils.append_to_tar_log(local_log, f"Cannot find Priref associated with file: {tar_file}. Please add manually.")
         if len(priref) > 0:
             utils.append_to_tar_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
             tar_file = os.path.basename(tar_path)

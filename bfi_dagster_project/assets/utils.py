@@ -215,7 +215,7 @@ def mediaconch_mkv(
     ]
 
     try:
-        result = subprocess.check_output(cmd, shell=False).decode()
+        result = subprocess.check_output(" ".join(cmd), shell=True).decode()
         if str(result).startswith(f"pass! {dpath}"):
             return ['Pass', result]
         return 'Fail', result
