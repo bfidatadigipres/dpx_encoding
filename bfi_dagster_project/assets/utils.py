@@ -88,7 +88,7 @@ def get_metadata(
         dpath
     ]
 
-    meta = subprocess.run(cmd, shell=False, check=True)
+    meta = subprocess.check_output(cmd)
     return meta.decode('utf-8').rstrip('\n')
 
 
@@ -761,7 +761,7 @@ def check_file(
         "&>", log
     ]
     try:
-        subprocess.run(cmd, shell=False, check=True)
+        subprocess.run(" ".join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err
