@@ -183,6 +183,8 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     arguments = (
         ['status', 'RAWcook completed'],
         ['encoding_complete', str(datetime.datetime.today())[:19]],
+        ['encoding_retry', 0],
+        ['encoding_log', log_path]
         ['derivative_path', ffv1_path],
         ['derivative_size', utils.get_folder_size(ffv1_path)],
         ['derivative_md5', checksum_data]
