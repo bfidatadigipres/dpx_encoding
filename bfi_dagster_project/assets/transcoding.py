@@ -27,7 +27,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
     def transcode_ffv1(
         context: dg.AssetExecutionContext,
         assessment: Dict[str, List[str]],
-    )  -> List[str]:
+    )  -> dg.Output:
         '''
         Receive AssetIn data from the assessment asset. Select RAWcook
         items, retrieve row information for file from database. Using
