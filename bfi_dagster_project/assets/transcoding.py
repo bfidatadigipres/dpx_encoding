@@ -234,7 +234,7 @@ def ffv1_validate(fullpath):
     log_data.append(f"MKV passed policy check: \n{result[1]}")
 
     # Check log for success statement
-    log = f"{fullpath}.txt"
+    log = f"{fullpath[0]}.txt"
     success = utils.check_mkv_log(log)
     if success is False:
         validation = False

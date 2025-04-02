@@ -457,7 +457,8 @@ def move_to_autoingest(
     '''
     Move a file to the new workflow folder.
     '''
-    autoingest = os.path.join(str(Path(fpath).parents[2]), 'autoingest/ingest/autodetect/')
+    # 3 for test, 2 for BP paths where autoingest sits within automation/
+    autoingest = os.path.join(str(Path(fpath).parents[3]), 'autoingest/ingest/autodetect/')
     try:
         dest_path = os.path.join(autoingest, os.path.basename(fpath))
         shutil.move(fpath, dest_path)
