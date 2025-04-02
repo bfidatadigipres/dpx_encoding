@@ -355,6 +355,7 @@ def tar_validate(fullpath):
             else:
                 auto_move = True
             '''
+            seq_del = "Turned off for test"
             auto_move = "Turned off for test"
             log_data.append("TAR wrap validation completed successfully.")
             for line in log_data:
