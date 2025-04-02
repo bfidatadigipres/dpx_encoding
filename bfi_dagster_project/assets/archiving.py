@@ -373,4 +373,5 @@ def tar_validate(fullpath):
                 "sequence": seq,
                 "success": validation,
                 "db_arguments": arguments,
-                "
+                "logs": log_data
+            }
