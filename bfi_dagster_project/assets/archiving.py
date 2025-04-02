@@ -339,3 +339,38 @@ def tar_validate(fullpath):
                 "db_arguments": arguments,
                 "logs": log_data
             }
+        else:
+            '''
+            # Delete source sequence
+            success = utils.delete_sequence(dpath)
+            seq_del = False
+            if success:
+                seq_del = True
+
+            # Move file to ingest
+            success = utils.move_to_autoingest(spath)
+            if not success:
+                auto_move = False
+            else:
+                auto_move = True
+            '''
+            auto_move = "Turned off for test"
+            log_data.append("TAR wrap validation completed successfully.")
+            for line in log_data:
+                utils.append_to_tar_log(log, line)
+            utils.move_log_to_dest(log, 'tar_logs')
+
+            arguments = (
+                ['status', 'TAR validation complete'],
+                ['validation_complete', str(datetime.datetime.today())[:19]],
+                ['validation_success', 'True'],
+                ['error_message', 'None'],
+                ['sequence_deleted', str(seq_del)],
+                ['moved_to_autoingest', str(auto_move)]
+            )
+
+            return {
+                "sequence": seq,
+                "success": validation,
+                "db_arguments": arguments,
+                "
