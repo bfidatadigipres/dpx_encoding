@@ -341,13 +341,12 @@ def tar_validate(fullpath):
                 "logs": log_data
             }
         else:
-            '''
             # Delete source sequence
             success = utils.delete_sequence(dpath)
             seq_del = False
             if success:
                 seq_del = True
-            '''
+
             # Move file to ingest
             success = utils.move_to_autoingest(spath)
             if not success:
@@ -355,8 +354,6 @@ def tar_validate(fullpath):
             else:
                 auto_move = True
 
-            seq_del = "Turned off for test"
-            auto_move = "Turned off for test"
             log_data.append("TAR wrap validation completed successfully.")
             for line in log_data:
                 utils.append_to_log(log, line)
