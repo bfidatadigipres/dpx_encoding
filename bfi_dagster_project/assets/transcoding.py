@@ -205,8 +205,11 @@ def ffv1_validate(fullpath):
     log_data = []
     error_message = []
     log_data.append(f"Received: {fullpath}")
-    spath = os.path.join(fullpath)
-    print(spath)
+    if isinstance(fullpath, str):
+        spath = fullpath
+    elif isinstance(fullpath[0], str):
+        spath = fullpath[0]
+
     fname = os.path.basename(spath)
     seq = fname.split('.')[0]
     dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
@@ -214,7 +217,6 @@ def ffv1_validate(fullpath):
     folder_size = utils.get_folder_size(dpath)
     file_size = utils.get_folder_size(spath)
     log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
-
     log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
 
     validation = True
