@@ -51,7 +51,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
 
         for data in results:
             seq = data['sequence']
-            arg = data["db_arguments"]
+            arg = data['db_arguments']
             entry = context.resources.database.append_to_database(context, seq, arg)
             context.log.info(f"{log_prefix}Written to Database: {entry}")
             for log in data['logs']:
@@ -204,9 +204,8 @@ def ffv1_validate(fullpath):
     '''
     log_data = []
     error_message = []
-    print(fullpath)
     log_data.append(f"Received: {fullpath}")
-    spath = fullpath[0]
+    spath = os.path.join(fullpath)
     print(spath)
     fname = os.path.basename(spath)
     seq = fname.split('.')[0]
