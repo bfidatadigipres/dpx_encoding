@@ -208,7 +208,7 @@ def mediaconch_mkv(
     '''
     Check FFV1 MKV against policy
     '''
-    policy = os.environ.get("POLICY_MKV")
+    policy = os.environ.get("POLICY_RAWCOOK")
     cmd = [
         'mediaconch', '-p',
         policy, dpath
