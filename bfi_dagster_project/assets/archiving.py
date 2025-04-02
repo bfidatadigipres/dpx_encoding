@@ -243,9 +243,9 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         if len(priref) > 0:
             utils.append_to_tar_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
             tar_file = os.path.basename(tar_path)
-            success = utils.write_to_cid(priref, tar_file)
-            if not success:
-                utils.append_to_tar_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
+            # success = utils.write_to_cid(priref, tar_file)
+            #if not success:
+            #    utils.append_to_tar_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
 
         # Get complete size of file following TAR wrap
         file_stats = os.stat(tar_path)
