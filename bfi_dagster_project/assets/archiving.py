@@ -93,9 +93,9 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
             context.log.info(f"{log_prefix}Written to Database: {entry}")
             for log in data['logs']:
                 if 'WARNING' in log:
-                    context.log.warning(f"{log_prefix} {log}")
+                    context.log.warning(f"{log_prefix}{log}")
                 else:
-                    context.log.info(f"{log_prefix} {log}")
+                    context.log.info(f"{log_prefix}{log}")
 
         return dg.Output(
             value={
@@ -117,7 +117,7 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
 
     log_data = []
     root, tar_source = os.path.split(fullpath[0])
-    local_log = os.path.join(root, f'{tar_source}_tar_wrap.log')
+    local_log = os.path.join(str(Path(root).parents[0]), f'tar_wrapping/{tar_source}_tar_wrap.log')
     if not os.path.exists(fullpath[0]):
         log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
         arguments = (

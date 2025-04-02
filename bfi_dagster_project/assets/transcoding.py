@@ -204,9 +204,10 @@ def ffv1_validate(fullpath):
     '''
     log_data = []
     error_message = []
-
+    print(fullpath)
     log_data.append(f"Received: {fullpath}")
     spath = fullpath[0]
+    print(spath)
     fname = os.path.basename(spath)
     seq = fname.split('.')[0]
     dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
