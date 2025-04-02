@@ -759,7 +759,7 @@ def check_file(
     log = os.path.join(root, f"check_log_{fname}.txt")
     cmd = [
         'rawcooked', '--check', f"{mpath}",
-        "&>", log
+        ">>", f"{log}", "2>&1"
     ]
     try:
         subprocess.run(" ".join(cmd), shell=True, check=True)
