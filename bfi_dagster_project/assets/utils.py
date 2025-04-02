@@ -211,12 +211,12 @@ def mediaconch_mkv(
     policy = os.environ.get("POLICY_MKV")
     cmd = [
         'mediaconch', '-p',
-        policy, f"{dpath}"
+        policy, dpath
     ]
 
     try:
         result = subprocess.check_output(cmd, shell=False).decode()
-        if str(result).startswith("pass! {dpath}"):
+        if str(result).startswith(f"pass! {dpath}"):
             return ['Pass', result]
         return 'Fail', result
     except Exception as err:
