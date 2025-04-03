@@ -14,7 +14,7 @@
   
   #myTable {
     border-collapse: collapse; /* Collapse borders */
-    width: 200%; /* Full-width */
+    width: 100%; /* Full-width */
     border: 1px solid #ddd; /* Add a grey border */
     font-size: 12px; /* Increase font-size */
   }
@@ -25,7 +25,7 @@
   }
   
   #myTable td {
-    word-break: break-all;
+    word-break: normal;
     text-align: left; /* Left-align text */
     padding: 12px; /* Add padding */
   }
