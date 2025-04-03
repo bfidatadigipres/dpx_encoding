@@ -3,10 +3,10 @@
     <head>
         <link rel="stylesheet" type= "text/css" href="{{ url_for('static',filename='styles/table.css') }}">
 <script>
-function myFunctionUsername() {
+function myFunctionSeqID() {
   // Declare variables
   var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("username");
+  input = document.getElementById("seq_id");
   filter = input.value.toUpperCase();
   table = document.getElementById("myTable");
   tr = table.getElementsByTagName("tr");
@@ -14,29 +14,6 @@ function myFunctionUsername() {
   // Loop through all table rows, and hide those who don't match the search query
   for (i = 0; i < tr.length; i++) {
     td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    }
-  }
-}
-</script>
-<script>
-function myFunctionFilename() {
-  // Declare variables
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("filename");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("myTable");
-  tr = table.getElementsByTagName("tr");
-
-  // Loop through all table rows, and hide those who don't match the search query
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[2];
     if (td) {
       txtValue = td.textContent || td.innerText;
       if (txtValue.toUpperCase().indexOf(filter) > -1) {
@@ -59,6 +36,29 @@ function myFunctionStatus() {
 
   // Loop through all table rows, and hide those who don't match the search query
   for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[2];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>
+<script>
+function myFunctionEncoding() {
+  // Declare variables
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("encoding_choice");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 0; i < tr.length; i++) {
     td = tr[i].getElementsByTagName("td")[5];
     if (td) {
       txtValue = td.textContent || td.innerText;
@@ -71,6 +71,29 @@ function myFunctionStatus() {
   }
 }
 </script>
+<script>
+  function myFunctionGaps() {
+    // Declare variables
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.getElementById("gaps_in_sequence");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("myTable");
+    tr = table.getElementsByTagName("tr");
+  
+    // Loop through all table rows, and hide those who don't match the search query
+    for (i = 0; i < tr.length; i++) {
+      td = tr[i].getElementsByTagName("td")[0];
+      if (td) {
+        txtValue = td.textContent || td.innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
+        }
+      }
+    }
+  }
+  </script>
 <script>
 function sortTable(n) {
   var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
@@ -139,10 +162,10 @@ function sortTable(n) {
     <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/article/3399090177">Instructions</a>
     <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/group/-1" class="split">Service Desk</a>
   </div>
-  <input type="text" id="seq_id" onkeyup="myFunctionUsername()" placeholder="Filter by sequence...">
+  <input type="text" id="seq_id" onkeyup="myFunctionSeqID()" placeholder="Filter by sequence...">
   <input type="text" id="status" onkeyup="myFunctionStatus()" placeholder="Filter by status...">
-  <input type="text" id="encoding_choice" onkeyup="myFunctionFilename()" placeholder="Filter by encoding type...">
-  <input type="text" id="gaps_in_sequence" onkeyup="myFunctionStatus()" placeholder="Filter by sequence gaps...">
+  <input type="text" id="encoding_choice" onkeyup="myFunctionEncoding()" placeholder="Filter by encoding type...">
+  <input type="text" id="gaps_in_sequence" onkeyup="myFunctionGaps()" placeholder="Filter by sequence gaps...">
   <div style="overflow-x:auto;">
     <table id="myTable" class="searchable sortable" style="width:100%">
         <tr class="header">
