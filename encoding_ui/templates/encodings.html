@@ -3,17 +3,17 @@
     <head>
         <link rel="stylesheet" type= "text/css" href="{{ url_for('static',filename='styles/table.css') }}">
 <script>
-function myFunctionSeqID() {
+function myFunctionStatus() {
   // Declare variables
   var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("seq_id");
+  input = document.getElementById("status");
   filter = input.value.toUpperCase();
   table = document.getElementById("myTable");
   tr = table.getElementsByTagName("tr");
 
   // Loop through all table rows, and hide those who don't match the search query
   for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
+    td = tr[i].getElementsByTagName("td")[2];
     if (td) {
       txtValue = td.textContent || td.innerText;
       if (txtValue.toUpperCase().indexOf(filter) > -1) {
@@ -26,17 +26,17 @@ function myFunctionSeqID() {
 }
 </script>
 <script>
-function myFunctionStatus() {
+function myFunctionSeqID() {
   // Declare variables
   var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("status");
+  input = document.getElementById("seq_id");
   filter = input.value.toUpperCase();
   table = document.getElementById("myTable");
   tr = table.getElementsByTagName("tr");
 
   // Loop through all table rows, and hide those who don't match the search query
   for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[2];
+    td = tr[i].getElementsByTagName("td")[0];
     if (td) {
       txtValue = td.textContent || td.innerText;
       if (txtValue.toUpperCase().indexOf(filter) > -1) {
