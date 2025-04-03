@@ -38,7 +38,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         context.log.info(f"{log_prefix}Received new encoding data: {assessment}")
         if not assessment['RAWcook']:
             context.log.info("No RAWcook sequences to process at this time.")
-            return []
+            return dg.Output()
 
         # Create/execute parallel transcodes
         context.log.info(f"{log_prefix}Launcing RAWcooked multiprocessing encoding")
