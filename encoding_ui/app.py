@@ -85,7 +85,7 @@ def reset_request():
                 cursor.execute(f"""
                     UPDATE encoding_status SET
                         status = ?,
-                        folder_path = NULL,
+                        folder_path = '',
                         first_image = NULL,
                         last_image = NULL,
                         gaps_in_sequence = NULL,
