@@ -390,7 +390,7 @@ def iterate_folders(
     filenames = []
     for root, _,files in os.walk(fpath):
         for file in files:
-            if file.endswith(('.dpx', '.DPX')):
+            if file.endswith(('.dpx', '.DPX', '.tif', '.TIF', '.tiff', '.TIFF')):
                 file_nums.append(int(re.search(r'\d+', file).group()))
                 filenames.append(os.path.join(root, file))
 
@@ -690,6 +690,14 @@ def check_for_version_two(
         'Error: undecodable file is becoming too big',
         'Error: the reversibility file is becoming big'
     ]
+
+    if not os.path.isfile(log):
+        log_name = os.path.basename(log)
+        log_path = os.path.join(str(Path(log).parents[1]), 'logs/')
+        for root, _, files in os.walk(log_path):
+            for file in files:
+                if log_name in file:
+                    log = os.path.join(root, file)
 
     if not os.path.isfile(log):
         return False

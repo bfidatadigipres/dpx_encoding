@@ -1,4 +1,5 @@
 import os
+import time
 import datetime
 import subprocess
 import dagster as dg
@@ -127,7 +128,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     ffv1_path = os.path.join(transcodes_path, f"{seq}.mkv")
     log_data.append(f"Path for Matroska: {ffv1_path}")
     log_path = os.path.join(transcodes_path, f"{seq}.mkv.txt")
-    log_data.append(f"Outputting log filet to {log_path}")
+    log_data.append(f"Outputting log file to {log_path}")
     log_data.append("Calling Encoder function")
 
     # Encode
@@ -151,12 +152,15 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         ]
 
     log_data.append(f"Calling RAWcooked with command: {' '.join(cmd)}")
+    tic = time.perf_counter()
     try:
         subprocess.run(" ".join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
         raise err
-
+    toc = time.perf_counter()
+    mins = (toc - tic) // 60
+    log_data.append(f"RAWcooked encoding took {mins} minutes")
     if not os.path.isfile(ffv1_path):
         log_data.append("WARNING: RAWcooked encoding failed. Moving to failures folder.")
         if not os.path.isfile(ffv1_path):

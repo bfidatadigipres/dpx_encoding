@@ -1,4 +1,5 @@
 import os
+import time
 import tarfile
 import datetime
 import dagster as dg
@@ -150,9 +151,14 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
 
     # Tar folder creation
     utils.append_to_log(local_log, f"Beginning TAR wrap now... {fullpath[0]}")
+    tic = time.perf_counter()
     log_data.append("Beginning TAR wrap now")
     tar_path = utils.tar_item(fullpath[0])
     log_data.append("TAR wrap completed")
+    toc = time.perf_counter()
+    mins = (toc - tic) // 60
+    log_data.append(f"TAR wrap took {mins} minutes")
+
     if tar_path is None:
         log_data.append("TAR wrap FAILED! See local logs for details.")
         utils.append_to_log(local_log, f"==== Failure exit: {fullpath[0]} ====")
