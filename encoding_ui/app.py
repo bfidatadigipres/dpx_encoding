@@ -73,12 +73,12 @@ def reset_request():
     if request.method == 'POST':
         seq_id = request.form['sequence'].strip()
         email = request.form['email'].strip()
-        request = request.form['request'].strip()
+        req = request.form['request'].strip()
 
         # Check for non-BFI email and reject
         if 'bfi.org.uk' not in email:
             return render_template('email_error_reset.html')
-        if request == 'Full reset':
+        if req == 'Full reset':
             status = 'Triggered assessment'
             date_stamp = str(datetime.datetime.today())[:19]
             with sqlite3.connect(DBASE) as users:
