@@ -287,6 +287,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     status = "Assessment successful"
     arguments = (
         ['status', status],
+        ['folder_path', image_sequence],
         ['gaps_in_sequence', 'No'],
         ['assessment_pass', 'Yes'],
         ['assessment_complete', str(datetime.datetime.today())[:19]],

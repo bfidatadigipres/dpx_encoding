@@ -96,7 +96,7 @@ def reset_request():
                         bitdepth = NULL,
                         image_width = NULL,
                         image_height = NULL,
-                        process_start = NULL,
+                        process_start = ?,
                         encoding_choice = NULL,
                         encoding_log = NULL,
                         encoding_retry = NULL,
@@ -111,7 +111,7 @@ def reset_request():
                         sequence_deleted = NULL,
                         moved_to_autoingest = NULL
                     WHERE seq_id = ?
-                """, (status, date_stamp, seq_id))
+                """, (status, date_stamp, date_stamp, seq_id))
                 users.commit()
         return render_template('index_reset.html')
     else:
