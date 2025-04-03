@@ -71,7 +71,7 @@ def reset_request():
             return render_template('initiate_reset.html', file=fname, trans_option=transcode)
 
     if request.method == 'POST':
-        seq_id = request.form['sequence'].strip()
+        seq_id = request.form['seq_id'].strip()
         email = request.form['email'].strip()
         req = request.form['request'].strip()
 
