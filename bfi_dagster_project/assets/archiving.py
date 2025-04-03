@@ -290,87 +290,89 @@ def tar_validate(fullpath):
     file_size = utils.get_folder_size(spath)
     log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
 
-    if fname.endswith('.tar'):
-        log = os.path.join(str(Path(spath).parents[1]), f'tar_wrapping/{seq}_tar_wrap.log')
-        validation = True
-        if not os.path.isfile(spath):
-            validation = False
-            log_data.append(f"Filepath supplied does not exist: {spath}")
-            errors.append('TAR file not found')
+    # Run chmod on TAR
+    os.chmod(spath, 0o777)
 
-        if file_size < folder_size:
-            validation = False
-            log_data.append("TAR file is smaller than source. Failing TAR file.")
-            errors.append('TAR file smaller than sequence')
+    log = os.path.join(str(Path(spath).parents[1]), f'tar_wrapping/{seq}_tar_wrap.log')
+    validation = True
+    if not os.path.isfile(spath):
+        validation = False
+        log_data.append(f"Filepath supplied does not exist: {spath}")
+        errors.append('TAR file not found')
 
-        diff = file_size - folder_size
-        if diff > 107374100:
-            validation = False
-            log_data.append(f"Size difference between source folder/TAR > 100MB. {diff} size - failing TAR.")
-            errors.append("TAR file over 100MB larger than sequence.")
+    if file_size < folder_size:
+        validation = False
+        log_data.append("TAR file is smaller than source. Failing TAR file.")
+        errors.append('TAR file smaller than sequence')
 
-        # Check logs contain success statement
-        success = utils.check_tar_log(log)
-        if success is False:
-            validation = False
-            log_data.append("Logs contain error message, failing this TAR")
-            errors.append('Error message found in log')
+    diff = file_size - folder_size
+    if diff > 107374100:
+        validation = False
+        log_data.append(f"Size difference between source folder/TAR > 100MB. {diff} size - failing TAR.")
+        errors.append("TAR file over 100MB larger than sequence.")
 
-        if validation is False:
-            # Move files to failure path
-            log_data.append(utils.move_to_failures(spath))
-            log_data.append(utils.move_to_failures(dpath))
+    # Check logs contain success statement
+    success = utils.check_tar_log(log)
+    if success is False:
+        validation = False
+        log_data.append("Logs contain error message, failing this TAR")
+        errors.append('Error message found in log')
 
-            # Move log to failure
-            log_data.append("Error: TAR file smaller than original folder size...")
-            for line in log_data:
-                utils.append_to_log(log, line)
-            utils.move_log_to_dest(log, 'failures')
+    if validation is False:
+        # Move files to failure path
+        log_data.append(utils.move_to_failures(spath))
+        log_data.append(utils.move_to_failures(dpath))
 
-            arguments = (
-                ['status', 'TAR validation failure'],
-                ['validation_success', 'False'],
-                ['validation_complete', str(datetime.datetime.today())[:19]],
-                ['error_message', ', '.join(errors)]
-            )
+        # Move log to failure
+        log_data.append("Error: TAR file smaller than original folder size...")
+        for line in log_data:
+            utils.append_to_log(log, line)
+        utils.move_log_to_dest(log, 'failures')
 
-            return {
-                "sequence": seq,
-                "success": validation,
-                "db_arguments": arguments,
-                "logs": log_data
-            }
+        arguments = (
+            ['status', 'TAR validation failure'],
+            ['validation_success', 'False'],
+            ['validation_complete', str(datetime.datetime.today())[:19]],
+            ['error_message', ', '.join(errors)]
+        )
+
+        return {
+            "sequence": seq,
+            "success": validation,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+    else:
+        # Delete source sequence
+        success = utils.delete_sequence(dpath)
+        seq_del = False
+        if success:
+            seq_del = True
+
+        # Move file to ingest
+        success = utils.move_to_autoingest(spath)
+        if not success:
+            auto_move = False
         else:
-            # Delete source sequence
-            success = utils.delete_sequence(dpath)
-            seq_del = False
-            if success:
-                seq_del = True
+            auto_move = True
 
-            # Move file to ingest
-            success = utils.move_to_autoingest(spath)
-            if not success:
-                auto_move = False
-            else:
-                auto_move = True
+        log_data.append("TAR wrap validation completed successfully.")
+        for line in log_data:
+            utils.append_to_log(log, line)
+        utils.move_log_to_dest(log, 'tar_logs')
 
-            log_data.append("TAR wrap validation completed successfully.")
-            for line in log_data:
-                utils.append_to_log(log, line)
-            utils.move_log_to_dest(log, 'tar_logs')
+        arguments = (
+            ['status', 'TAR validation complete'],
+            ['validation_complete', str(datetime.datetime.today())[:19]],
+            ['validation_success', 'True'],
+            ['error_message', 'None'],
+            ['sequence_deleted', str(seq_del)],
+            ['moved_to_autoingest', str(auto_move)]
+        )
 
-            arguments = (
-                ['status', 'TAR validation complete'],
-                ['validation_complete', str(datetime.datetime.today())[:19]],
-                ['validation_success', 'True'],
-                ['error_message', 'None'],
-                ['sequence_deleted', str(seq_del)],
-                ['moved_to_autoingest', str(auto_move)]
-            )
-
-            return {
-                "sequence": seq,
-                "success": validation,
-                "db_arguments": arguments,
-                "logs": log_data
-            }
+        return {
+            "sequence": seq,
+            "success": validation,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
