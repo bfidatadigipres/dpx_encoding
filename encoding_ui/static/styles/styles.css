@@ -1,0 +1,33 @@
+body {
+    background-color: white;
+  }
+  h1 {
+    color: black;
+  }
+  p {
+    color: black
+  }
+  P.blocktext {
+    margin-left: auto;
+    margin-right: auto;
+    width: 8em
+  }
+  table, th, td {
+    border:1px solid black;
+  }
+  centre {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
+    font-size: 40px
+  }
+  .container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 20px
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }

@@ -1,0 +1,83 @@
+* {
+    font-family: Roboto, Arial, Helvetica, sans-serif;
+    color: #505050;
+  }
+  
+  #username, #filename, #status {
+    width: 30%;
+    font-size: 16px; /* Increase font-size */
+    padding: 12px 20px 12px 40px; /* Add some padding */
+    border: 1px solid #ddd; /* Add a grey border */
+    margin-top: 6px;
+    margin-bottom: 12px; /* Add some space below the input */
+  }
+  
+  #myTable {
+    border-collapse: collapse; /* Collapse borders */
+    width: 100%; /* Full-width */
+    border: 1px solid #ddd; /* Add a grey border */
+    font-size: 16px; /* Increase font-size */
+  }
+  
+  #myTable th {
+    text-align: left; /* Left-align text */
+    padding: 12px; /* Add padding */
+  }
+  
+  #myTable td {
+    word-break: break-all;
+    text-align: left; /* Left-align text */
+    padding: 12px; /* Add padding */
+  }
+  
+  #myTable tr {
+    /* Add a bottom border to all table rows */
+    border-bottom: 1px solid #ddd;
+  }
+  
+  #myTable tr.header, #myTable tr:hover {
+    /* Add a grey background color to the table header and on hover */
+    background-color: #f1f1f1;
+  }
+  
+  .header {
+    padding: 15px;
+    margin-bottom: 2px;
+    text-align: left;
+    background: #f1f1f1;
+    color: black;
+    font-size: 20px;
+  }
+  
+  .topnav {
+    background-color: #808080;
+    overflow: hidden;
+  }
+  
+  /* Style the links inside the navigation bar */
+  .topnav a {
+    float: left;
+    color: white;
+    text-align: center;
+    border-right: 1px solid #f1f1f1;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+  }
+  
+  /* Change the color of links on hover */
+  .topnav a:hover {
+    background-color: #f1f1f1f1;
+    color: black;
+  }
+  
+  .topnav a.split {
+    float: right;
+    color: white;
+    border-left: 1px solid #f1f1f1;
+  }
+  
+  .topnav a.split:hover {
+    background-color: #f1f1f1f1;
+    color: black;
+  }

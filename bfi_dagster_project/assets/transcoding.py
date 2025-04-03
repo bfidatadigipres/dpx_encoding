@@ -184,7 +184,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         ['status', 'RAWcook completed'],
         ['encoding_complete', str(datetime.datetime.today())[:19]],
         ['encoding_retry', 0],
-        ['encoding_log', log_path]
+        ['encoding_log', log_path],
         ['derivative_path', ffv1_path],
         ['derivative_size', utils.get_folder_size(ffv1_path)],
         ['derivative_md5', checksum_data]
@@ -223,7 +223,7 @@ def ffv1_validate(fullpath):
 
     # Run chmod on MKV
     os.chmod(spath, 0o777)
-    
+
     validation = True
     if not os.path.isfile(spath):
         log_data.append(f"WARNING: Filepath not found: {spath}")

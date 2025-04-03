@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type= "text/css" href="{{ url_for('static',filename='styles/form.css') }}">
+    </head>
+    <body>
+        <div class="header">
+          <h1>BFI National Archive Image Sequence Processing</h1>
+          <p>View image sequence encoding progress and request refresh of sequence to trigger encoding restart.</p>
+        </div>
+	    <div class="topnav">
+          <a href="{{ url_for('reset_request') }}">Refresh request</a>
+          <a href="{{ url_for('encodings') }}">View encodings</a>
+          <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/article/3399090177">Instructions</a>
+          <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/group/-1" class="split">Service Desk</a>
+	    </div>
+	    <br/>
+        <div>Please use the buttons below to submit restart of encoding or view progress.</div>
+	    <br/>
+        <button class="btn-nav" type="button" onclick="window.location.href='{{ url_for('reset_request') }}';">Submit a sequence restart</button><br/>
+        <button class="btn-nav" type="button" onclick="window.location.href='{{ url_for('encodings') }}';">View all current encodings</button><br/>
+    </body>
+</html>
