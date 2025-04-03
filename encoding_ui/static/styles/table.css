@@ -4,7 +4,7 @@
   }
   
   #username, #filename, #status {
-    width: 80%;
+    width: 30%;
     font-size: 16px; /* Increase font-size */
     padding: 12px 20px 12px 40px; /* Add some padding */
     border: 1px solid #ddd; /* Add a grey border */
@@ -16,7 +16,7 @@
     border-collapse: collapse; /* Collapse borders */
     width: 100%; /* Full-width */
     border: 1px solid #ddd; /* Add a grey border */
-    font-size: 16px; /* Increase font-size */
+    font-size: 12px; /* Increase font-size */
   }
   
   #myTable th {
