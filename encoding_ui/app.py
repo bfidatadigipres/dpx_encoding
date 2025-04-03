@@ -18,7 +18,7 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/home')
 def index():
-    return render_template('index_transcode.html')
+    return render_template('index_retry.html')
 
 DBASE = os.environ.get('DATABASE')
 CONNECT = sqlite3.connect(DBASE)
