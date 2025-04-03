@@ -78,74 +78,72 @@ def reset_request():
         # Check for non-BFI email and reject
         if 'bfi.org.uk' not in email:
             return render_template('email_error_reset.html')
-        if req == 'Full reset':
-            status = 'Triggered assessment'
-            date_stamp = str(datetime.datetime.today())[:19]
-            with sqlite3.connect(DBASE) as users:
-                cursor = users.cursor()
-                cursor.execute(f"""
-                    INSERT INTO encoding_status (
-                        seq_id,
-                        status,
-                        folder_path,
-                        first_image,
-                        last_image,
-                        gaps_in_sequence,
-                        assessment_pass,
-                        assessment_complete,
-                        colourspace,
-                        seq_size,
-                        bitdepth,
-                        image_width,
-                        image_height,
-                        process_start,
-                        encoding_choice,
-                        encoding_log,
-                        encoding_retry,
-                        encoding_complete,
-                        derivative_path,
-                        derivative_size,
-                        derivative_md5,
-                        validation_complete,
-                        validation_success,
-                        error_message,
-                        last_updated,
-                        sequence_deleted,
-                        moved_to_autoingest
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?), (
-                        {seq_id},
-                        {status},
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        '',
-                        {date_stamp},
-                        '',
-                        ''
-                    )"""
-                )
-                users.commit()
-        return render_template('index_reset.html')
-    else:
-        return render_template('initiate_reset.html')
+        if req != 'Full reset':
+            return render_template('initiate_reset.html')
+
+        status = 'Triggered assessment'
+        date_stamp = str(datetime.datetime.today())[:19]
+        with sqlite3.connect(DBASE) as users:
+            cursor = users.cursor()
+            cursor.execute(f"""
+                UPDATE encoding_status SET (
+                    status,
+                    folder_path,
+                    first_image,
+                    last_image,
+                    gaps_in_sequence,
+                    assessment_pass,
+                    assessment_complete,
+                    colourspace,
+                    seq_size,
+                    bitdepth,
+                    image_width,
+                    image_height,
+                    process_start,
+                    encoding_choice,
+                    encoding_log,
+                    encoding_retry,
+                    encoding_complete,
+                    derivative_path,
+                    derivative_size,
+                    derivative_md5,
+                    validation_complete,
+                    validation_success,
+                    error_message,
+                    last_updated,
+                    sequence_deleted,
+                    moved_to_autoingest
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?), (
+                    {status},
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    {date_stamp},
+                    '',
+                    ''
+                ) WHERE seq_id = '{seq_id}'
+            """)
+            users.commit()
+    return render_template('index_reset.html')
 
 
 @app.route('/encodings')
