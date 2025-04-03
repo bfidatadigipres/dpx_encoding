@@ -111,7 +111,7 @@ def reset_request():
                         sequence_deleted = NULL,
                         moved_to_autoingest = NULL
                     WHERE seq_id = ?
-                """, status, date_stamp, seq_id)
+                """, (status, date_stamp, seq_id))
                 users.commit()
         return render_template('index_reset.html')
     else:
