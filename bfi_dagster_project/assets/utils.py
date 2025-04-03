@@ -759,7 +759,8 @@ def check_file(
     success statement
     '''
     root, fname = os.path.split(mpath)
-    log = os.path.join(root, f"check_log_{fname}.txt")
+    log_name = f"check_log_{fname}.txt"
+    log = os.path.join(root, log_name)
     cmd = [
         'rawcooked', '--check', f"{mpath}",
         ">>", f"{log}", "2>&1"
@@ -774,7 +775,7 @@ def check_file(
         logs = file.readlines()
     for line in logs:
         if 'Reversibility was checked, no issue detected.' in line:
-            log_path = os.path.join(str(Path(root).parents[0]), 'logs/check_logs/')
+            log_path = os.path.join(str(Path(root).parents[0]), 'logs/check_logs/', log_name)
             shutil.move(log, log_path)
             return True
 
