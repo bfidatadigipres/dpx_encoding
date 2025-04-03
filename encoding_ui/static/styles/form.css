@@ -21,7 +21,7 @@
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 16px;
-    color: #508050;
+    color: #505050;
   }
   
   label {
@@ -74,7 +74,7 @@
   }
   
   .topnav {
-    background-color: #808080;
+    background-color: #508050;
     overflow: hidden;
   }
   
