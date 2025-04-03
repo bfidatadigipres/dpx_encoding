@@ -76,7 +76,7 @@ def reset_request():
 
         # Check for non-BFI email and reject
         if 'bfi.org.uk' not in email:
-            return render_template('email_error_reset.html')
+            return render_template('error_email_reset.html')
         if req == 'Full reset':
             status = 'Triggered assessment'
             date_stamp = str(datetime.datetime.today())[:19]
