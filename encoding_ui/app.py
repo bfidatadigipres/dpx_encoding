@@ -56,19 +56,19 @@ CONNECT.execute("""
             """)
 
 
-@app.route('/reset_request', methods=['GET', 'POST'])
+@app.route('/reset_request', methods=['POST'])
 def reset_request():
     '''
     Handle requests to clear all fields
     that relate to a specific seq_id if
     error_message present
-    '''
 
     if request.method == 'GET':
         fname = request.args.get("file")
         transcode = request.args.get("option")
         if fname and transcode:
-            return render_template('initiate_reset.html', file=fname, trans_option=transcode)
+            return render_template('initiate_reset.html')
+    '''
 
     if request.method == 'POST':
         seq_id = request.form['seq_id'].strip()
