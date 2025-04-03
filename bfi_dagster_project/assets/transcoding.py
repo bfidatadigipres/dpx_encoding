@@ -206,7 +206,7 @@ def ffv1_validate(fullpath):
     '''
     log_data = []
     error_message = []
-    log_data.append(f"Received: {fullpath}")
+    log_data.append(f"Received: {fullpath[0]}")
     if isinstance(fullpath, str):
         spath = fullpath
     elif isinstance(fullpath[0], str):
@@ -218,7 +218,7 @@ def ffv1_validate(fullpath):
     log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
     folder_size = utils.get_folder_size(dpath)
     file_size = utils.get_folder_size(spath)
-    log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
+    log_data.append(f"Found sizes in bytes:\n{folder_size} {dpath}\n{file_size} {spath}")
     log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
 
     # Run chmod on MKV
