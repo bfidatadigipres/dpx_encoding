@@ -56,19 +56,18 @@ CONNECT.execute("""
             """)
 
 
-@app.route('/reset_request', methods=['POST'])
+@app.route('/reset_request', methods=['GET', 'POST'])
 def reset_request():
     '''
     Handle requests to clear all fields
     that relate to a specific seq_id if
     error_message present
-
-    if request.method == 'GET':
-        fname = request.args.get("file")
-        transcode = request.args.get("option")
-        if fname and transcode:
-            return render_template('initiate_reset.html')
     '''
+    if request.method == 'GET':
+        seq_id = request.args.get("seq_id")
+        email = request.args.get("email")
+        if seq_id and email:
+            return render_template('initiate_reset.html', seq_id=seq_id, email=email)
 
     if request.method == 'POST':
         seq_id = request.form['seq_id'].strip()
@@ -78,72 +77,72 @@ def reset_request():
         # Check for non-BFI email and reject
         if 'bfi.org.uk' not in email:
             return render_template('email_error_reset.html')
-        if req != 'Full reset':
-            return render_template('initiate_reset.html')
-
-        status = 'Triggered assessment'
-        date_stamp = str(datetime.datetime.today())[:19]
-        with sqlite3.connect(DBASE) as users:
-            cursor = users.cursor()
-            cursor.execute(f"""
-                UPDATE encoding_status SET (
-                    status,
-                    folder_path,
-                    first_image,
-                    last_image,
-                    gaps_in_sequence,
-                    assessment_pass,
-                    assessment_complete,
-                    colourspace,
-                    seq_size,
-                    bitdepth,
-                    image_width,
-                    image_height,
-                    process_start,
-                    encoding_choice,
-                    encoding_log,
-                    encoding_retry,
-                    encoding_complete,
-                    derivative_path,
-                    derivative_size,
-                    derivative_md5,
-                    validation_complete,
-                    validation_success,
-                    error_message,
-                    last_updated,
-                    sequence_deleted,
-                    moved_to_autoingest
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?), (
-                    {status},
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    {date_stamp},
-                    '',
-                    ''
-                ) WHERE seq_id = '{seq_id}'
-            """)
-            users.commit()
-    return render_template('index_reset.html')
+        if req == 'Full reset':
+            status = 'Triggered assessment'
+            date_stamp = str(datetime.datetime.today())[:19]
+            with sqlite3.connect(DBASE) as users:
+                cursor = users.cursor()
+                cursor.execute(f"""
+                    UPDATE encoding_status SET (
+                        status,
+                        folder_path,
+                        first_image,
+                        last_image,
+                        gaps_in_sequence,
+                        assessment_pass,
+                        assessment_complete,
+                        colourspace,
+                        seq_size,
+                        bitdepth,
+                        image_width,
+                        image_height,
+                        process_start,
+                        encoding_choice,
+                        encoding_log,
+                        encoding_retry,
+                        encoding_complete,
+                        derivative_path,
+                        derivative_size,
+                        derivative_md5,
+                        validation_complete,
+                        validation_success,
+                        error_message,
+                        last_updated,
+                        sequence_deleted,
+                        moved_to_autoingest
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?), (
+                        {status},
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        '',
+                        {date_stamp},
+                        '',
+                        ''
+                    ) WHERE seq_id = '{seq_id}'
+                """)
+                users.commit()
+        return render_template('index_reset.html')
+    else:
+        return render_template('initiate_reset.html')
 
 
 @app.route('/encodings')
