@@ -378,16 +378,16 @@ def iterate_folders(
 ) -> tuple[list, list]:
     '''
     Iterate suppied path and return list
-    of filenames
+    of filenames re search for last numbers
+    in filename
     '''
     file_nums = []
     filenames = []
     for root, _,files in os.walk(fpath):
         for file in files:
-            if file.endswith(('.dpx', '.DPX')):
+            if file.endswith(('.dpx', '.DPX', '.tif', '.TIF', '.tiff', '.TIFF')):
                 file_nums.append(int(re.search(r'\d+(?!.*\d)', file).group()))
                 filenames.append(os.path.join(root, file))
-            elif file.endswith(('.tif', '.TIF', '.tiff', '.TIFF')):
 
     return (file_nums, filenames)
 
