@@ -166,36 +166,6 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
-    folder_depth, file_path = utils.count_folder_depth(image_sequence)
-    log_data.append(f"Folder depth is {folder_depth} folder to images")
-    if folder_depth is None:
-        arguments = (
-                ['status', 'Assessment failed'],
-                ['error_message', 'Folder path depth error']
-            )
-        log_data.append("Folder path is non-standard depth. Assessment failed.")
-        return {
-            "sequence": image_sequence,
-            "success": False,
-            "encoding_choice": None,
-            "db_arguments": arguments,
-            "logs": log_data
-        }
-
-    if int(folder_depth) < 3 or int(folder_depth) > 4:
-        arguments = (
-                ['status', 'Assessment failed'],
-                ['error_message', f'Folder path depth error: {folder_depth}']
-        )
-        log_data.append("Folder path is non-standard depth. Assessment failed.")
-        return {
-            "sequence": image_sequence,
-            "success": False,
-            "encoding_choice": None,
-            "db_arguments": arguments,
-            "logs": log_data
-        }
-
     first_image, last_image, missing = utils.gaps(image_sequence)
     log_data.append(f"Image data - first {first_image} - last {last_image} - missing: {len(missing)}")
     if len(missing) > 0:
@@ -212,6 +182,40 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
+
+    if first_image.endswith(('.dpx', '.DPX')):
+        # Only assess DPX folder depths
+        folder_depth, file_path = utils.count_folder_depth(image_sequence)
+        log_data.append(f"Folder depth is {folder_depth} folder to images")
+        if folder_depth is None:
+            arguments = (
+                    ['status', 'Assessment failed'],
+                    ['error_message', 'Folder path depth error']
+                )
+            log_data.append("Folder path is non-standard depth. Assessment failed.")
+            return {
+                "sequence": image_sequence,
+                "success": False,
+                "encoding_choice": None,
+                "db_arguments": arguments,
+                "logs": log_data
+            }
+
+        if int(folder_depth) < 3 or int(folder_depth) > 4:
+            arguments = (
+                    ['status', 'Assessment failed'],
+                    ['error_message', f'Folder path depth error: {folder_depth}']
+            )
+            log_data.append("Folder path is non-standard depth. Assessment failed.")
+            return {
+                "sequence": image_sequence,
+                "success": False,
+                "encoding_choice": None,
+                "db_arguments": arguments,
+                "logs": log_data
+            }
+    else:
+        log_data.append("Sequence is not DPX and will not have folder structure assessed.")
 
     folder_size = utils.get_folder_size(image_sequence)
     cspace = utils.get_metadata('Video', 'ColorSpace', first_image)
