@@ -25,7 +25,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
     @dg.sensor(
         name=sensor_name,
         job=job,
-        minimum_interval_seconds=900,
+        minimum_interval_seconds=3600,
         required_resource_keys={'database', 'process_pool'}
     )
     def failed_encoding_retry_sensor(
