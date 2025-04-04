@@ -40,7 +40,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         List containing filepath is passed to validation asset.
         '''
         if not context.op_config.get('sequence'):
-            return dg.Output()
+            return dg.Output(value={})
         log_prefix = f"[{key_prefix}] " if key_prefix else ""
         fullpath = context.op_config.get('sequence')
         seq = os.path.basename(fullpath)
@@ -54,15 +54,15 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.info(f"{log_prefix}==== Retry RAWcook encoding: {fullpath} ====")
         if status != "Pending retry":
             context.log.error(f"{log_prefix}Sequence not suitable for retry. Exiting.")
-            return dg.Output()
+            return dg.Output(value={})
         context.log.info(f"{log_prefix}Status indicates selected for retry successful")
         if choice != "RAWcook":
             context.log.error(f"{log_prefix}Sequence not suitable for RAWcooked re-encoding. Exiting.")
-            return dg.Output()
+            return dg.Output(value={})
         context.log.info("{log_prefix}Encoding choice is RAWcooked")
         if not os.path.exists(fullpath):
             context.log.error(f"{log_prefix}Failed to find path {fullpath}. Exiting.")
-            return dg.Output()
+            return dg.Output(value={})
         context.log.info(f"{log_prefix}File path identified: {fullpath}")
 
         ffv1_path = os.path.join(str(Path(fullpath).parents[1]), f"ffv1_transcoding/{seq}.mkv")
@@ -90,7 +90,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             context.log.info(f"{log_prefix}RAWcooked encoding failed. Updating database:\n{arguments}")
             entry = context.resources.database.append_to_database(context, seq, arguments)
             context.log.info(entry)
-            return dg.Output()
+            return dg.Output(value={})
         context.log.info(f"{log_prefix}RAWcooked encoding completed. Ready for validation checks")
         checksum_data = utils.get_checksum(ffv1_path)
         context.log.info(f"{log_prefix}Checksum: %s", data[f"{seq}.mkv"])

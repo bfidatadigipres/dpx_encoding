@@ -46,7 +46,7 @@ def build_archiving_asset(key_prefix: Optional[str] = None):
 
         if not assess_seqs['TAR']:
             context.log.info(f"{log_prefix}No TAR sequences to process at this time.")
-            return dg.Output()
+            return dg.Output(value={})
 
         tar_tasks = [(folder,) for folder in assess_seqs['TAR']]
 

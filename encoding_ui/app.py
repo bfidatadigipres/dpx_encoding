@@ -124,6 +124,7 @@ def encodings():
     Return the View all requested page
     '''
     connect = sqlite3.connect(DBASE)
+    connect.execute("PRAGMA wal_checkpoint(FULL)")
     cursor = connect.cursor()
     cursor.execute(f"SELECT * FROM encoding_status where last_updated >= datetime('now','-100 days')")
     data = cursor.fetchall()
