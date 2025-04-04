@@ -796,10 +796,10 @@ def recursive_chmod(dpath: str, mode: int) -> None:
             for dir in dirs:
                 try:
                     os.chmod(os.path.join(root, dir), mode)
-                except Exception as e:
+                except PermissionError as e:
                     print(f"Error changing {dir}: {e}")
             for file in files:
                 try:
                     os.chmod(os.path.join(root, file), mode)
-                except Exception as e:
+                except PermissionError as e:
                     print(f"Error changing {file}: {e}")

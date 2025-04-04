@@ -93,7 +93,10 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     arguments = []
 
     # Recursively set permissions
-    #utils.recursive_chmod(image_sequence, 0o777)
+    try:
+        utils.recursive_chmod(image_sequence, 0o777)
+    except PermissionError as err:
+        print(err)
 
     seq = os.path.basename(image_sequence)
     log_data.append(f"Processing image sequence: {seq}")
@@ -146,8 +149,6 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
     elif seq in str(rec):
-        pass
-        '''
         log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {rec}")
         arguments = (
             ['status', 'Assessment failed'],
@@ -161,7 +162,6 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
-        '''
     if ftype.lower() not in ['tif', 'tiff', 'dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (

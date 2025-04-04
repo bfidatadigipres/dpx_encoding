@@ -226,7 +226,10 @@ def ffv1_validate(fullpath):
     log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
 
     # Run chmod on MKV
-    os.chmod(spath, 0o770)
+    try:
+        utils.recursive_chmod(spath, 0o777)
+    except PermissionError as err:
+        print(err)
 
     validation = True
     if not os.path.isfile(spath):

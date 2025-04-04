@@ -297,7 +297,10 @@ def tar_validate(fullpath):
     log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
 
     # Run chmod on TAR
-    os.chmod(spath, 0o770)
+    try:
+        utils.recursive_chmod(spath, 0o777)
+    except PermissionError as err:
+        print(err)
 
     log = os.path.join(str(Path(spath).parents[1]), f'tar_wrapping/{seq}_tar_wrap.log')
     validation = True
