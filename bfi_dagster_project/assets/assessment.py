@@ -147,7 +147,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         arguments = (
             ['status', 'Assessment failed'],
             ['folder_path', image_sequence],
-            ['error_message', f'Digital file ingested for this CID item already: {rec}']
+            ['error_message', f'Digital file exists in DPI with same name: {seq}.']
         )
         return {
             "sequence": image_sequence,
