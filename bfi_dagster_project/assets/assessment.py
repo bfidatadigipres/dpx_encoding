@@ -98,6 +98,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     if success is False:
         arguments = (
                 ['status', 'Assessment failed'],
+                ['folder_path', image_sequence],
                 ['error_message', 'File name formatted incorrectly']
             )
         log_data.append(f"Writing to database:\n{arguments}")
@@ -114,6 +115,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     if not part:
         arguments = (
                 ['status', 'Assessment failed'],
+                ['folder_path', image_sequence],
                 ['error_message', 'Part whole extraction failure']
             )
         log_data.append(f"Writing to database:\n {arguments}")
@@ -130,6 +132,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         log_data.append(f"WARNING: Unable to match sequence to CID Item record {seq}")
         arguments = (
             ['status', 'Assessment failed'],
+            ['folder_path', image_sequence],
             ['error_message', f'Could not match sequence to CID item record: {seq}']
         )
         return {
@@ -143,6 +146,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {rec}")
         arguments = (
             ['status', 'Assessment failed'],
+            ['folder_path', image_sequence],
             ['error_message', f'Digital file ingested for this CID item already: {rec}']
         )
         return {
@@ -156,6 +160,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (
             ['status', 'Assessment failed'],
+            ['folder_path', image_sequence],
             ['error_message', f'File type incorrect for sequence: {seq}']
         )
         return {
@@ -172,6 +177,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         log_data.append(f"Gaps found in sequence: {missing}")
         arguments = (
                 ['status', 'Assessment failed'],
+                ['folder_path', image_sequence],
                 ['error_message', f'Gaps found in sequence: {missing}']
             )
         log_data.append(f"Folder has gaps in sequence. {missing}")
@@ -190,6 +196,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         if folder_depth is None:
             arguments = (
                     ['status', 'Assessment failed'],
+                    ['folder_path', image_sequence],
                     ['error_message', 'Folder path depth error']
                 )
             log_data.append("Folder path is non-standard depth. Assessment failed.")
@@ -204,6 +211,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         if int(folder_depth) < 3 or int(folder_depth) > 4:
             arguments = (
                     ['status', 'Assessment failed'],
+                    ['folder_path', image_sequence],
                     ['error_message', f'Folder path depth error: {folder_depth}']
             )
             log_data.append("Folder path is non-standard depth. Assessment failed.")
@@ -238,6 +246,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         log_data.append("Folder metadata could not be extracted. Assessment failed.")
         arguments = (
                 ['status', 'Assessment failed'],
+                ['folder_path', image_sequence],
                 ['error_message', 'Failed with metadata error']
             )
         log_data.append("Missing metadata from DPX sequence.")
