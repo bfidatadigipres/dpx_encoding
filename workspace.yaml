@@ -2,15 +2,50 @@ load_from:
   # First module instance
   - python_module:
       module_name: bfi_dagster_project
-      attribute: project1_defs
-      location_name: bfi_dagster_project1
+      attribute: project01_defs
+      location_name: bfi_dagster_project01
   # Second module instance
   - python_module:
       module_name: bfi_dagster_project
-      attribute: project2_defs
-      location_name: bfi_dasgter_project2
+      attribute: project02_defs
+      location_name: bfi_dasgter_project02
   # Third module instance
   - python_module:
       module_name: bfi_dagster_project
-      attribute: project3_defs
-      location_name: bfi_dagster_project3
+      attribute: project03_defs
+      location_name: bfi_dagster_project03
+  # Fourth module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project04_defs
+      location_name: bfi_dagster_project04
+  # Fifth module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project05_defs
+      location_name: bfi_dasgter_project05
+  # Sixth module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project06_defs
+      location_name: bfi_dagster_project06
+  # Seventh module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project07_defs
+      location_name: bfi_dagster_project07
+  # Eigth module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project08_defs
+      location_name: bfi_dasgter_project08
+  # Ninth module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project09_defs
+      location_name: bfi_dagster_project09
+  # Tenth module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project10_defs
+      location_name: bfi_dagster_project10

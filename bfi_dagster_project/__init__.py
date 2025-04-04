@@ -102,6 +102,13 @@ def build_project_definitions(project_id: str, cron_schedule: str):
 
 
 # Pre-built project definitions for direct use
-project1_defs = build_project_definitions("TARGET1", "0 */2 * * *")
-project2_defs = build_project_definitions("TARGET2", "0 1-23/2 * * *")
-project3_defs = build_project_definitions("TARGET3", "30 */2 * * *")
+project01_defs = build_project_definitions("DG1_QNAP03", "0 */2 * * *")
+project02_defs = build_project_definitions("DG2_FILM_OPS", "0 1-23/2 * * *")
+project03_defs = build_project_definitions("DG3_FILM_PRES", "10 */2 * * *")
+project04_defs = build_project_definitions("DG4_FILM_SCAN", "10 1-23/2 * * *")
+project05_defs = build_project_definitions("DG5_FILM_QC", "20 1-23/2 * * *")
+project06_defs = build_project_definitions("DG6_FILM_LAB", "20 */2 * * *")
+project07_defs = build_project_definitions("DG7_FILM_MICRL", "30 */2 * * *")
+project08_defs = build_project_definitions("DG8_DIGIOPS", "30 1-23/2 * * *")
+project09_defs = build_project_definitions("DG9_QNAP10", "40 */2 * * *")
+project10_defs = build_project_definitions("DG10_QNAP11", "40 1-23/2 * * *")
