@@ -192,9 +192,9 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
-    folder_depth, file_path = utils.count_folder_depth(image_sequence)
     if first_image.endswith(('.dpx', '.DPX')):
         # Only assess DPX folder depths
+        folder_depth = utils.count_folder_depth(image_sequence)
         log_data.append(f"Folder depth is {folder_depth} folder to images")
         if folder_depth is None:
             arguments = (
@@ -283,18 +283,18 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     else:
         log_data.append(f"Directory tree written into sequence path: {pth}")
 
-    # Use file_path to create metadata in folder
-    pth = utils.metadata_dump(image_sequence, file_path, '')
+    # Use first_image to create metadata in folder
+    pth = utils.metadata_dump(image_sequence, first_image, '')
     if pth:
         log_data.append(f"Metadata written into sequence path: {pth}")
     else:
         log_data.append(f"WARNING: Metadata not written into sequence path: {seq}")
 
-    # Use file_path to create metadata for CID media record
+    # Use first_image to create metadata for CID media record
     if arg == 'TAR':
-        pth1, pth2 = utils.metadata_dump(image_sequence, file_path, 'tar')
+        pth1, pth2 = utils.metadata_dump(image_sequence, first_image, 'tar')
     else:
-        pth1, pth2 = utils.metadata_dump(image_sequence, file_path, 'mkv')
+        pth1, pth2 = utils.metadata_dump(image_sequence, first_image, 'mkv')
     if pth1:
         log_data.append(f"Metadata written to Admin/Logs/cid_mediainfo path: {pth1} / {pth2}")
     else:

@@ -247,36 +247,29 @@ def get_partwhole(
 
 def count_folder_depth(
     fpath: str
-) -> tuple[str, str]:
+) -> str | bool | None:
     '''
     Check if folder is three depth of four depth
     across total scan folder contents and folders
     ordered correctly
     '''
     folder_contents = []
-    dpx_path = []
     for root, dirs, files in os.walk(fpath):
         for directory in dirs:
             folder_contents.append(os.path.join(root, directory))
-        for file in files:
-            if file.lower().endswith(('.dpx', '.tif', '.tiff')):
-                dpx_path.append(os.path.join(root, file))
-    dpx_path.sort()
-
-    first_dpx = dpx_path[0]
 
     # Check for dupes in folder names and length of found folders
     repeats = [item for item, count in collections.Counter(folder_contents).items() if count > 1]
     if len(repeats) > 0:
-        return False, first_dpx
+        return False
     if len(folder_contents) < 2:
-        return False, first_dpx
+        return False
     if len(folder_contents) == 2:
         if 'scan' in folder_contents[0].split('/')[-1].lower() and 'x' in folder_contents[1].split('/')[-1].lower():
-            return '3', first_dpx
+            return '3'
     if len(folder_contents) == 3:
         if 'x' in folder_contents[0].split('/')[-1].lower() and 'scan' in folder_contents[1].split('/')[-1].lower() and 'R' in folder_contents[2].split('/')[-1].upper():
-            return '4', first_dpx
+            return '4'
     if len(folder_contents) > 3:
         total_scans = []
         for num in range(0, len(folder_contents)):
@@ -287,15 +280,15 @@ def count_folder_depth(
         if len(folder_contents) / scan_num == 2:
             # Ensure folder naming order is correct
             if 'scan' not in folder_contents[0].split('/')[-1].lower():
-                return None, first_dpx
+                return None
             sorted(folder_contents, key=len)
-            return '3', first_dpx
+            return '3'
         if (len(folder_contents) - 1) / scan_num == 2:
             # Ensure folder naming order is correct
             if 'scan' in folder_contents[0].split('/')[-1].lower() and 'R' not in folder_contents[len(folder_contents) - 1].split('/')[-1].upper():
-                return None, first_dpx
+                return None
             sorted(folder_contents, key=len)
-            return '4', first_dpx
+            return '4'
 
 
 def get_file_type(
