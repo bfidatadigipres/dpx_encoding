@@ -39,7 +39,7 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
         # Get folder_name from AssetIn
         if folder_list == []:
             context.log.info(f"{log_prefix}Run input is empty. Closing.")
-            return {'ffmpeg': [], 'tar': [], 'invalid': []}
+            return {'RAWcook': [], 'TAR': [], 'invalid': []}
         context.log.info(f"{log_prefix}Folder list received: {folder_list}")
 
         # Change assessment status
