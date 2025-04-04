@@ -384,9 +384,10 @@ def iterate_folders(
     filenames = []
     for root, _,files in os.walk(fpath):
         for file in files:
-            if file.endswith(('.dpx', '.DPX', '.tif', '.TIF', '.tiff', '.TIFF')):
-                file_nums.append(int(re.search(r'\d+', file).group()))
+            if file.endswith(('.dpx', '.DPX')):
+                file_nums.append(int(re.search(r'\d+(?!.*\d)', file).group()))
                 filenames.append(os.path.join(root, file))
+            elif file.endswith(('.tif', '.TIF', '.tiff', '.TIFF')):
 
     return (file_nums, filenames)
 
