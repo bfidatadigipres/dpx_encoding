@@ -33,7 +33,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
     )
     def reencode_failed_asset(
         context: dg.AssetExecutionContext,
-    ) -> List[str]:
+    ) -> dg.Output:
         '''
         Receive context op_config containting folder path for failed transcode
         attempt, retrieves database row data and begins re-encode attempt.
