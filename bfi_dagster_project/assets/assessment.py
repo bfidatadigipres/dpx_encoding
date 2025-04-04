@@ -143,6 +143,8 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
     elif seq in str(rec):
+        pass
+        '''
         log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {rec}")
         arguments = (
             ['status', 'Assessment failed'],
@@ -156,6 +158,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
+        '''
     if ftype.lower() not in ['tif', 'tiff', 'dpx', 'dcp', 'dcdm', 'wav', 'tar']:
         log_data.append(f"File type incorrect for sequence: {seq}")
         arguments = (
