@@ -453,9 +453,9 @@ def move_to_autoingest(
     Move a file to the new workflow folder.
     '''
     # 3 for test, 2 for BP paths where autoingest sits within automation/
-    if 'qnap' in str(fpath):
+    if '/mnt/qnap' in str(fpath) or '/mnt/Edit' in str(fpath):
         autoingest = os.path.join(str(Path(fpath).parents[3]), 'autoingest/ingest/autodetect/')
-    elif 'bp_nas' in str(fpath):
+    else:
         autoingest = os.path.join(str(Path(fpath).parents[2]), 'autoingest/ingest/autodetect/')
     try:
         dest_path = os.path.join(autoingest, os.path.basename(fpath))
