@@ -139,7 +139,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
-    elif seq in str(rec) > 0:
+    elif seq in str(rec):
         log_data.append(f"WARNING: Digital file with same sequence name exists in DPI: {rec}")
         arguments = (
             ['status', 'Assessment failed'],
