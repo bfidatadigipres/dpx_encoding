@@ -193,7 +193,7 @@ class SQLiteResource(dg.ConfigurableResource):
             # Use parameterized query to prevent SQL injection
             query = """
             INSERT INTO encoding_status
-            (seq_id, status, full_path, process_start, last_updated)
+            (seq_id, status, folder_path, process_start, last_updated)
             VALUES (?, ?, '', ?, ?)
             """
             cur.execute(query, (seq_id, status, timestamp, timestamp))
