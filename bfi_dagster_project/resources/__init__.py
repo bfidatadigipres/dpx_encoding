@@ -175,13 +175,14 @@ class SQLiteResource(dg.ConfigurableResource):
                     error_message TEXT,
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     sequence_deleted TEXT,
-                    moved_to_autoingest TEXT
+                    moved_to_autoingest TEXT,
+                    project TEXT
                 )
             """)
             context.log.info("Database initialized at: %s", self.filepath)
 
     @with_retries()
-    def start_process(self, context: dg.AssetExecutionContext, seq_id: str, folder_path: str, status: str) -> list[tuple]:
+    def start_process(self, context: dg.AssetExecutionContext, seq_id: str, folder_path: str, status: str, key: str) -> list[tuple]:
         '''
         Initializes a new process record with proper connection handling
         '''
@@ -193,10 +194,10 @@ class SQLiteResource(dg.ConfigurableResource):
             # Use parameterized query to prevent SQL injection
             query = """
             INSERT INTO encoding_status
-            (seq_id, status, folder_path, process_start, last_updated)
-            VALUES (?, ?, '', ?, ?)
+            (seq_id, status, folder_path, process_start, last_updated, project)
+            VALUES (?, ?, '', ?, ?, ?)
             """
-            cur.execute(query, (seq_id, status, timestamp, timestamp))
+            cur.execute(query, (seq_id, status, timestamp, timestamp, key))
 
         # Return after retrieval to ensure we see the inserted data
         return self.retrieve_seq_id_row(context, "SELECT * FROM encoding_status WHERE seq_id=?", 'fetchone', (seq_id,))

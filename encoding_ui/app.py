@@ -1,10 +1,9 @@
 '''
-Flask App for DPI downloader tool using SQLite database supply
-Retrieve requests from HTML web input, update SQLite db with
-new requests, using POST. Accessed by download Python script
-using GET requests, and statuses updated as download progresses.
+Flask App for DPX/TIF encoding tool using SQLite database supply
+Retrieve refresh requests from HTML web input, update SQLite db with
+new requests, using POST. Viewed by teams, 100 day since last update.
 
-2023
+2025
 '''
 
 import os
@@ -50,7 +49,8 @@ CONNECT.execute("""
                     error_message TEXT,
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     sequence_deleted TEXT,
-                    moved_to_autoingest TEXT
+                    moved_to_autoingest TEXT,
+                    project TEXT
                 )
             """)
 
