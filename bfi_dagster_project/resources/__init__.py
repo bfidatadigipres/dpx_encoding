@@ -151,7 +151,7 @@ class SQLiteResource(dg.ConfigurableResource):
                     process_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     seq_id TEXT NOT NULL,
                     status TEXT DEFAULT 'Started',
-                    folder_path TEXT NOT NULL,
+                    folder_path TEXT,
                     first_image TEXT,
                     last_image TEXT,
                     gaps_in_sequence TEXT,
@@ -193,8 +193,8 @@ class SQLiteResource(dg.ConfigurableResource):
             # Use parameterized query to prevent SQL injection
             query = """
             INSERT INTO encoding_status
-            (seq_id, status, process_start, last_updated)
-            VALUES (?, ?, ?, ?)
+            (seq_id, status, full_path, process_start, last_updated)
+            VALUES (?, ?, '', ?, ?)
             """
             cur.execute(query, (seq_id, status, timestamp, timestamp))
 
