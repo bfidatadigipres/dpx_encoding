@@ -218,10 +218,11 @@ def ffv1_validate(fullpath):
 
     else:
         # Move image sequence to_delete and delete
-        success = utils.delete_sequence(dpath)
-        seq_del = 'No'
-        if success:
-            seq_del = 'Yes'
+        #success = utils.delete_sequence(dpath)
+        #seq_del = 'No'
+        #if success:
+        #    seq_del = 'Yes'
+        seq_del = 'Off-line for test'
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)
