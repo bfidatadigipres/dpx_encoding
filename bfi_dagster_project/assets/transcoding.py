@@ -279,7 +279,7 @@ def ffv1_validate(fullpath):
 
         arguments = (
             ['status', 'MKV validation failure'],
-            ['validation_success', 'False'],
+            ['validation_success', 'No'],
             ['validation_complete', str(datetime.datetime.today())[:19]],
             ['error_message', error_message]
         )
@@ -293,16 +293,16 @@ def ffv1_validate(fullpath):
     else:
         # Move image sequence to_delete and delete
         success = utils.delete_sequence(dpath)
-        seq_del = False
+        seq_del = 'No'
         if success:
-            seq_del = True
+            seq_del = 'Yes'
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)
         if not success:
-           auto_move = 'False'
+           auto_move = 'No'
         else:
-           auto_move = 'True'
+           auto_move = 'Yes'
         log_data.append("RAWcooked validation completed.")
         for line in log_data:
             utils.append_to_log(log, line)
@@ -311,10 +311,10 @@ def ffv1_validate(fullpath):
         arguments = (
             ['status', 'MKV validation complete'],
             ['validation_complete', str(datetime.datetime.today())[:19]],
-            ['validation_success', 'True'],
+            ['validation_success', 'Yes'],
             ['error_message', 'None'],
-            ['sequence_deleted', str(seq_del)],
-            ['moved_to_autoingest', str(auto_move)]
+            ['sequence_deleted', seq_del],
+            ['moved_to_autoingest', auto_move]
         )
 
         return {

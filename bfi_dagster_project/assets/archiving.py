@@ -249,9 +249,9 @@ def tar_wrap(fullpath: str) -> Dict[str, Any]:
         if len(priref) > 0:
             utils.append_to_log(local_log, f"Updating CID Item record with TAR wrap data: {priref}")
             tar_file = os.path.basename(tar_path)
-            # success = utils.write_to_cid(priref, tar_file)
-            #if not success:
-            #    utils.append_to_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
+            success = utils.write_to_cid(priref, tar_file)
+            if not success:
+                utils.append_to_log(local_log, f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually.")
 
         # Get complete size of file following TAR wrap
         file_stats = os.stat(tar_path)
@@ -340,7 +340,7 @@ def tar_validate(fullpath):
 
         arguments = (
             ['status', 'TAR validation failure'],
-            ['validation_success', 'False'],
+            ['validation_success', 'No'],
             ['validation_complete', str(datetime.datetime.today())[:19]],
             ['error_message', ', '.join(errors)]
         )
@@ -354,16 +354,16 @@ def tar_validate(fullpath):
     else:
         # Delete source sequence
         success = utils.delete_sequence(dpath)
-        seq_del = False
+        seq_del = 'No'
         if success:
-            seq_del = True
+            seq_del = 'Yes'
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)
         if not success:
-            auto_move = False
+            auto_move = 'No'
         else:
-            auto_move = True
+            auto_move = 'Yes'
 
         log_data.append("TAR wrap validation completed successfully.")
         for line in log_data:
@@ -373,10 +373,10 @@ def tar_validate(fullpath):
         arguments = (
             ['status', 'TAR validation complete'],
             ['validation_complete', str(datetime.datetime.today())[:19]],
-            ['validation_success', 'True'],
+            ['validation_success', 'Yes'],
             ['error_message', 'None'],
-            ['sequence_deleted', str(seq_del)],
-            ['moved_to_autoingest', str(auto_move)]
+            ['sequence_deleted', seq_del],
+            ['moved_to_autoingest', auto_move]
         )
 
         return {
