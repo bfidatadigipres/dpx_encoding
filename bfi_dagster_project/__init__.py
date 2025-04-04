@@ -87,7 +87,7 @@ def build_project_definitions(project_id: str, cron_schedule: str):
         resources={
             "source_path": dg.EnvVar(project_id).get_value(),
             "database": resources.SQLiteResource(filepath=DATABASE),
-            "process_pool": resources.process_pool.configured({"num_processes": 2})
+            "process_pool": resources.process_pool.configured({"num_processes": 3})
         },
         sensors=sensors,
         jobs=jobs,

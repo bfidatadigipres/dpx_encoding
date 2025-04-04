@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 
 class ProcessPoolResource:
-    def __init__(self, num_proc=2):
+    def __init__(self, num_proc=3):
         self.num_proc = num_proc
         #self,_pool = None
 
@@ -29,7 +29,7 @@ class ProcessPoolResource:
 
 @dg.resource
 def process_pool(init_context):
-    return ProcessPoolResource(num_proc=init_context.resource_config.get("num_processes", 2))
+    return ProcessPoolResource(num_proc=init_context.resource_config.get("num_processes", 3))
 
 
 def with_retries(max_retries=5, retry_delay=1.0, backoff_factor=2.0,
