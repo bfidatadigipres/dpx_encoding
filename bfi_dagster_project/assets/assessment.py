@@ -192,9 +192,9 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "logs": log_data
         }
 
+    folder_depth, file_path = utils.count_folder_depth(image_sequence)
     if first_image.endswith(('.dpx', '.DPX')):
         # Only assess DPX folder depths
-        folder_depth, file_path = utils.count_folder_depth(image_sequence)
         log_data.append(f"Folder depth is {folder_depth} folder to images")
         if folder_depth is None:
             arguments = (
