@@ -92,6 +92,9 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     log_data = []
     arguments = []
 
+    # Recursively set permissions
+    utils.recursive_chmod(image_sequence, 0o770)
+
     seq = os.path.basename(image_sequence)
     log_data.append(f"Processing image sequence: {seq}")
     success = utils.check_fname(seq)
