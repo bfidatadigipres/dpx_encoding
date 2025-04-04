@@ -325,9 +325,10 @@ def gaps(
 
     missing_dpx = []
     file_nums, filenames = iterate_folders(dpath)
+    print(file_nums, filenames)
     # Calculate range from first/last
     file_range = list(range(min(file_nums), max(file_nums) + 1))
-
+    print(file_range)
     # Retrieve equivalent DPX names for logs
     first_dpx = filenames[file_nums.index(min(file_nums))]
     last_dpx = filenames[file_nums.index(max(file_nums))]
