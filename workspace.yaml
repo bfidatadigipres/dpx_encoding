@@ -49,3 +49,8 @@ load_from:
       module_name: bfi_dagster_project
       attribute: project10_defs
       location_name: bfi_dagster_project10
+  # Eleventh module instance
+  - python_module:
+      module_name: bfi_dagster_project
+      attribute: project11_defs
+      location_name: bfi_dagster_project11
