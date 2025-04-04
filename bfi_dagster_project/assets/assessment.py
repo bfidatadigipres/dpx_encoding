@@ -246,7 +246,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         width = utils.get_metadata('Image', 'Width', first_image)
     height = utils.get_metadata('Video', 'Height', first_image)
     log_data.append(f"DPX width: {width}")
-    if not width:
+    if not height:
         height = utils.get_metadata('Image', 'Height', first_image)
     if not folder_size or not cspace or not bdepth or not width:
         log_data.append("Folder metadata could not be extracted. Assessment failed.")
