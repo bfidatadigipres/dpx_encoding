@@ -8,7 +8,6 @@ using GET requests, and statuses updated as download progresses.
 '''
 
 import os
-import re
 import sqlite3
 import datetime
 from flask import Flask, render_template, request
@@ -73,6 +72,7 @@ def reset_request():
         seq_id = request.form['seq_id'].strip()
         email = request.form['email'].strip()
         req = request.form['request'].strip()
+        capture_log(email, seq_id)
 
         # Check for non-BFI email and reject
         if 'bfi.org.uk' not in email:
@@ -129,6 +129,16 @@ def encodings():
     cursor.execute(f"SELECT * FROM encoding_status where last_updated >= datetime('now','-100 days')")
     data = cursor.fetchall()
     return render_template("encodings.html", data=data)
+
+
+def capture_log(email: str, sequence: str) -> None:
+    '''
+    Capture email / sequence requests
+    with datestamp
+    '''
+    date_stamp = str(datetime.datetime.today())[:19]
+    with open("refresh_requests.log", "a") as log:
+        log.write(f"{date_stamp} {email} {sequence}\n")
 
 
 if __name__ == '__main__':
