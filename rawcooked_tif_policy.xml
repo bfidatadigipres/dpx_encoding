@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<policy type="or" name="BFI TIFF metadata conformance checker" license="MIT">
+  <description>Tests if a TIFF sequence conforms to BFI RAWcooked license: RAW/RGB/16bit/U/LE</description>
+  <policy type="and" name="TIFF conformance check">
+    <rule name="General/Format is TIFF" value="Format" tracktype="General" occurrence="*" operator="=">TIFF</rule>
+    <policy type="or" name="Extension is tiff or tif">
+      <rule name="General/FileExtension is tiff" value="FileExtension" tracktype="General" occurrence="*" operator="=">tiff</rule>
+      <rule name="General/FileExtension is tiff" value="FileExtension" tracktype="General" occurrence="*" operator="=">tif</rule>
+    </policy>
+    <policy type="or" name="Format Compression is Raw">
+      <rule name="Image/Format is Raw" value="Format" tracktype="Image" occurrence="*" operator="=">Raw</rule>
+      <rule name="Video/Format is Raw" value="Format" tracktype="Video" occurrence="*" operator="=">Raw</rule>
+      <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Image" occurrence="*" operator="=">Raw</rule>
+      <rule name="Format_Compression is Raw" value="Format_Compression" tracktype="Video" occurrence="*" operator="=">Raw</rule>
+    </policy>
+    <policy type="or" name="Compression Mode is Lossless">
+      <rule name="Image/Compression_Mode is Lossless" value="Compression_Mode" tracktype="Image" occurrence="*" operator="=">Lossless</rule>
+      <rule name="Video/Compression_Mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
+    </policy>
+    <policy type="or" name="BitDepth / colorspace / endianess match BFI license">
+      <policy type="or" name="16-bit RGB Little endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="Image/BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+          <rule name="Image/ColorSpace is RGB" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGB</rule>
+          <rule name="Image/Format_Settings_Endianness is Little" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Little</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="Video/BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+          <rule name="Video/Colorspace is RGB" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGB</rule>
+          <rule name="Video/Endianness is little" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Little</rule>
+        </policy>
+      </policy>
+    </policy>
+  </policy>
+</policy>
