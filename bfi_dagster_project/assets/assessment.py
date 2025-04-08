@@ -303,7 +303,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     else:
         log_data.append(f"WARNING: Metadata not written into Admin/Logs/cid_mediainfo path: {seq}")
 
-    status = "Assessment successful"
+    status = f"Assessment success, starting {encoding_choice} encoding"
     arguments = (
         ['status', status],
         ['folder_path', image_sequence],
