@@ -318,7 +318,7 @@ def tar_validate(fullpath):
     if diff > 107374100:
         validation = False
         log_data.append(f"Size difference between source folder/TAR > 100MB. {diff} size - failing TAR.")
-        errors.append("TAR file over 100MB larger than sequence.")
+        errors.append("TAR file significantly larger than sequence.")
 
     # Check logs contain success statement
     success = utils.check_tar_log(log)
