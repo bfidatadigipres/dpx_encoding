@@ -14,19 +14,14 @@ Steps:
 4. Generate MD5 dict for internals of TAR
 5. Compare to ensure identical:
    Yes. Output MD5 to manifest and add into TAR file
-        Move original folder to 'delete' folder
-        Update details to local log.
+        Delete the source file/folder
+        Update details to local log / CID item record.
+        Move TAR file to autoingest. Update all logs.
    No. Delete faulty TAR.
        Output warning to Local log and leave file
        for retry at later date.
-6. Check if file is over 1TB in size:
-   Yes. Move to oversize folder, update oversize log
-        and all local logs then exit.
-   No. Continue to move source to 'to_delete' folder
-       and TAR file to autoingest. Update all logs.
 
-Joanna White
-2022
+2025
 '''
 
 import os
@@ -51,7 +46,7 @@ LOCAL_PATH = os.path.split(sys.argv[1])[0]
 AUTO_TAR = LOCAL_PATH.split('for_tar_wrap')[0]
 TAR_FAIL = os.path.join(AUTO_TAR, 'failures/')
 CHECKSUM = os.path.join(AUTO_TAR, 'checksum_manifests/')
-if '/mnt/bp_nas' not in LOCAL_PATH:
+if '/mnt/bp_nas' in LOCAL_PATH:
     parent_path = LOCAL_PATH.split('tar_preservation')[0]
     AUTOINGEST = os.path.join(parent_path, os.environ['AUTOINGEST_STORE'])
 else:
@@ -351,11 +346,7 @@ def main():
         file_size = file_stats.st_size
         log.append(f"File size is {file_size} bytes")
         LOGGER.info("File size is %s bytes.", file_size)
-        if int(file_size) > 1099511627770:
-            log.append("FILE IS OVER 1TB IN SIZE AND WILL USING BLOBBING TO BE PUT TO DPI")
-            LOGGER.warning("TAR file is over 1TB in size and will be PUT to DPI using blobbing: %s", tar_source)
-        print(AUTOINGEST)
-        log.append(f"Moving TAR file to Autoingest: {AUTOINGEST}")
+
         try:
             LOGGER.info("Moving %s to %s", tar_path, AUTOINGEST)
             shutil.move(tar_path, AUTOINGEST)
@@ -365,7 +356,7 @@ def main():
             LOGGER.info("Deleting image sequence: %s", fullpath)
             os.rmdir(fullpath)
         except Exception as err:
-            LOGGER.warning("Source move to 'to_delete' folder failed:\n%s", err)
+            LOGGER.warning("Source deletion of folder failed:\n%s", err)
         try:
             LOGGER.info("Moving MD5 manifest to checksum_manifest folder %s", CHECKSUM)
             shutil.move(md5_manifest, CHECKSUM)
@@ -374,7 +365,7 @@ def main():
 
         # Tidy away error_log following successful creation
         if os.path.isfile(os.path.join(TAR_FAIL, f"{tar_source}_errors.log")):
-            shutil.move(os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), os.path.join(AUTO_TAR, "completed", f"{tar_source}.log"))
+            os.remove(os.path.join(TAR_FAIL, f"{tar_source}_errors.log"))
 
         # Write note to CID Item record that file has been wrapped using Python tarfile module.
         success = write_to_cid(priref, tar_file)
