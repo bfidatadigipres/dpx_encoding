@@ -105,7 +105,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         arguments = (
                 ['status', 'Assessment failed'],
                 ['folder_path', image_sequence],
-                ['error_message', 'File name formatted incorrectly']
+                ['error_message', 'Folder name formatted incorrectly']
             )
         log_data.append(f"Writing to database:\n{arguments}")
         return {
@@ -184,7 +184,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         arguments = (
                 ['status', 'Assessment failed'],
                 ['folder_path', image_sequence],
-                ['error_message', f'Gaps found in sequence: {missing}']
+                ['error_message', f'{len(missing)} gaps found in sequence']
             )
         log_data.append(f"Folder has gaps in sequence. {missing}")
         return {
@@ -303,7 +303,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     else:
         log_data.append(f"WARNING: Metadata not written into Admin/Logs/cid_mediainfo path: {seq}")
 
-    status = "Assessment successful"
+    status = f"Assessment success, starting {encoding_choice} encoding"
     arguments = (
         ['status', status],
         ['folder_path', image_sequence],
