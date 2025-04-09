@@ -29,7 +29,7 @@ function myFunctionStatus() {
 function myFunctionSeqID() {
   // Declare variables
   var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("seq_id");
+  input = document.getElementById("folder_path");
   filter = input.value.toUpperCase();
   table = document.getElementById("myTable");
   tr = table.getElementsByTagName("tr");
@@ -162,15 +162,16 @@ function sortTable(n) {
       <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/article/4051402810">Instructions</a>
       <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/group/-1" class="split">Service Desk</a>
     </div>
-    <input type="text" id="seq_id" onkeyup="myFunctionSeqID()" placeholder="Filter by sequence...">
+    <input type="text" id="folder_path" onkeyup="myFunctionSeqID()" placeholder="Filter by sequence...">
     <input type="text" id="status" onkeyup="myFunctionStatus()" placeholder="Filter by status...">
     <input type="text" id="encoding_choice" onkeyup="myFunctionEncoding()" placeholder="Filter by encoding type...">
     <input type="text" id="gaps_in_sequence" onkeyup="myFunctionGaps()" placeholder="Filter by sequence gaps...">
     <div style="overflow-x:auto;">
       <table id="myTable" class="searchable sortable" style="width:100%">
           <tr class="header">
-            <th onclick="sortTable(0)">Sequence name</th>
-            <th onclick="sortTable(1)">Status</th>
+            <th onclick="sortTable(0)">Folder path</th>
+            <th onclick="sortTable(1)">Sequence name</th>
+            <th onclick="sortTable(2)">Status</th>
             <th onclick="sortTable(3)">First image</th>
             <th onclick="sortTable(4)">Last image</th>
             <th onclick="sortTable(5)">Sequence gaps</th>
@@ -191,10 +192,10 @@ function sortTable(n) {
             <th onclick="sortTable(24)">Last update</th>
             <th onclick="sortTable(25)">Sequence deleted</th>
             <th onclick="sortTable(26)">Moved to autoingest</th>
-            <th onclick="sortTable(27)">Folder path</th>
           </tr>
           {%for downloads in data%}
             <tr>
+              <td>{{downloads[3]}}</td>
               <td>{{downloads[1]}}</td>
               <td>{{downloads[2]}}</td>
               <td>{{downloads[4]}}</td>
@@ -217,7 +218,6 @@ function sortTable(n) {
               <td>{{downloads[25]}}</td>
               <td>{{downloads[26]}}</td>
               <td>{{downloads[27]}}</td>
-              <td>{{downloads[3]}}</td>
             </tr>
           {%endfor%}
       </table>
