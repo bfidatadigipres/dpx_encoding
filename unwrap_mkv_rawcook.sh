@@ -5,9 +5,11 @@
 # ===============================
 
 # Global variables extracted from environmental variables
-SCRIPT_LOG="${QNAP_FILM}${DPX_SCRIPT_LOG}"
-DPX_PATH="${QNAP_FILM}${UNWRAP_RAWCOOK}"
-ERRORS="${QNAP_FILM}${CURRENT_ERRORS}"
+FPATH="$1"
+echo "${FPATH}"
+SCRIPT_LOG="${LOG_PATH}"
+DPX_PATH="${FPATH}${UNWRAP_RAWCOOK}"
+ERRORS="${DPX_PATH}failed/"
 COMPLETED="${DPX_PATH}completed/"
 
 # Function to write output to log, call 'log' + 'statement' that populates $1.
@@ -25,7 +27,7 @@ find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -name '*.mkv' -mmin +10 >> "${DPX_PAT
 # Write a START note to the logfile if files for decoding, else exit
 if [ -s "${DPX_PATH}unwrap_list.txt" ]
   then
-    log "============= DPX Unwrap RAWcook script START ============="
+    log "============= DPX Unwrap RAWcook ${1} START ============="
     list=$(cat "${DPX_PATH}unwrap_list.txt")
     log "Files found to process:"
     log "$list"

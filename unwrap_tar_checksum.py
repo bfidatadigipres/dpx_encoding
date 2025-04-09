@@ -4,6 +4,7 @@
 unwrap_tar_checksum.py
 
 Script functions:
+0. Receive path to storage/build unwrap_tar path
 1. Check in unwrap_tar folder for any .tar packages
 2. Launch Linux tar to unwrap the file
 3. Check for success/fail statements (to be ascertained)
@@ -34,18 +35,20 @@ import logging
 import datetime
 import subprocess
 
+if not len(sys.argv) >= 2:
+    sys.exit("Missing argument for python launch")
+
 # Global variables
-DPX_PATH = os.environ['QNAP_FILMOPS']
-ERRORS = os.path.join(DPX_PATH, os.environ['CURRENT_ERRORS'])
-SCRIPT_LOG = os.path.join(DPX_PATH, os.environ['DPX_SCRIPT_LOG'])
-UNTAR_PATH = os.path.join(DPX_PATH, os.environ['UNWRAP_TAR'])
+TARGET = sys.argv[1]
+UNTAR_PATH = os.path.join(TARGET, os.environ['UNWRAP_TAR'])
+SCRIPT_LOG = os.environ['LOG_PATH']
 COMPLETED = os.path.join(UNTAR_PATH, 'completed/')
 FAILED = os.path.join(UNTAR_PATH, 'failed/')
 LOCAL_LOG = os.path.join(UNTAR_PATH, 'unwrapped_tar_checksum.log')
 TODAY = str(datetime.datetime.now())[:10]
 
 # Setup logging
-LOGGER = logging.getLogger('unwrap_tar_checksum_qnap_filmops')
+LOGGER = logging.getLogger('unwrap_tar_checksum_qnap_11_digiops')
 HDLR = logging.FileHandler(os.path.join(SCRIPT_LOG, 'unwrap_tar_checksum.log'))
 FORMATTER = logging.Formatter('%(asctime)s\t%(levelname)s\t%(message)s')
 HDLR.setFormatter(FORMATTER)
@@ -81,25 +84,6 @@ def linux_untar_file(fpath):
         return extract_path
 
 
-def setfacl_call(fpath):
-    '''
-    Setfacl command for unwrapped
-    folders to allow wider access
-    to files
-    '''
-
-    cmd = [
-        "setfacl", "-m",
-        "u:root:rwx,u:nobody:rwx,u:10001106:rwx,g:root:rwx,g:users:rwx,g:10001447:rwx",
-        fpath
-    ]
-
-    success = subprocess.run(cmd)
-    if success.returncode == 0:
-        return True
-    return False
-
-
 def python_tarfile(fpath, untar_fpath):
     '''
     If Linux TAR fails, try with python tarfile
@@ -121,12 +105,16 @@ def main():
     Check unwrap_tar path and iterate contents unwrapping/checksum
     verify testing if manifest found in package
     '''
+
+    if not os.path.exists(UNTAR_PATH):
+        sys.exit(f"Exiting: Error with supplied path: {UNTAR_PATH}")
+
     log_list = []
     tar_files = [x for x in os.listdir(UNTAR_PATH) if os.path.isfile(os.path.join(UNTAR_PATH, x))]
     if len(tar_files) == 0:
         sys.exit(f"{UNTAR_PATH} EMPTY. SCRIPT EXITING.")
 
-    LOGGER.info("========= UNWRAP TAR CHECKSUM SCRIPT START =====================")
+    LOGGER.info(f"========= UNWRAP TAR SCRIPT {TARGET} START =====================")
 
     for fname in tar_files:
         fname_log = fname.split(".")[0]
@@ -140,7 +128,7 @@ def main():
             LOGGER.info("Skipping file, not a TAR: %s", fname)
             error_mssg1 = "File/folder placed in unwrap_tar/ folder is not a TAR file. Please remove this item from this path"
             error_mssg2 = None
-            error_log(os.path.join(ERRORS, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
+            error_log(os.path.join(FAILED, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
             build_log(log_list)
             continue
 
@@ -173,7 +161,7 @@ def main():
                 shutil.move(fpath, FAILED)
                 error_mssg1 = f"Linux TAR and Python tarfile cannot extract data. Please try alternative software. File location: {fpath}"
                 error_mssg2 = None
-                error_log(os.path.join(ERRORS, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
+                error_log(os.path.join(FAILED, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
                 if os.path.exists(untar_fpath) and not os.listdir(untar_fpath):
                     LOGGER.info("Moved TAR to failed/ folder. Deleted empty folder: %s", untar_file)
                     log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Deleted empty extraction folder: {untar_file}")
@@ -192,9 +180,6 @@ def main():
             LOGGER.info("Linux TAR programme extracted file to path: %s", untar_fpath)
 
         os.chmod(untar_fpath, 0o777)
-        success = setfacl_call(untar_fpath)
-        if not success:
-            log_list.append(f"{str(datetime.datetime.now())[:10]}\tWARNING: Unable to setfacl with folder {untar_fpath}")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtracted TAR file successful: {untar_fpath}")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tExtraction took {minutes_taken} minutes to complete")
         LOGGER.info("It took %s minutes to perform this extraction.", minutes_taken)
@@ -213,7 +198,7 @@ def main():
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tMD5 manifest extracted from TAR file for comparison")
 
             for k, v in manifest_contents.items():
-                if local_manifest[k] == v:
+                if local_manifest.get(k) == v:
                     print(f"MD5 match: {k}")
                 else:
                     print(f"MD5 does not match: {k}")
@@ -227,7 +212,7 @@ def main():
                 log_list.append(f"{str(datetime.datetime.now())[:10]}\tMD5 manifest cannot be fully matched to extracted MD5 manifest.")
                 error_mssg1 = f"MD5 manifests do not match from TAR file, and unwrapped TAR folder contents: {local_manifest_path}"
                 error_mssg2 = None
-                error_log(os.path.join(ERRORS, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
+                error_log(os.path.join(FAILED, f"{fname_log}_errors.log"), error_mssg1, error_mssg2)
         else:
             LOGGER.info("MD5 manifest was not extracted from TAR file. No comparison possible.")
             log_list.append(f"{str(datetime.datetime.now())[:10]}\tNo MD5 manifest extracted from TAR file. No comparison possible.")
@@ -236,8 +221,8 @@ def main():
         LOGGER.info("%s file moved to COMPLETED path: %s", fname, COMPLETED)
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tMoved TAR to completed/ folder for manual deletion.")
         log_list.append(f"{str(datetime.datetime.now())[:10]}\t-------------------------------------------------------------------")
-        if os.path.exists(os.path.join(ERRORS, f"{fname_log}_errors.log")):
-            shutil.move(os.path.join(ERRORS, f"{fname_log}_errors.log"), os.path.join(ERRORS, f"completed/{fname_log}_errors.log"))
+        if os.path.exists(os.path.join(FAILED, f"{fname_log}_errors.log")):
+            os.rename(os.path.join(FAILED, f"{fname_log}_errors.log"), os.path.join(COMPLETED, f"{fname_log}.log"))
         build_log(log_list)
 
     LOGGER.info("========= UNWRAP TAR CHECKSUM SCRIPT END =======================")
@@ -267,6 +252,9 @@ def get_checksum(fpath):
             with open(os.path.join(root, file), "rb") as md5_file:
                 for chunk in iter(lambda: md5_file.read(65536), b""):
                     hsh.update(chunk)
+                if file in ['ASSETMAP','VOLINDEX']:
+                    folder_prefix = os.path.basename(root)
+                    file = f'{folder_prefix}_{file}'
                 md5s[file] = hsh.hexdigest()
     return md5s
 

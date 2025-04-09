@@ -20,16 +20,17 @@ function control {
 control
 
 # Path to folder
-FPATH="${QNAP_TEMP}${DPX_WRAP}"
-LOGS="${QNAP_TEMP}${DPX_SCRIPT_LOG}tar_wrapping_checksum.log"
-FLIST="${QNAP_TEMP}${TAR_PRES}temp_file_list.txt"
+PTH="$1"
+FPATH="${PTH}${DPX_WRAP}"
+LOGS="${LOG_PATH}tar_wrapping_checksum.log"
+FLIST="${PTH}${TAR_PRES}temp_file_list.txt"
 
 if [ -z "$(ls -A ${FPATH})" ]
   then
     echo "Folder empty, for_tar_wrap, script exiting."
     exit 1
   else
-    echo "=========== TAR WRAPPING CHECKSUM SCRIPT START =========== $date_FULL" >> "$LOGS"
+    echo "=========== TAR WRAPPING CHECKSUM $1 START =========== $date_FULL" >> "$LOGS"
     echo "Looking for files or folders in $FPATH" >> "$LOGS"
     echo "Writing any files/folders found to $FLIST:" >> "$LOGS"
 fi
@@ -47,6 +48,6 @@ cat "$FLIST" >> "$LOGS"
 
 # Launching Python script using parallel
 echo " Launching Python script to TAR wrap files/folders " >> "$LOGS"
-grep "/mnt/" "$FLIST" | parallel --jobs 1 "${PY3_ENV} ${DPX_SCRIPTS}film_operations/tar_wrapping_checksum.py {}"
+grep "/mnt/" "$FLIST" | parallel --jobs 1 "${PYENV311} ${DPX_SCRIPTS}tar_wrapping_checksum.py {}"
 echo " =========== TAR WRAPPING CHECKSUM SCRIPT END =========== $date_FULL" >> "$LOGS"
 echo "" >> "$LOGS"
