@@ -195,9 +195,9 @@ class SQLiteResource(dg.ConfigurableResource):
             query = """
             INSERT INTO encoding_status
             (seq_id, status, folder_path, process_start, last_updated, project)
-            VALUES (?, ?, '', ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """
-            cur.execute(query, (seq_id, status, timestamp, timestamp, key))
+            cur.execute(query, (seq_id, status, folder_path, timestamp, timestamp, key))
 
         # Return after retrieval to ensure we see the inserted data
         return self.retrieve_seq_id_row(context, "SELECT * FROM encoding_status WHERE seq_id=?", 'fetchone', (seq_id,))
