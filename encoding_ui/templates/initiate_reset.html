@@ -18,11 +18,12 @@
             <!-- <label id="label">Enter name (surname and initial):</label> -->
             <input type="text" name="seq_id" placeholder="Enter image sequence name - eg N_123456_01of03" required><br/>
             <!-- <label id="label">Enter sequence name:</label> -->
-            <input type="text" name="email" placeholder="Enter email address in full - only BFI emails are permitted - eg joe.smith@bfi.org.uk" required><br/>
+            <input type="text" name="email" placeholder="Enter BFI email address in full - eg, joe.smith@bfi.org.uk" required><br/>
             <!-- <label id="label" for="action_type">Selection action type:</label> -->
             <select name="request" id="request" required>
                 <option value="" disabled selected>Select action</option>
                 <option value="Full reset">Full restart of sequence encoding (clear database entry)</option>
+                <option value="Accept gaps">Accept gaps in sequence for long-term preservation</option>
             </select><br/>
             <input type="submit" value="submit"/><br/>
         </form>

@@ -113,6 +113,43 @@ def reset_request():
                     WHERE seq_id = ?
                 """, (status, date_stamp, date_stamp, seq_id))
                 users.commit()
+        elif req == 'Accept gaps':
+            status = 'Triggered assessment'
+            gaps = 'Accept gaps'
+            date_stamp = str(datetime.datetime.today())[:19]
+            with sqlite3.connect(DBASE) as users:
+                cursor = users.cursor()
+                cursor.execute(f"""
+                    UPDATE encoding_status SET
+                        status = ?,
+                        folder_path = '',
+                        first_image = NULL,
+                        last_image = NULL,
+                        gaps_in_sequence = ?,
+                        assessment_pass = NULL,
+                        assessment_complete = NULL,
+                        colourspace = NULL,
+                        seq_size = NULL,
+                        bitdepth = NULL,
+                        image_width = NULL,
+                        image_height = NULL,
+                        process_start = ?,
+                        encoding_choice = NULL,
+                        encoding_log = NULL,
+                        encoding_retry = NULL,
+                        encoding_complete = NULL,
+                        derivative_path = NULL,
+                        derivative_size = NULL,
+                        derivative_md5 = NULL,
+                        validation_complete = NULL,
+                        validation_success = NULL,
+                        error_message = NULL,
+                        last_updated = ?,
+                        sequence_deleted = NULL,
+                        moved_to_autoingest = NULL
+                    WHERE seq_id = ?
+                """, (status,  gaps, date_stamp, date_stamp, seq_id))
+                users.commit()
         return render_template('index_reset.html')
     else:
         return render_template('initiate_reset.html')

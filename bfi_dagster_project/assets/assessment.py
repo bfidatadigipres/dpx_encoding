@@ -47,7 +47,11 @@ def build_assess_sequence_asset(key_prefix: Optional[str] = None):
             ['status', 'Assessment started'],
         )
         for folder in folder_list:
-            seq = os.path.basename(folder)
+            if folder.startswith('GAPS_'):
+                fd = folder.split('_', 1)[-1]
+                seq = os.path.basename(fd)
+            else:           
+                seq = os.path.basename(folder)
             context.log.info(f"{log_prefix}Updating assessment started: {arg}")
             entry = context.resources.database.append_to_database(context, seq, arg)
             context.log.info(f"{log_prefix}Updated database status: Assessment started {entry}")
@@ -93,12 +97,17 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     arguments = []
 
     # Recursively set permissions
+    accept_gaps = False
+    if image_sequence.startswith('GAPS_'):
+        accept_gaps = True
+        image_sequence = image_sequence.split('_', 1)[-1]
+
+    seq = os.path.basename(image_sequence)
     try:
         utils.recursive_chmod(image_sequence, 0o777)
     except PermissionError as err:
         print(err)
 
-    seq = os.path.basename(image_sequence)
     log_data.append(f"Processing image sequence: {seq}")
     success = utils.check_fname(seq)
     if success is False:
@@ -176,24 +185,28 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
             "db_arguments": arguments,
             "logs": log_data
         }
-
+    
     first_image, last_image, missing = utils.gaps(image_sequence)
-    log_data.append(f"Image data - first {first_image} - last {last_image} - missing: {len(missing)}")
-    if len(missing) > 0:
-        log_data.append(f"Gaps found in sequence: {missing}")
-        arguments = (
-                ['status', 'Assessment failed'],
-                ['folder_path', image_sequence],
-                ['error_message', f'{len(missing)} gaps found in sequence']
-            )
-        log_data.append(f"Folder has gaps in sequence. {missing}")
-        return {
-            "sequence": image_sequence,
-            "success": False,
-            "encoding_choice": None,
-            "db_arguments": arguments,
-            "logs": log_data
-        }
+    if accept_gaps is False:
+        log_data.append(f"Image data - first {first_image} - last {last_image} - missing: {len(missing)}")
+        if len(missing) > 0:
+            log_data.append(f"Gaps found in sequence: {missing}")
+            arguments = (
+                    ['status', 'Assessment failed'],
+                    ['folder_path', image_sequence],
+                    ['gaps_in_sequence', 'Yes'],
+                    ['error_message', f'{len(missing)} gaps found in sequence']
+                )
+            log_data.append(f"Folder has gaps in sequence. {missing}")
+            return {
+                "sequence": image_sequence,
+                "success": False,
+                "encoding_choice": None,
+                "db_arguments": arguments,
+                "logs": log_data
+            }
+    else:
+        log_data.append(f"GAPS ACCEPTED for long-term preservation:\n{missing}")
 
     if first_image.endswith(('.dpx', '.DPX')):
         # Only assess DPX folder depths

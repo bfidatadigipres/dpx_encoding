@@ -53,6 +53,9 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
             elif len(result) > 0 and 'Triggered assessment' not in str(result):
                 context.log.info(f"{log_prefix}Skipping: Sequence already listed in process/processed: %s", result)
                 continue
+            elif len(result) > 0 and 'Triggered assessment' in str(result) and 'Accept gaps' in str(result):
+                context.log.info(f"{log_prefix}Picking up sequence a second time. Passing for processing: %s", result)
+                current_files.append(f"GAPS_{dpath}")
             elif len(result) > 0 and 'Triggered assessment' in str(result):
                 context.log.info(f"{log_prefix}Picking up sequence a second time. Passing for processing: %s", result)
                 current_files.append(dpath)
