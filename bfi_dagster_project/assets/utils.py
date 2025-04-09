@@ -6,6 +6,7 @@ import ffmpeg
 import shutil
 import tarfile
 import hashlib
+import tenacity
 import datetime
 import collections
 import subprocess
@@ -112,6 +113,7 @@ def write_dir_tree(
         return False
 
 
+@tenacity.retry(stop=tenacity.stop_after_attempt(3))
 def metadata_dump(
     dpath: str,
     file_path: str,
@@ -138,8 +140,7 @@ def metadata_dump(
         try:
             subprocess.run(command, check=True, shell=False)
         except Exception as err:
-            print(err)
-            return None
+            raise err
         if os.path.isfile(outpath):
             return outpath
         else:
@@ -166,14 +167,15 @@ def metadata_dump(
             subprocess.run(command, check=True, shell=False)
             subprocess.run(command2, check=True, shell=False)
         except Exception as err:
-            print(err)
-            return None, None
+            raise err
+
         if os.path.isfile(outpath) and os.path.isfile(outpath2):
             return outpath, outpath2
         else:
             return None, None
 
 
+@tenacity.retry(stop=tenacity.stop_after_attempt(3))
 def mediaconch(
     ipath: str,
     arg: str
@@ -200,10 +202,10 @@ def mediaconch(
         else:
             return ['Fail', str(result)]
     except Exception as err:
-        print(err)
-        raise
+        raise err
 
 
+@tenacity.retry(stop=tenacity.stop_after_attempt(3))
 def mediaconch_mkv(
     dpath: str
 ) -> List:
@@ -222,8 +224,7 @@ def mediaconch_mkv(
             return ['Pass', result]
         return ['Fail', result]
     except Exception as err:
-        print(err)
-        raise
+        raise err
 
 
 def get_partwhole(
