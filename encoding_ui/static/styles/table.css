@@ -3,7 +3,7 @@
     color: #505050;
   }
   
-  #seq_id, #encoding_choice, #gaps_in_sequence, #status {
+  #folder_path, #encoding_choice, #gaps_in_sequence, #status {
     width: 30%;
     font-size: 16px; /* Increase font-size */
     padding: 12px 20px 12px 40px; /* Add some padding */
