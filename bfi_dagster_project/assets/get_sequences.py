@@ -32,8 +32,12 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
         directories.sort()
         context.log.info(f"{log_prefix}Directories located:\n%s", directories)
 
+        count = 1
         current_files = []
         for dr in directories:
+            if count > 4:
+                break
+            count += 1
             dpath = os.path.join(seq_supply, dr)
             context.log.info(f"{log_prefix}Directory path: %s", dpath)
 

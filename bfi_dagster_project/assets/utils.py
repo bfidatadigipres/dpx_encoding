@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import ffmpeg
 import shutil
 import tarfile
 import hashlib
@@ -72,7 +73,6 @@ def accepted_file_type(ext):
 
 
 def get_metadata(
-    stream: str,
     arg: str,
     dpath: str
 ) -> str:
@@ -80,16 +80,14 @@ def get_metadata(
     Retrieve metadata with subprocess
     for supplied stream/field arg
     '''
+    probe = ffmpeg.probe(dpath)
+    if 'streams' not in probe:
+        return False
 
-    cmd = [
-        'mediainfo', '--Full',
-        '--Language=raw',
-        f'--Output={stream};%{arg}%',
-        dpath
-    ]
-
-    meta = subprocess.check_output(cmd)
-    return meta.decode('utf-8').rstrip('\n')
+    if probe['streams'][0][arg]:
+        return probe['streams'][0][arg]
+    else:
+        return False
 
 
 def write_dir_tree(

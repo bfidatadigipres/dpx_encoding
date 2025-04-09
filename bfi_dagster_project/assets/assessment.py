@@ -232,22 +232,21 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         log_data.append("Sequence is not DPX and will not have folder structure assessed.")
 
     folder_size = utils.get_folder_size(image_sequence)
-    cspace = utils.get_metadata('Video', 'ColorSpace', first_image)
-    log_data.append(f"Colourspace: {cspace}")
-    if not cspace:
-        cspace = utils.get_metadata('Image', 'ColorSpace', first_image)
-    bdepth = utils.get_metadata('Video', 'BitDepth', first_image)
+    cspace = utils.get_metadata('pix_fmt', first_image)
+    if 'gray16be' in cspace:
+        log_data.append("Colourspace: Luma")
+    else:
+        log_data.append(f"Colourspace: {cspace}")
+
+    bdepth = utils.get_metadata('bits_per_raw_sample', first_image)
     log_data.append(f"Bit depth: {bdepth}")
-    if not bdepth:
-        bdepth = utils.get_metadata('Image', 'BitDepth', first_image)
-    width = utils.get_metadata('Video', 'Width', first_image)
+
+    width = utils.get_metadata('width', first_image)
     log_data.append(f"DPX width: {width}")
-    if not width:
-        width = utils.get_metadata('Image', 'Width', first_image)
-    height = utils.get_metadata('Video', 'Height', first_image)
-    log_data.append(f"DPX width: {width}")
-    if not height:
-        height = utils.get_metadata('Image', 'Height', first_image)
+
+    height = utils.get_metadata('height', first_image)
+    log_data.append(f"DPX width: {height}")
+
     if not folder_size or not cspace or not bdepth or not width:
         log_data.append("Folder metadata could not be extracted. Assessment failed.")
         arguments = (
