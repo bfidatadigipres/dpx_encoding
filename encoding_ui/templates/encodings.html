@@ -191,6 +191,7 @@ function sortTable(n) {
             <th onclick="sortTable(24)">Last update</th>
             <th onclick="sortTable(25)">Sequence deleted</th>
             <th onclick="sortTable(26)">Moved to autoingest</th>
+            <th onclick="sortTable(27)">Folder path</th>
           </tr>
           {%for downloads in data%}
             <tr>
@@ -216,6 +217,7 @@ function sortTable(n) {
               <td>{{downloads[25]}}</td>
               <td>{{downloads[26]}}</td>
               <td>{{downloads[27]}}</td>
+              <td>{{downloads[3]}}</td>
             </tr>
           {%endfor%}
       </table>
