@@ -139,9 +139,11 @@ def metadata_dump(
             subprocess.run(command, check=True, shell=False)
         except Exception as err:
             print(err)
-            return False
+            return None
         if os.path.isfile(outpath):
             return outpath
+        else:
+            return None
 
     elif len(ext) > 0:
         outpath = os.path.join(METADATA_PATH, f"{directory}_{file}_SOURCE.json")
@@ -165,9 +167,11 @@ def metadata_dump(
             subprocess.run(command2, check=True, shell=False)
         except Exception as err:
             print(err)
-            return False, err
+            return None, None
         if os.path.isfile(outpath) and os.path.isfile(outpath2):
             return outpath, outpath2
+        else:
+            return None, None
 
 
 def mediaconch(

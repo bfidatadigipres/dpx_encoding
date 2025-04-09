@@ -35,7 +35,7 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
         count = 1
         current_files = []
         for dr in directories:
-            if count > 4:
+            if count > 2:
                 break
             count += 1
             dpath = os.path.join(seq_supply, dr)

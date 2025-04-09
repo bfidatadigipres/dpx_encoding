@@ -233,10 +233,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
 
     folder_size = utils.get_folder_size(image_sequence)
     cspace = utils.get_metadata('pix_fmt', first_image)
-    if 'gray16be' in cspace:
-        log_data.append("Colourspace: Luma")
-    else:
-        log_data.append(f"Colourspace: {cspace}")
+    log_data.append(f"Colourspace: {cspace}")
 
     bdepth = utils.get_metadata('bits_per_raw_sample', first_image)
     log_data.append(f"Bit depth: {bdepth}")
