@@ -157,7 +157,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         subprocess.run(" ".join(cmd), shell=True, check=True)
     except subprocess.CalledProcessError as err:
         print(err)
-        raise err
+
     toc = time.perf_counter()
     mins = (toc - tic) // 60
     log_data.append(f"RAWcooked encoding took {mins} minutes")
