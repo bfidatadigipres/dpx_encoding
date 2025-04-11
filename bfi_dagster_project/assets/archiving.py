@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 import tarfile
 import datetime
 import dagster as dg
@@ -353,11 +354,16 @@ def tar_validate(fullpath):
         }
     else:
         # Delete source sequence
+        cpath = os.path.join(str(Path(spath).parents[1]), 'processing/for_deletion/')
+        if not os.path.exists(cpath):
+            os.makedirs(cpath, exist_ok=True, mode=0o777)
+        shutil.move(dpath, os.path.join(cpath, seq))
+        seq_del = 'Moved to for_deletion folder'
+        log_data.append(f"Image sequence moved to {cpath}")
         #success = utils.delete_sequence(dpath)
         #seq_del = 'No'
         #if success:
         #    seq_del = 'Yes'
-        seq_del = 'Off-line for test'
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)

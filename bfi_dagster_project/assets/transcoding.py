@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 import datetime
 import subprocess
 import dagster as dg
@@ -291,12 +292,17 @@ def ffv1_validate(fullpath):
         }
 
     else:
-        # Move image sequence to_delete and delete
-        # success = utils.delete_sequence(dpath)
+        # Delete image sequence
+        cpath = os.path.join(str(Path(spath).parents[1]), 'processing/for_deletion/')
+        if not os.path.exists(cpath):
+            os.makedirs(cpath, exist_ok=True, mode=0o777)
+        shutil.move(dpath, os.path.join(cpath, seq))
+        seq_del = 'Moved to for_deletion folder'
+        log_data.append(f"Image sequence moved to {cpath}")
+        # success = utils.delete_sequence(os.path.join(move_to, seq)))
         # seq_del = 'No'
         # if success:
         #     seq_del = 'Yes'
-        seq_del = 'Off-line for test'
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)
