@@ -153,7 +153,7 @@ def reset_request():
         elif req == 'Remove':
             with sqlite3.connect(DBASE) as users:
                 cursor = users.cursor()
-                cursor.execute(f"""DELETE FROM encoding_status WHERE seq_id={seq_id}""")
+                cursor.execute("""DELETE FROM encoding_status WHERE seq_id=?""", (seq_id,))
                 users.commit()
         return render_template('index_reset.html')
     else:
