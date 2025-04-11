@@ -204,7 +204,7 @@ def ffv1_validate(fullpath):
         utils.move_log_to_dest(log, 'failures')
 
         arguments = (
-            ['status', 'MKV validation failure'],
+            ['status', 'RAWcook failed'],
             ['validation_success', 'No'],
             ['validation_complete', str(datetime.datetime.today())[:19]],
             ['error_message', error_message]
