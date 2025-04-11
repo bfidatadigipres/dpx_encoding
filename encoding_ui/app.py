@@ -150,6 +150,11 @@ def reset_request():
                     WHERE seq_id = ?
                 """, (status,  gaps, date_stamp, date_stamp, seq_id))
                 users.commit()
+        elif req == 'Remove':
+            with sqlite3.connect(DBASE) as users:
+                cursor = users.cursor()
+                cursor.execute(f"""DELETE FROM encoding status WHERE seq_id=?""", (seq_id))
+                users.commit()
         return render_template('index_reset.html')
     else:
         return render_template('initiate_reset.html')

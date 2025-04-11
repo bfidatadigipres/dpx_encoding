@@ -435,14 +435,18 @@ def move_to_failures(
 def move_log_to_dest(lpath: str, arg: str) -> None:
     '''
     Move a file or sequence to the failures folder.
+    Prepend failed logs 'fail_'
     '''
     dest = os.path.join(str(Path(lpath).parents[1]), f"logs/{arg}/")
-
+    if arg == 'failures':
+        fname = f"fail_{os.path.basename(lpath)}"
+    else:
+        fname = os.path.basename(lpath)
     try:
         if not os.path.exists(dest):
             os.makedirs(dest, exist_ok=True)
 
-        dest_path = os.path.join(dest, os.path.basename(lpath))
+        dest_path = os.path.join(dest, fname)
         shutil.move(lpath, dest_path)
 
     except Exception as e:
@@ -690,12 +694,15 @@ def check_for_version_two(
     ]
 
     if not os.path.isfile(log):
-        log_name = os.path.basename(log)
-        log_path = os.path.join(str(Path(log).parents[1]), 'logs/')
-        for root, _, files in os.walk(log_path):
-            for file in files:
-                if log_name in file:
-                    log = os.path.join(root, file)
+        log_name_clean = os.path.basename(log)
+        log_name_fail = f"fail_{log_name_clean}"
+        log_path = os.path.join(str(Path(log).parents[1]), 'logs/failures/')
+        files = os.listdir(log_path)
+        for file in files:
+            if log_name_clean in file:
+                log = os.path.join(log_path, file)
+            if log_name_fail in file:
+                log = os.path.join(log_path, file)
 
     if not os.path.isfile(log):
         return False
