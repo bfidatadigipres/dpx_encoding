@@ -72,7 +72,7 @@ def reset_request():
         seq_id = request.form['seq_id'].strip()
         email = request.form['email'].strip()
         req = request.form['request'].strip()
-        capture_log(email, seq_id)
+        capture_log(email, seq_id, req)
 
         # Check for non-BFI email and reject
         if 'bfi.org.uk' not in email:
@@ -173,14 +173,14 @@ def encodings():
     return render_template("encodings.html", data=data)
 
 
-def capture_log(email: str, sequence: str) -> None:
+def capture_log(email: str, sequence: str, req: str) -> None:
     '''
     Capture email / sequence requests
     with datestamp
     '''
     date_stamp = str(datetime.datetime.today())[:19]
     with open("refresh_requests.log", "a") as log:
-        log.write(f"{date_stamp} {email} {sequence}\n")
+        log.write(f"{date_stamp} {email} {sequence} {req}\n")
 
 
 if __name__ == '__main__':
