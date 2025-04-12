@@ -113,7 +113,7 @@ def write_dir_tree(
         return False
 
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(3))
+@tenacity.retry(stop=tenacity.stop_after_attempt(5))
 def metadata_dump(
     dpath: str,
     file_path: str,
@@ -175,7 +175,7 @@ def metadata_dump(
             return None, None
 
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(3))
+@tenacity.retry(stop=tenacity.stop_after_attempt(10))
 def mediaconch(
     ipath: str,
     arg: str
@@ -205,7 +205,7 @@ def mediaconch(
         raise err
 
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(3))
+@tenacity.retry(stop=tenacity.stop_after_attempt(10))
 def mediaconch_mkv(
     dpath: str
 ) -> List:
