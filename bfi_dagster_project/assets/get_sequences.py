@@ -35,6 +35,8 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
         count = 1
         current_files = []
         for dr in directories:
+            if 'for_deletion' in dr:
+                continue
             if count > 2:
                 break
             count += 1
