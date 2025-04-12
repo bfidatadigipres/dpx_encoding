@@ -191,8 +191,8 @@ def mediaconch(
         return ['Fail', 'Image sequence extension not recognised for RAWcook']
 
     cmd = [
-        'mediaconch', '-p',
-        policy, ipath
+        'mediaconch', '--Force',
+        '-p', policy, ipath
     ]
 
     try:
@@ -214,8 +214,8 @@ def mediaconch_mkv(
     '''
     policy = os.environ.get("POLICY_RAWCOOK")
     cmd = [
-        'mediaconch', '-p',
-        policy, dpath
+        'mediaconch', '--Force',
+        '-p', policy, dpath
     ]
 
     try:
