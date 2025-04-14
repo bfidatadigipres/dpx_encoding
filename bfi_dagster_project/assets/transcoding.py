@@ -113,6 +113,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     log_data.append("Encoding choice is RAWcooked")
     if not os.path.exists(fullpath[0]):
         log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
+
         arguments = (
             ['status', 'RAWcook failed'],
             ['encoding_complete', str(datetime.datetime.today())[:19]]
@@ -214,10 +215,13 @@ def ffv1_validate(fullpath):
     log_data.append(f"Received: {fullpath[0]}")
     if isinstance(fullpath, str):
         spath = fullpath
-    elif isinstance(fullpath[0], str):
+    else:
         spath = fullpath[0]
+
     if not os.path.exists(spath):
         log_data.append(f"WARNING: Failed to find path {spath}. Exiting.")
+        log_data.append(utils.move_to_failures(spath))
+
         arguments = (
             ['status', 'RAWcook failed'],
             ['validation_complete', str(datetime.datetime.today())[:19]]
