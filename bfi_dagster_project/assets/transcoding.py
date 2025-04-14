@@ -216,6 +216,18 @@ def ffv1_validate(fullpath):
         spath = fullpath
     elif isinstance(fullpath[0], str):
         spath = fullpath[0]
+    if not os.path.exists(spath):
+        log_data.append(f"WARNING: Failed to find path {spath}. Exiting.")
+        arguments = (
+            ['status', 'RAWcook failed'],
+            ['validation_complete', str(datetime.datetime.today())[:19]]
+        )
+        return {
+            "sequence": None,
+            "success": False,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
 
     fname = os.path.basename(spath)
     seq = fname.split('.')[0]

@@ -289,6 +289,23 @@ def tar_validate(fullpath):
 
     log_data.append(f"Received: {fullpath}")
     spath = fullpath[0]
+    if not os.path.exists(spath):
+        log_data.append(f"WARNING: Failed to find path {spath}. Exiting.")=
+        for line in log_data:
+            utils.append_to_log(log, line)
+        log_data.append(utils.move_to_failures(dpath))
+        utils.move_log_to_dest(log, 'failures')
+
+        arguments = (
+            ['status', 'TAR validation failure'],
+            ['error_message', f'Path failed: {spath}']
+        )
+        return {
+            "sequence": None,
+            "success": False,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
     fname = os.path.basename(spath)
     seq = fname.split('.')[0]
     dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
