@@ -59,11 +59,13 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
         # Group by batch size if needed
         for seq in failed_encodings:
             print(seq)
-            seq_id = seq["seq_id"]
-            spath = seq["folder_path"]
+            seq_id = seq[1]
+            spath = seq[3]
             if key_prefix not in spath:
                 continue
-            retry_count = seq.get("encoding_retry", 0)
+            retry_count = seq[17]
+            if not retry_count.isnumeric():
+                retry_count = 0
 
             if int(retry_count) > 3:
                 context.log.warning(f"{log_prefix}Attempted encodings exceeded 3 attempts. Manual attention needed.")
