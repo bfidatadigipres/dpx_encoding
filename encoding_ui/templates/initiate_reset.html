@@ -21,12 +21,12 @@
             <input type="text" name="email" placeholder="Enter BFI email address in full - eg, joe.smith@bfi.org.uk" required><br/>
             <!-- <label id="label" for="action_type">Selection action type:</label> -->
             <select name="request" id="request" required>
-                <option value="" disabled selected>Select action</option>
+                <option value="" disabled selected>Select action below. Please manually move sequence into 'processing' folder also.</option>
                 <option value="Full reset">Refresh sequence for new encoding attempt</option>
                 <option value="Accept gaps">Accept gaps in sequence for long-term preservation</option>
                 <option value="Remove">Delete sequence row from database</option>
-                <option value="16fps">Coming soon - Force MKV framerate to 16 FPS</option>
-                <option value="24fps">Coming soon - Force MKV framerate to 24 FPS</option>
+                <option value="Force 16 FPS">Force FFV1 MKV encoding framerate to 16 FPS</option>
+                <option value="Force 24 FPS">Force FFV1 MKV encoding framerate to 24 FPS</option>
             </select><br/>
             <input type="submit" value="submit"/><br/>
         </form>

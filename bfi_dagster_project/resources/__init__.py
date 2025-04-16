@@ -176,7 +176,8 @@ class SQLiteResource(dg.ConfigurableResource):
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     sequence_deleted TEXT,
                     moved_to_autoingest TEXT,
-                    project TEXT
+                    project TEXT,
+                    Instruction TEXT
                 )
             """)
             context.log.info("Database initialized at: %s", self.filepath)

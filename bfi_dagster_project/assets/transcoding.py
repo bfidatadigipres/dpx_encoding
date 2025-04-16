@@ -42,9 +42,26 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
             context.log.info("No RAWcook sequences to process at this time.")
             return dg.Output(value={})
 
+        # Check for accepted gaps / forced framerates
+        for_rawcooking = []
+        for fpath in assessment['RAWcook']:
+            root, seq = os.path.split(fpath)
+            search = "SELECT status FROM encoding_status WHERE seq_id=?"
+            result = context.resources.database.retrieve_seq_id_row(context, search, 'fetchall', (seq,))
+            context.log.info(f"{log_prefix}Received row {result}")
+
+            if 'Accept gaps' in str(result):
+                for_rawcooking.append(os.path.join(root, f"GAPS_{seq}"))
+            elif 'Force 24 FPS' in str(result):
+                for_rawcooking.append(os.path.join(root, f"24FPS_{seq}"))
+            elif 'Force 16 FPS' in str(result):
+                for_rawcooking.append(os.path.join(root, f"16FPS_{seq}"))
+            else:
+                for_rawcooking.append(fpath)
+    
         # Create/execute parallel transcodes
         context.log.info(f"{log_prefix}Launcing RAWcooked multiprocessing encoding")
-        transcode_tasks = [(folder,) for folder in assessment['RAWcook']]
+        transcode_tasks = [(folder,) for folder in for_rawcooking]
         results = context.resources.process_pool.map(transcode, transcode_tasks)
 
         # Filter out None vals
@@ -68,7 +85,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                 value={},
                 metadata={
                     "successfully_complete": '0'
-                })
+                })     
 
         validation_tasks = [(folder,) for folder in completed_files]
         results = context.resources.process_pool.map(ffv1_validate, validation_tasks)
@@ -108,11 +125,27 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     ''' Complete transcodes in parallel '''
     log_data = []
 
-    seq = os.path.basename(fullpath[0])
-    transcodes_path = os.path.join(str(Path(fullpath[0]).parents[1]), 'ffv1_transcoding/')
+    gaps = fps24 = fps16 = False
+    root, seq = os.path.split(fullpath)
+    if seq.startswith('GAPS_'):
+        gaps = True
+        seq = seq.split('_', 1)[-1]
+        fullpath = os.path.join(root, seq)
+    elif seq.startswith('24FPS_'):
+        fps24 = True
+        seq = seq.split('_', 1)[-1]
+        fullpath = os.path.join(root, seq)
+    elif seq.startswith('16FPS_'):
+        fps16 = True
+        seq = seq.split('_', 1)[-1]
+        fullpath = os.path.join(root, seq)
+    else:
+        fullpath = fullpath[0]
+        
+    transcodes_path = os.path.join(str(Path(fullpath).parents[1]), 'ffv1_transcoding/')
     log_data.append("Encoding choice is RAWcooked")
-    if not os.path.exists(fullpath[0]):
-        log_data.append(f"WARNING: Failed to find path {fullpath[0]}. Exiting.")
+    if not os.path.exists(fullpath):
+        log_data.append(f"WARNING: Failed to find path {fullpath}. Exiting.")
 
         arguments = (
             ['status', 'RAWcook failed'],
@@ -126,34 +159,37 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             "logs": log_data
         }
 
-    log_data.append(f"File path identified: {fullpath[0]}")
+    log_data.append(f"File path identified: {fullpath}")
     ffv1_path = os.path.join(transcodes_path, f"{seq}.mkv")
     log_data.append(f"Path for Matroska: {ffv1_path}")
     log_path = os.path.join(transcodes_path, f"{seq}.mkv.txt")
     log_data.append(f"Outputting log file to {log_path}")
     log_data.append("Calling Encoder function")
 
-    # Encode
+    # Set up encoding command
     output_v2 = utils.check_for_version_two(log_path)
-    if output_v2 is True:
-        cmd = [
-            "rawcooked", "-y", "--all",
-            "--no-accept-gaps",
-            "--output-version", "2",
-            "-s", "5281680", f"{fullpath[0]}",
-            "-o", f"{ffv1_path}",
-            ">>", f"{log_path}", "2>&1"
-        ]
-    else:
-        cmd = [
-            "rawcooked", "-y", "--all",
-            "--no-accept-gaps",
-            "-s", "5281680", f"{fullpath[0]}",
-            "-o", f"{ffv1_path}",
-            ">>", f"{log_path}", "2>&1"
-        ]
+    cmd = [
+        "rawcooked", "-y", "--all"
+    ]
 
-    log_data.append(f"Calling RAWcooked with command: {' '.join(cmd)}")
+    if gaps is False:
+        cmd.append("--no-accept-gaps")
+
+    if output_v2 is True:
+        cmd.extend(["--output-version", "2"])
+
+    if fps16 is True:
+        cmd.extend(["--framerate", "16"])
+    if fps24 is True:
+        cmd.extend(["--framerate", "24"])
+
+    cmd.extend([
+        "-s", "5281680", f"{fullpath}",
+        "-o", f"{ffv1_path}",
+        ">>", f"{log_path}", "2>&1"
+    ])
+
+    log_data.append(f"Calling RAWcooked with specific sequence command: {' '.join(cmd)}")
     tic = time.perf_counter()
     try:
         subprocess.run(" ".join(cmd), shell=True, check=True)
@@ -168,7 +204,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         if not os.path.isfile(ffv1_path):
             log_data.append("WARNING: Cannot find file, moving to failures folder")
             utils.move_to_failures(ffv1_path)
-        utils.move_to_failures(fullpath[0])
+        utils.move_to_failures(fullpath)
         utils.move_log_to_dest(log_path, 'failures')
         arguments = (
             ['status', 'RAWcook failed'],
@@ -212,11 +248,11 @@ def ffv1_validate(fullpath):
     '''
     log_data = []
     error_message = []
-    log_data.append(f"Received: {fullpath[0]}")
+    log_data.append(f"Received: {fullpath}")
     if isinstance(fullpath, str):
         spath = fullpath
     else:
-        spath = fullpath[0]
+        spath = fullpath
 
     if not os.path.exists(spath):
         log_data.append(f"WARNING: Failed to find path {spath}. Exiting.")
@@ -263,7 +299,7 @@ def ffv1_validate(fullpath):
     log_data.append(f"MKV passed policy check: \n{result[1]}")
 
     # Check log for success statement
-    log = f"{fullpath[0]}.txt"
+    log = f"{fullpath}.txt"
     success = utils.check_mkv_log(log)
     if success is False:
         validation = False
