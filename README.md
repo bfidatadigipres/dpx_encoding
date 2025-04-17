@@ -16,7 +16,7 @@ To launch the Dagster project in the active venv navigate into dpx_encoding repo
    
 For an overview of how Dagster projects can be configured we recommend the Dagster Documentation, and their Dagster University.    
    
-.left[<img src="https://raw.githubusercontent.com/digitensions/dpx_encoding/main/images/dagster_run_overview.png" width="500">]  
+.left[<img src="https://raw.githubusercontent.com/bfidatadigipres/dpx_encoding/blob/main/images/dagster_run_overview.png" width="500">]  
     
 ## Overview of encoding_ui scripts:      
     
