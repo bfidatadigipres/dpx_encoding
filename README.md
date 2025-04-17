@@ -13,17 +13,17 @@ These scripts handle the complete encoding process from start to finish, includi
   
 RAWcooked encoding is adaptable depending on requests fed into the code from a Flask web application broadcasting within the BFI DPI network. This allows colleagues to switch on/off the --no-accept-gaps feature of RAWcooked, to force the ‘-framerate’ flag for 16 or 24 where image sequence frame rates are inaccurate. The code also senses if a previous encoding pass has run and failed due to information stored in the padding data, triggering a RAWcooked ‘--output-version 2’ pass. The Flask web application also provides an overview of each sequences settings for the first image sequence, and reports at various stages of the transcoding allowing colleagues an overview of their sequence progress, whether RAWcooked encoded or TAR wrapped.  
   
-To launch the Dagster project in the active venv navigate into dpx_encoding repository and call:  
+To launch the Dagster project in the active venv navigate into dpx_encoding repository and call:   
 ```dagster dev -w workspace.yaml -h 0.0.0.0 -p 8000```  
-  
+   
 For an overview of how Dagster projects can be configured we recommend the Dagster Documentation, and their Dagster University.    
   
 
 ## Additional code (detailed notes below):
    
-tar_wrapping_launch.sh / tar_wrapping_checksum.py  
-unwrap_mkv_rawcook.sh  
-unwrap_tar_checksum.py  
+```tar_wrapping_launch.sh``` / ```tar_wrapping_checksum.py```   
+```unwrap_mkv_rawcook.sh```   
+```unwrap_tar_checksum.py```   
 
 ## Dependencies
 
