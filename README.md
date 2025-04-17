@@ -92,12 +92,13 @@ To prevent the scripts from running multiple versions at once and overburdening 
 
 The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:     
 
-DPX Encoding script crontab entries:  
+DPX Encoding script crontab entries:   
+```bash
     0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock  ${DPX_SCRIPTS}tar_wrapping_launch.sh ${DG1_QNAP03}
     0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_mkv_rawcook.lock  ${DPX_SCRIPTS}unwrap_rawcook.sh ${DG10_QNAP11}  
     0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_tar.lock  ${PYENV3}  ${DPX_SCRIPTS}unwrap_tar_checksum.py ${DG6_FILM_LAB}
     */5   *     *    *    *    user   /mnt/path/dpx_encoding/flock_rebuild.sh  
-    
+```    
  
 ### BFI server and storage configuration  
 
