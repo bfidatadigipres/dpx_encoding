@@ -32,12 +32,12 @@ Linux system programmes for the shell launched scripts.
 Python standard library imports requirements.txt
 
 These scripts are run from Ubuntu 24.04LTS installed server and rely upon several open source softwares Media Area and FFmpeg.  
-Please follow the links below to find out more:  
-RAWcooked version 24.01 - https://mediaarea.net/rawcooked  
-(--output-version2 is not compatible with < RAWcooked V21.01)  
-FFmpeg Version 7 - https://ffmpeg.org/  
-MediaConch V24 - https://mediaarea.net/mediaconch  
-MediaInfo V24 - https://mediaarea.net/mediainfo  
+Please follow the links below to find out more:   
+RAWcooked version 24.01 - https://mediaarea.net/rawcooked    
+(--output-version2 is not compatible with < RAWcooked V21.01)    
+FFmpeg Version 7 - https://ffmpeg.org/    
+MediaConch V24 - https://mediaarea.net/mediaconch    
+MediaInfo V24 - https://mediaarea.net/mediainfo    
 
 ## Environmental variable storage  
 
