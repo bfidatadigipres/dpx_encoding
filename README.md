@@ -182,37 +182,37 @@ Loads with a list of flock lock paths. A for loop checks if each path in the lis
 
 ### Environmental variable mapping
 
-#### Paths to different storage devices used at launch of Dagster projec:
+#### Paths to different storage devices used at launch of Dagster project:
 
-DG1_QNAP03  
-DG2_FILM_OPS  
-DG3_FILM_PRES  
-DG4_FILM_SCAN  
-DG5_FILM_QC  
-DG6_FILM_LAB  
-DG7_FILM_MICRL  
-DG8_DIGIOPS  
-DG9_QNAP10  
-DG10_QNAP11  
-DG11_QNAP06  
-DG12_EDIT_DIR
+DG1_QNAP03   
+DG2_FILM_OPS   
+DG3_FILM_PRES   
+DG4_FILM_SCAN    
+DG5_FILM_QC    
+DG6_FILM_LAB    
+DG7_FILM_MICRL    
+DG8_DIGIOPS    
+DG9_QNAP10    
+DG10_QNAP11    
+DG11_QNAP06    
+DG12_EDIT_DIR    
   
 #### automation folder variables:  
-Dagster home allows logs to persist across launches of Dagster software:  
-DAGSTER_HOME=“/home/user/code/git/dagster_home/” 
-  
-MySQL database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:  
-DATABASE=“dpx_encoding/encoding_database.db”  
-  
-Environmental vars needed for contab script launches:  
-DPX_SCRIPTS="/home/user/code/git/dpx_encoding/"  
-PYENV3="/home/user/code/ENV3/bin/python3" 
-  
-Addition script variables:  
-POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml"  
-POLICY_DPX=“dpx_encoding/rawcooked_dpx_policy.xml"  
-POLICY_TIFF=“dpx_encoding/rawcooked_tiff_policy.xml”  
-UNWRAP_RAWCOOK="automation/unwrap_rawcook_mkv/"
-TAR_PRES="automation/tar_preservation/"  
-DPX_WRAP="automation/tar_preservation/for_tar_wrap/"  
+Dagster home allows logs to persist across launches of Dagster software:    
+DAGSTER_HOME=“/home/user/code/git/dagster_home/”   
+    
+MySQL database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:    
+DATABASE=“dpx_encoding/encoding_database.db”    
+    
+Environmental vars needed for contab script launches:    
+DPX_SCRIPTS="/home/user/code/git/dpx_encoding/"    
+PYENV3="/home/user/code/ENV3/bin/python3"   
+    
+Addition script variables:    
+POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml"    
+POLICY_DPX=“dpx_encoding/rawcooked_dpx_policy.xml"    
+POLICY_TIFF=“dpx_encoding/rawcooked_tiff_policy.xml”    
+UNWRAP_RAWCOOK="automation/unwrap_rawcook_mkv/"    
+TAR_PRES="automation/tar_preservation/"    
+DPX_WRAP="automation/tar_preservation/for_tar_wrap/"    
   
