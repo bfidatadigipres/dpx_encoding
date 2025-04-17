@@ -126,7 +126,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     log_data = []
 
     gaps = fps24 = fps16 = False
-    root, seq = os.path.split(fullpath)
+    root, seq = os.path.split(fullpath[0])
     if seq.startswith('GAPS_'):
         gaps = True
         seq = seq.split('_', 1)[-1]
@@ -248,10 +248,10 @@ def ffv1_validate(fullpath):
     '''
     log_data = []
     error_message = []
-    log_data.append(f"Received: {fullpath}")
-    if isinstance(fullpath, str):
-        spath = fullpath
-    else:
+    log_data.append(f"Received: {fullpath[0]}")
+    if isinstance(fullpath, tuple):
+        spath = fullpath[0]
+    elif isinstance(fullpath, str):
         spath = fullpath
 
     if not os.path.exists(spath):
