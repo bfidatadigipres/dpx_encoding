@@ -51,6 +51,7 @@ CONNECT.execute("""
                     sequence_deleted TEXT,
                     moved_to_autoingest TEXT,
                     project TEXT
+                    Instruction TEXT
                 )
             """)
 
@@ -110,9 +111,9 @@ def reset_request():
                         last_updated = ?,
                         sequence_deleted = NULL,
                         moved_to_autoingest = NULL,
-                        Instructions = NULL
+                        Instruction = NULL
                     WHERE seq_id = ?
-                """, (status, date_stamp, date_stamp, seq_id))
+                """, (status, date_stamp, date_stamp, seq_id,))
                 users.commit()
         elif req == 'Accept gaps':
             status = 'Triggered assessment'
@@ -148,9 +149,9 @@ def reset_request():
                         last_updated = ?,
                         sequence_deleted = NULL,
                         moved_to_autoingest = NULL,
-                        Instructions = ?
+                        Instruction = ?
                     WHERE seq_id = ?
-                """, (status, 'Yes', date_stamp, date_stamp, instruction, seq_id))
+                """, (status, 'Yes', date_stamp, date_stamp, instruction, seq_id,))
                 users.commit()
         elif req == 'Force 16 FPS' or req == 'Force 24 FPS':
             status = 'Triggered assessment'
@@ -186,9 +187,9 @@ def reset_request():
                         last_updated = ?,
                         sequence_deleted = NULL,
                         moved_to_autoingest = NULL,
-                        Instructions = ?
+                        Instruction = ?
                     WHERE seq_id = ?
-                """, (status, date_stamp, date_stamp, instruction, seq_id))
+                """, (status, date_stamp, date_stamp, instruction, seq_id,))
                 users.commit()
         elif req == 'Remove':
             with sqlite3.connect(DBASE) as users:
