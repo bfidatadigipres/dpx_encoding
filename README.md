@@ -88,17 +88,17 @@ automation
 
 ## Supporting crontab actions
 
-The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.  
+The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.    
 To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them every hour. It is common for the lock files to disappear when a server is rebooted, etc.
 
-The scripts for encoding and automation_dpx/ activities will run frequently throughout the day:     
+The scripts for encoding and automation activities will run frequently throughout the day. Each of the first three scripts will have 12 different entries each with a different 'DG' path (see environments below) and a unique Flock lock, but call the same code:     
 
 DPX Encoding script crontab entries:   
-```bash
-    */1   *     *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dag_app.lock   ${PYENV3}  ${DPX_SCRIPTS}encoding_ui/app.py    
-    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script.lock  ${DPX_SCRIPTS}tar_wrapping_launch.sh ${DG1_QNAP03}
-    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_mkv_rawcook.lock  ${DPX_SCRIPTS}unwrap_rawcook.sh ${DG10_QNAP11}  
-    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_tar.lock  ${PYENV3}  ${DPX_SCRIPTS}unwrap_tar_checksum.py ${DG6_FILM_LAB}
+```bash 
+    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script03.lock  ${DPX_SCRIPTS}tar_wrapping_launch.sh ${DG1_QNAP03}
+    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_mkv_rawcook10.lock  ${DPX_SCRIPTS}unwrap_rawcook.sh ${DG10_QNAP11}  
+    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_tar06.lock  ${PYENV3}  ${DPX_SCRIPTS}unwrap_tar_checksum.py ${DG6_FILM_LAB}
+    */1   *     *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dag_app.lock   ${PYENV3}  ${DPX_SCRIPTS}encoding_ui/app.py   
     */5   *     *    *    *    user   /mnt/path/dpx_encoding/flock_rebuild.sh  
 ```    
  
