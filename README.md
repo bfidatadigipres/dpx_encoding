@@ -43,7 +43,9 @@ Please follow the links below to find out more: 
 - FFmpeg Version 7 - https://ffmpeg.org/
 - MediaConch V24 - https://mediaarea.net/mediaconch
 - MediaInfo V24 - https://mediaarea.net/mediainfo
-
+  
+This code base uses BFI_scripts adlib_v3.py library which is used across all our code base to POST and GET data between the code and our Axiell database. It is likely if you want to run this code that this dependency will register as missing, and I recommend you remove any imports to the Python, or use of this code. If you have an Axiell database you may use this library, and you can find it in our [BFI_scripts repository](https://github.com/bfidatadigipres/BFI_scripts/blob/main/adlib_v3.py).
+  
 ## Environmental variable storage  
 
 These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely. They are imported to Python scripts near the beginning using ```os.environ.get('VARIABLE')```, and are called in shell scripts like ```"${VARIABLE}"```. They are saved into the /etc/environment file.
