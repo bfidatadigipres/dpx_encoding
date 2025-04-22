@@ -212,9 +212,12 @@ DAGSTER_HOME=“/home/user/code/git/dagster_home/”
 MySQL database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:    
 DATABASE=“dpx_encoding/encoding_database.db”    
     
-Environmental vars needed for contab script launches:    
+Environmental vars needed for crontab script launches:    
 DPX_SCRIPTS="/home/user/code/git/dpx_encoding/"    
 PYENV3="/home/user/code/ENV3/bin/python3"   
+
+Variable used in calling adlib_v3 library (neighbouring BFI_scrips repository code):   
+CODE="/home/user/code/git/BFI_scripts"   
     
 Addition script variables:    
 POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml"    
