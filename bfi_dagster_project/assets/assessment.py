@@ -246,16 +246,16 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
 
     folder_size = utils.get_folder_size(image_sequence)
     cspace = utils.get_metadata('pix_fmt', first_image)
-    log_data.append(f"Colourspace: {cspace}")
+    log_data.append(f"Image colourspace: {cspace}")
 
     bdepth = utils.get_metadata('bits_per_raw_sample', first_image)
-    log_data.append(f"Bit depth: {bdepth}")
+    log_data.append(f"Image bit depth: {bdepth}")
 
     width = utils.get_metadata('width', first_image)
-    log_data.append(f"DPX width: {width}")
+    log_data.append(f"Image width: {width}")
 
     height = utils.get_metadata('height', first_image)
-    log_data.append(f"DPX width: {height}")
+    log_data.append(f"Image width: {height}")
 
     if not folder_size or not cspace or not bdepth or not width:
         log_data.append("Folder metadata could not be extracted. Assessment failed.")
