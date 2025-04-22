@@ -13,7 +13,8 @@ import subprocess
 from pathlib import Path
 from typing import List, Dict, Optional, Final
 
-# Local library
+# Local BFI_scripts library for writing to BFI database
+# Code is an environment variable for the BFI_scripts repository
 sys.path.append(os.environ.get('CODE'))
 import adlib_v3 as ad
 
@@ -298,8 +299,8 @@ def get_file_type(
     seq: str
 ) -> tuple[str, str]:
     '''
-    Call up CID with fname
-    and check item file-type
+    Call up BFI CID database with fname
+    and check item file-type (BFI specific code)
     '''
     print(CID_API)
     ob_num = get_object_number(seq)
@@ -662,7 +663,8 @@ def write_to_cid(
     fname: str
 ) -> bool:
     '''
-    Make payload and write to CID
+    Make payload and write to BFI CID database
+    (BFI specific code)
     '''
 
     name = 'datadigipres'
