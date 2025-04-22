@@ -218,6 +218,7 @@ PYENV3="/home/user/code/ENV3/bin/python3"
 
 Variable used in calling adlib_v3 library (neighbouring BFI_scrips repository code):   
 CODE="/home/user/code/git/BFI_scripts"   
+CID_API* is an Axiell API Rest HTTP address for the Adlib library to POST/GET to Axiell   
     
 Addition script variables:    
 POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml"    
