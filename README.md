@@ -44,7 +44,7 @@ Please follow the links below to find out more: 
 - MediaConch V24 - https://mediaarea.net/mediaconch
 - MediaInfo V24 - https://mediaarea.net/mediainfo
   
-This code base uses BFI_scripts adlib_v3.py library which is used across all our code base to POST and GET data between the code and our Axiell database. It is likely if you want to run this code that this dependency will register as missing, and I recommend you remove any imports to the Python, or use of this code. If you have an Axiell database you may use this library, and you can find it in our [BFI_scripts repository](https://github.com/bfidatadigipres/BFI_scripts/blob/main/adlib_v3.py).
+This code base uses BFI_scripts adlib_v3.py library which is used across all BFI National Archive code base to POST and GET data between the code and our Axiell Collections Information Database. If you want to run this code this dependency will register as missing.  I recommend you remove any imports of adlib_v3 to Python scripts and also remove adlib blocks of code where found. If you have an Axiell database with API access you may view/try this library and you can find it in our [BFI_scripts repository](https://github.com/bfidatadigipres/BFI_scripts/blob/main/adlib_v3.py). We currently run adlib against the latest API version using the 'jsonv1' JSON formatting response (including 'spans' as per previous API version), and anticipate updates to this script in coming months.  
   
 ## Environmental variable storage  
 
@@ -205,7 +205,7 @@ DG10_QNAP11 
 DG11_QNAP06    
 DG12_EDIT_DIR    
   
-#### automation folder variables:  
+#### Automation folder variables:  
 Dagster home allows logs to persist across launches of Dagster software:    
 DAGSTER_HOME=“/home/user/code/git/dagster_home/”   
     
