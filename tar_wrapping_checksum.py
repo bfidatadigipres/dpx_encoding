@@ -163,7 +163,7 @@ def get_checksum(fpath):
     '''
     data = {}
     pth, file = os.path.split(fpath)
-    if file in ['ASSETMAP','VOLINDEX']:
+    if file in ['ASSETMAP','VOLINDEX','ASSETMAP.xml','VOLINDEX.xml']:
         folder_prefix = os.path.basename(pth)
         file = f'{folder_prefix}_{file}'
     hash_md5 = hashlib.md5()

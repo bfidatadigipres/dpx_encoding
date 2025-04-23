@@ -252,7 +252,7 @@ def get_checksum(fpath):
             with open(os.path.join(root, file), "rb") as md5_file:
                 for chunk in iter(lambda: md5_file.read(65536), b""):
                     hsh.update(chunk)
-                if file in ['ASSETMAP','VOLINDEX']:
+                if file in ['ASSETMAP','VOLINDEX','ASSETMAP.xml','VOLINDEX.xml']:
                     folder_prefix = os.path.basename(root)
                     file = f'{folder_prefix}_{file}'
                 md5s[file] = hsh.hexdigest()
