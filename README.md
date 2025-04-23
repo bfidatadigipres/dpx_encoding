@@ -34,7 +34,7 @@ RAWcooked encoding is adaptable depending on requests fed into the code from a F
 
 Linux system programmes for the shell launched scripts.
 
-Python standard library imports requirements.txt
+Python standard library imports  requirements.txt
 
 These scripts are run from Ubuntu 24.04LTS installed server and rely upon several open source softwares Media Area and FFmpeg.  
 Please follow the links below to find out more:   
@@ -123,7 +123,7 @@ BFI RAWcooked server (retrieved using Linux ```lscpu```):
 - Sockets 2  
 The 64 CPUs are calculated Threads x Cores x Sockets.  
 
-In addition to plenty of CPUs it is good to have storage commuication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thorougly: https://github.com/MediaArea/RAWcooked/issues/375  
+In addition to plenty of CPUs it is good to have storage communication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thorougly: https://github.com/MediaArea/RAWcooked/issues/375  
 
 
 ## NON-DAGSTER SCRIPTS
@@ -209,14 +209,14 @@ DG12_EDIT_DIR
 Dagster home allows logs to persist across launches of Dagster software:    
 DAGSTER_HOME=“/home/user/code/git/dagster_home/”   
     
-MySQL database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:    
+SQLite database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:    
 DATABASE=“dpx_encoding/encoding_database.db”    
     
 Environmental vars needed for crontab script launches:    
 DPX_SCRIPTS="/home/user/code/git/dpx_encoding/"    
 PYENV3="/home/user/code/ENV3/bin/python3"   
 
-Variable used in calling adlib_v3 library (neighbouring BFI_scrips repository code):   
+Variable used in calling adlib_v3 library (neighbouring BFI_scripts repository code):   
 CODE="/home/user/code/git/BFI_scripts"   
 CID_API* is an Axiell API Rest HTTP address for the Adlib library to POST/GET to Axiell   
     
