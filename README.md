@@ -123,7 +123,7 @@ BFI RAWcooked server (retrieved using Linux ```lscpu```):
 - Sockets 2  
 The 64 CPUs are calculated Threads x Cores x Sockets.  
 
-In addition to plenty of CPUs it is good to have storage communication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thorougly: https://github.com/MediaArea/RAWcooked/issues/375  
+In addition to plenty of CPUs it is good to have storage communication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thoroughly: https://github.com/MediaArea/RAWcooked/issues/375  
 
 
 ## NON-DAGSTER SCRIPTS
@@ -139,7 +139,7 @@ Script functions:
 4. A check is made that a folder doesn't exist for this file already, such as a file that has been recently unwrapped - named RAWcooked_unwrap_N_123456_01of01/.
 5. If no folder found the file name is written to a 'confirmed_unwrap_list.txt'.
 6. Each item on the 'confirmed_unwrap_list.txt' is passed to GNU parallel where one at a time, RAWcooked is used to unwrap the FFV1 MKV to DPX, and placed in the 'RAWcooked_unwrap...' folder.
-7. A log is created for each demux, and this is checked for the message 'Reversibility was checkd, no issue detected.'
+7. A log is created for each demux, and this is checked for the message 'Reversibility was checked, no issue detected.'
    - If this message is found the file FFV1 MKV is moved to the completed/ folder.
    - If this message is not found the problem is written to the logs, but the MKV and folder is left in place for manual review.
 
