@@ -95,8 +95,8 @@ automation
 
 ## Supporting crontab actions
 
-The RAWcooked and TAR scripts are to be driven from a server /etc/crontab.    
-To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script flock_rebuild.sh regularly checks for their presence, and if absent, recreates them every hour. It is common for the lock files to disappear when a server is rebooted, etc.
+The RAWcooked and TAR scripts are launched from a server /etc/crontab which schedules their run.    
+To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script ```flock_rebuild.sh``` regularly checks for their presence, and if absent recreates them. It is common for the lock files to disappear when a server is rebooted, etc.
 
 The scripts for encoding and automation activities will run frequently throughout the day. Each of the first three scripts will have 12 different entries each with a different 'DG' path (see environments below) and a unique Flock lock, but call the same code:     
 
