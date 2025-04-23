@@ -34,7 +34,7 @@ RAWcooked encoding is adaptable depending on requests fed into the code from a F
 
 Linux system programmes for the shell launched scripts.
 
-Python standard library imports are listed in:   
+Python library imports are listed in:   
 ```requirements.txt```   
 
 These scripts are run from Ubuntu 24.04LTS installed server and rely upon several open source softwares Media Area and FFmpeg.  
