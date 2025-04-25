@@ -46,7 +46,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
 
         failed_encodings = context.resources.database.retrieve_seq_id_row(context, search, 'fetchall')
 
-        if not failed_encodings[0]:
+        if not failed_encodings:
             return dg.SensorResult(
                 skip_reason=f"{log_prefix}No failed encodings to retry",
                 cursor=datetime.datetime.now().isoformat()

@@ -1,6 +1,8 @@
 import os
+import time
 import shutil
 import datetime
+import subprocess
 from pathlib import Path
 import dagster as dg
 from typing import List, Optional
@@ -44,7 +46,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             return dg.Output(value={})
         log_prefix = f"[{key_prefix}] " if key_prefix else ""
         fullpath = context.op_config.get('sequence')
-        seq = os.path.basename(fullpath)
+        root, seq = os.path.split(fullpath)
         context.log.info(f"{log_prefix}Received new encoding data: {fullpath}")
 
         search = "SELECT * FROM encoding_status WHERE seq_id=?"
@@ -66,21 +68,63 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             return dg.Output(value={})
         context.log.info(f"{log_prefix}File path identified: {fullpath}")
 
-        ffv1_path = os.path.join(str(Path(fullpath).parents[1]), f"ffv1_transcoding/{seq}.mkv")
+        # Check for accepted gaps / forced framerates
+        gaps = fps24 = fps16 = False
+        if 'Accept gaps' in str(data):
+            gaps = True
+        elif 'Force 24 FPS' in str(data):
+            fps24 = True
+        elif 'Force 16 FPS' in str(data):
+            fps16 = True
+
+        transcodes_path = os.path.join(str(Path(fullpath).parents[1]), 'ffv1_transcoding/')
+        ffv1_path = os.path.join(transcodes_path, f"{seq}.mkv")
+        context.log.info(f"Path for Matroska: {ffv1_path}")
         if os.path.isfile(ffv1_path):
             context.log.info(f"{log_prefix}Delete existing transcode attempt.")
             os.remove(ffv1_path)
-        context.log.info(f"{log_prefix}Path for Matroska: %s", ffv1_path)
 
-        log_path = f"{ffv1_path}.txt"
-        context.log.info(f"{log_prefix}Outputting log file to %s", log_path)
-        context.log.info(f"{log_prefix}Calling Encoder function")
-        output_path = utils.encoder(fullpath, ffv1_path, log_path)
+        log_path = os.path.join(transcodes_path, f"{seq}.mkv.txt")
+        context.log.info(f"Outputting log file to {log_path}")
+        context.log.info("Calling Encoder function")
 
-        if output_path is None:
-            context.log.warning(f"{log_prefix}RAWcooked encoding failed. Moving to failures folder.")
+        # Set up encoding command
+        output_v2 = utils.check_for_version_two(log_path)
+        cmd = [
+            "rawcooked", "-y", "--all"
+        ]
+
+        if gaps is False:
+            cmd.append("--no-accept-gaps")
+
+        if output_v2 is True:
+            cmd.extend(["--output-version", "2"])
+
+        if fps16 is True:
+            cmd.extend(["--framerate", "16"])
+        if fps24 is True:
+            cmd.extend(["--framerate", "24"])
+
+        cmd.extend([
+            "-s", "5281680", f"{fullpath}",
+            "-o", f"{ffv1_path}",
+            ">>", f"{log_path}", "2>&1"
+        ])
+
+        context.log.info(f"Calling RAWcooked with specific sequence command: {' '.join(cmd)}")
+        tic = time.perf_counter()
+        try:
+            subprocess.run(" ".join(cmd), shell=True, check=True)
+        except subprocess.CalledProcessError as err:
+            print(err)
+
+        toc = time.perf_counter()
+        mins = (toc - tic) // 60
+        context.log.info(f"RAWcooked encoding took {mins} minutes")
+        if not os.path.isfile(ffv1_path):
+            context.log.warning("WARNING: RAWcooked encoding failed. Moving to failures folder.")
             if not os.path.isfile(ffv1_path):
-                context.log.warning(f"{log_prefix}Cannot find file, moving to failures folder")
+                context.log.warning("WARNING: Cannot find file, moving to failures folder")
                 utils.move_to_failures(ffv1_path)
             utils.move_to_failures(fullpath)
             utils.move_log_to_dest(log_path, 'failures')
@@ -88,26 +132,26 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
                 ['status', 'RAWcook failed'],
                 ['encoding_complete', str(datetime.datetime.today())[:19]]
             )
-            context.log.info(f"{log_prefix}RAWcooked encoding failed. Updating database:\n{arguments}")
+            context.log.warning(f"{log_prefix}RAWcooked encoding failed. Updating database:\n{arguments}")
             entry = context.resources.database.append_to_database(context, seq, arguments)
-            context.log.info(entry)
             return dg.Output(value={})
-        context.log.info(f"{log_prefix}RAWcooked encoding completed. Ready for validation checks")
-        checksum_data = utils.get_checksum(ffv1_path)
-        context.log.info(f"{log_prefix}Checksum: %s", data[f"{seq}.mkv"])
+
+        context.log.info("RAWcooked encoding completed. Ready for validation checks")
+        checksum_data = utils.md5_hash(ffv1_path)
+        context.log.info(f"Checksum: {checksum_data}")
         arguments = (
-            ['status', 'RAWcook completed'],
+            ['status', 'RAWcook retry completed'],
             ['encoding_complete', str(datetime.datetime.today())[:19]],
+            ['encoding_log', log_path],
             ['derivative_path', ffv1_path],
             ['derivative_size', utils.get_folder_size(ffv1_path)],
-            ['derivative_md5', checksum_data[f"{seq}.mkv"]]
+            ['derivative_md5', checksum_data]
         )
-        context.log.info(f"{log_prefix}RAWcook completed successfully. Updating database:\n%s", arguments)
+        context.log.info(f"RAWcook completed successfully. Updating database:\n{arguments}")
         entry = context.resources.database.append_to_database(context, seq, arguments)
-        context.log.info(f"{log_prefix}Row data written: {entry}")
 
         # Validate in function
-        results = context.resources.process_pool.map(ffv1_validate, [ffv1_path])
+        results = ffv1_validate(ffv1_path)
         validated_files = {
             "valid": [r['sequence'] for r in results if r['success'] is not False],
             "invalid": [r['sequence'] for r in results if r['success'] is False]
@@ -140,24 +184,44 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
     return reencode_failed_asset
 
 
-def ffv1_validate(fullpath):
+def ffv1_validate(spath):
     '''
-    Run validation checks against TAR
+    Run validation checks against FFV1 MKV
     '''
     log_data = []
     error_message = []
 
-    log_data.append(f"Received: {fullpath}")
-    spath = fullpath[0]
+    log_data.append(f"Received: {spath}")
+
+    if not os.path.exists(spath):
+        log_data.append(f"WARNING: Failed to find path {spath}. Exiting.")
+        log_data.append(utils.move_to_failures(spath))
+
+        arguments = (
+            ['status', 'RAWcook failed'],
+            ['validation_complete', str(datetime.datetime.today())[:19]]
+        )
+        return {
+            "sequence": None,
+            "success": False,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
     fname = os.path.basename(spath)
     seq = fname.split('.')[0]
     dpath = os.path.join(str(Path(spath).parents[1]), 'processing/', seq)
     log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
     folder_size = utils.get_folder_size(dpath)
     file_size = utils.get_folder_size(spath)
-    log_data.append(f"Found sizes:\n{folder_size} {dpath}\n{file_size} {spath}")
+    log_data.append(f"Found sizes in bytes:\n{folder_size} {dpath}\n{file_size} {spath}")
+    log = f"{spath}.txt"
 
-    log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
+    # Run chmod on MKV
+    try:
+        utils.recursive_chmod(spath, 0o777)
+    except PermissionError as err:
+        print(err)
 
     validation = True
     if not os.path.isfile(spath):

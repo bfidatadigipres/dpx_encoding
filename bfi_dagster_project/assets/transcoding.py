@@ -276,7 +276,7 @@ def ffv1_validate(fullpath):
     folder_size = utils.get_folder_size(dpath)
     file_size = utils.get_folder_size(spath)
     log_data.append(f"Found sizes in bytes:\n{folder_size} {dpath}\n{file_size} {spath}")
-    log = os.path.join(str(Path(spath).parents[1]), f'transcode_logs/{seq}.mkv.txt')
+    log = f"{spath}.txt"
 
     # Run chmod on MKV
     try:
@@ -299,7 +299,6 @@ def ffv1_validate(fullpath):
     log_data.append(f"MKV passed policy check: \n{result[1]}")
 
     # Check log for success statement
-    log = f"{spath}.txt"
     success = utils.check_mkv_log(log)
     if success is False:
         validation = False
@@ -362,6 +361,7 @@ def ffv1_validate(fullpath):
             auto_move = 'No'
         else:
             auto_move = 'Yes'
+
         log_data.append("RAWcooked validation completed.")
         for line in log_data:
             utils.append_to_log(log, line)
