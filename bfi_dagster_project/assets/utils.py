@@ -637,27 +637,6 @@ def append_to_log(
         log.close()
 
 
-def error_log(
-    fpath: str,
-    message: str,
-    kandc: str
-) -> None:
-    '''
-    If needed, write error log
-    for incomplete sequences.
-    '''
-    ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if not kandc:
-        with open(fpath, 'a+') as log:
-            log.write(f"tar_wrapping {ts}: {message}.\n\n")
-            log.close()
-    else:
-        with open(fpath, 'a+') as log:
-            log.write(f"tar_wrapping {ts}: {message}.\n")
-            log.write(f"\tPlease contact the KLC Developer team {kandc}.\n\n")
-            log.close()
-
-
 def write_to_cid(
     priref: str,
     fname: str

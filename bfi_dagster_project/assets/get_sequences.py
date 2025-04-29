@@ -39,7 +39,6 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
                 continue
             if count > 2:
                 break
-            count += 1
             dpath = os.path.join(seq_supply, dr)
             context.log.info(f"{log_prefix}Directory path: %s", dpath)
 
@@ -65,6 +64,7 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
                 current_files.append(dpath)
                 entry = context.resources.database.start_process(context, dr, dpath, 'Triggered assessment')
                 context.log.info(f"{log_prefix}New entry made in database: %s - %s", entry, dpath)
+            count += 1
 
         context.log.info(f"{log_prefix}Files being handed to assessment:\n%s", current_files)
         return current_files
