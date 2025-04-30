@@ -20,6 +20,9 @@ Steps:
    No. Delete faulty TAR.
        Output warning to Local log and leave file
        for retry at later date.
+       Move TAR file to failures folder for retry
+6. Clean up source folder if successful 
+7. Update logs
 
 2025
 '''
@@ -45,6 +48,7 @@ if not os.path.exists(sys.argv[1]):
 LOCAL_PATH = os.path.split(sys.argv[1])[0]
 AUTO_TAR = LOCAL_PATH.split('for_tar_wrap')[0]
 TAR_FAIL = os.path.join(AUTO_TAR, 'failures/')
+COMPLETED = os.path.join(AUTO_TAR, 'completed/')
 CHECKSUM = os.path.join(AUTO_TAR, 'checksum_manifests/')
 if '/mnt/bp_nas' in LOCAL_PATH:
     parent_path = LOCAL_PATH.split('tar_preservation')[0]
@@ -219,8 +223,7 @@ def main():
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
     LOGGER.info("==== TAR Wrapping Check script start ===============================")
     LOGGER.info("Path received for TAR wrap using Python3 tarfile: %s", fullpath)
-    split_path = os.path.split(fullpath)
-    tar_source = split_path[1]
+    tar_source = os.path.basename(fullpath)
 
     # Validate filename and retrieve priref/file_type
     fname_split = tar_source.split('_')
@@ -353,10 +356,10 @@ def main():
         except Exception as err:
             LOGGER.warning("File move to autoingest failed:\n%s", err)
         try:
-            LOGGER.info("Deleting image sequence: %s", fullpath)
-            os.rmdir(fullpath)
+            LOGGER.info("Moving sequence to completed/: %s", fullpath)
+            shutil.move(fullpath, COMPLETED)
         except Exception as err:
-            LOGGER.warning("Source deletion of folder failed:\n%s", err)
+            LOGGER.warning("Source folder failed to move to completed/ path:\n%s", err)
         try:
             LOGGER.info("Moving MD5 manifest to checksum_manifest folder %s", CHECKSUM)
             shutil.move(md5_manifest, CHECKSUM)
@@ -364,8 +367,17 @@ def main():
             LOGGER.warning("MD5 manifest move failed:\n%s", err)
 
         # Tidy away error_log following successful creation
+        resolved_error_log = f"resolved_{tar_source}_errors.log"
         if os.path.isfile(os.path.join(TAR_FAIL, f"{tar_source}_errors.log")):
-            os.remove(os.path.join(TAR_FAIL, f"{tar_source}_errors.log"))
+            os.rename(os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), os.path.join(TAR_FAIL, resolved_error_log))
+
+        # Delete source for TAR wrapped file/folder
+        if os.path.isdir(os.path.join(COMPLETED, tar_source)):
+            LOGGER.info("Deleting source folder %s", tar_source)
+            shutil.rmtree(os.path.join(COMPLETED, tar_source))
+        elif os.path.isfile(os.path.join(COMPLETED, tar_source)):
+            LOGGER.info("Deleting source file %s", tar_source)
+            os.remove(os.path.join(COMPLETED, tar_source))
 
         # Write note to CID Item record that file has been wrapped using Python tarfile module.
         success = write_to_cid(priref, tar_file)
@@ -436,7 +448,7 @@ def error_log(fpath, message, kandc):
     else:
         with open(fpath, 'a+') as log:
             log.write(f"tar_wrapping {ts}: {message}.\n")
-            log.write(f"\tPlease contact the Knowledge and Collections Developer {kandc}.\n\n")
+            log.write(f"- Please contact the Knowledge and Collections Developer {kandc}.\n\n")
             log.close()
 
 
