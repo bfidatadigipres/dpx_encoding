@@ -265,7 +265,7 @@ def ffv1_validate(spath):
         utils.move_to_failures(spath)
         utils.move_to_failures(dpath)
         for line in log_data:
-            utils.append_to_tar_log(log, line)
+            utils.append_to_log(log, line)
         utils.move_log_to_dest(log, 'failures')
 
         arguments = (
