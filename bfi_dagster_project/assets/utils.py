@@ -258,8 +258,11 @@ def count_folder_depth(
     ordered correctly
     '''
     folder_contents = []
-    for root, dirs, files in os.walk(fpath):
+    for root, dirs, _ in os.walk(fpath):
         for directory in dirs:
+            if directory.startswith('.'):
+                if os.listdir(os.path.join(root, directory)) == []:
+                    continue
             folder_contents.append(os.path.join(root, directory))
 
     # Check for dupes in folder names and length of found folders
