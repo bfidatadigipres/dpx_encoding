@@ -50,8 +50,8 @@ if '/mnt/bp_nas' in LOCAL_PATH:
     parent_path = LOCAL_PATH.split('tar_preservation')[0]
     AUTOINGEST = os.path.join(parent_path, os.environ['AUTOINGEST_STORE'])
 else:
-    parent_path = LOCAL_PATH.split('automation')[0]
-    AUTOINGEST = os.path.join(LOCAL_PATH, os.environ['AUTOINGEST_STORE'])
+    parent_path = LOCAL_PATH.split('/automation')[0]
+    AUTOINGEST = os.path.join(parent_path, os.environ['AUTOINGEST_STORE'])
 LOG = os.path.join(AUTO_TAR, 'tar_wrapping_checksum.log')
 CID_API = os.environ['CID_API4']
 
