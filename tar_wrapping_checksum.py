@@ -21,7 +21,7 @@ Steps:
        Output warning to Local log and leave file
        for retry at later date.
        Move TAR file to failures folder for retry
-6. Clean up source folder if successful 
+6. Clean up source folder if successful
 7. Update logs
 
 2025
@@ -136,7 +136,7 @@ def get_tar_checksums(tar_path, folder):
             continue
 
         pth, fname = os.path.split(item_name)
-        if fname in ['ASSETMAP','VOLINDEX']:
+        if fname in ['ASSETMAP','VOLINDEX', 'ASSETMAP.xml', 'VOLINDEX.xml']:
             folder_prefix = os.path.basename(pth)
             fname = f'{folder_prefix}_{fname}'
         print(item_name, fname, item)
