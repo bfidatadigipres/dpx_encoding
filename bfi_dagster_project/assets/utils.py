@@ -293,6 +293,7 @@ def count_folder_depth(
                 return None
             sorted(folder_contents, key=len)
             return '4'
+    return False
 
 
 def get_file_type(
