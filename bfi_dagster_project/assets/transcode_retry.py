@@ -303,7 +303,7 @@ def ffv1_validate(spath):
 
         log_data.append("RAWcooked validation completed.")
         for line in log_data:
-            utils.append_to_tar_log(log, line)
+            utils.append_to_log(log, line)
         utils.move_log_to_dest(log, 'transcode_logs')
 
         arguments = (
