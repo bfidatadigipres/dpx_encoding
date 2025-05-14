@@ -671,7 +671,7 @@ def write_to_cid(
 def check_for_version_two(
     log: str
 ) -> bool:
-    ''' Check if outout version2 needed '''
+    ''' Check if output version2 needed '''
 
     warnings = [
         'Error: undecodable file is becoming too big',
