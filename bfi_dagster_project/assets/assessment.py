@@ -257,30 +257,31 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     height = utils.get_metadata('height', first_image)
     log_data.append(f"Image width: {height}")
 
-    if not folder_size or not cspace or not bdepth or not width:
-        log_data.append("Folder metadata could not be extracted. Assessment failed.")
-        arguments = (
-                ['status', 'Assessment failed'],
-                ['folder_path', image_sequence],
-                ['error_message', 'Failed with metadata error']
-            )
-        log_data.append("Missing metadata from DPX sequence.")
-        return {
-            "sequence": image_sequence,
-            "success": False,
-            "encoding_choice": None,
-            "db_arguments": arguments,
-            "logs": log_data
-        }
-
     if first_image.lower().endswith(('.tif', '.tiff')):
         arg = 'TIF'
     elif first_image.lower().endswith('.dpx'):
         arg = 'DPX'
     else:
         arg = 'TAR'
-    policy_pass, response = utils.mediaconch(first_image, arg)
 
+    if arg is 'DPX':
+        if not folder_size or not cspace or not bdepth or not width:
+            log_data.append("Folder metadata could not be extracted. Assessment failed.")
+            arguments = (
+                    ['status', 'Assessment failed'],
+                    ['folder_path', image_sequence],
+                    ['error_message', 'Failed with metadata error']
+                )
+            log_data.append("Missing metadata from DPX sequence.")
+            return {
+                "sequence": image_sequence,
+                "success": False,
+                "encoding_choice": None,
+                "db_arguments": arguments,
+                "logs": log_data
+            }
+
+    policy_pass, response = utils.mediaconch(first_image, arg)
     if policy_pass == 'Fail':
         encoding_choice = 'TAR'
         log_data.append(f"DPX sequence {seq} failed DPX policy:\n {response}")
