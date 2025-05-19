@@ -85,10 +85,11 @@ def get_metadata(
     probe = ffmpeg.probe(dpath)
     if 'streams' not in probe:
         return False
-
-    if probe['streams'][0][arg]:
-        return probe['streams'][0][arg]
-    else:
+    try:
+        if probe['streams'][0][arg]:
+            return probe['streams'][0][arg]
+    except KeyError as err:
+        print(f"KeyError: {err}")
         return False
 
 
