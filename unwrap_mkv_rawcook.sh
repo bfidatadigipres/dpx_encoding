@@ -23,6 +23,7 @@ touch "${DPX_PATH}confirmed_unwrap_list.txt"
 
 # Get list of MKV files in UNWRAP_MKV path
 find "${DPX_PATH}" -maxdepth 1 -mindepth 1 -name '*.mkv' -mmin +10 >> "${DPX_PATH}unwrap_list.txt"
+cat ${DPX_PATH}unwrap_list.txt
 
 # Write a START note to the logfile if files for decoding, else exit
 if [ -s "${DPX_PATH}unwrap_list.txt" ]
