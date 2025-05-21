@@ -370,6 +370,8 @@ def gaps(
 
     missing_dpx = []
     file_nums, filenames = iterate_folders(dpath)
+    if file_nums is None or filenames is None:
+        return None, None, None
     print(file_nums, filenames)
     # Calculate range from first/last
     file_range = list(range(min(file_nums), max(file_nums) + 1))
@@ -433,7 +435,8 @@ def iterate_folders(
             if file.endswith(('.dpx', '.DPX', '.tif', '.TIF', '.tiff', '.TIFF')):
                 file_nums.append(int(re.search(r'\d+(?!.*\d)', file).group()))
                 filenames.append(os.path.join(root, file))
-
+    if not file_nums or not filenames:
+        return None, None
     return (file_nums, filenames)
 
 

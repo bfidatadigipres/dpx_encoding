@@ -187,6 +187,22 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         }
     
     first_image, last_image, missing = utils.gaps(image_sequence)
+    if not first_image or not last_image:
+        log_data.append(f"WARNING: No DPX or TIFF files found for sequence.")
+        arguments = (
+                ['status', 'Assessment failed'],
+                ['folder_path', image_sequence],
+                ['error_message', f'No DPX or TIFF files found in sequence.']
+            )
+        log_data.append("No first or last DPX/TIFF found. Assessment failed.")
+        return {
+            "sequence": image_sequence,
+            "success": False,
+            "encoding_choice": None,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
     if accept_gaps is False:
         log_data.append(f"Image data - first {first_image} - last {last_image} - missing: {len(missing)}")
         if len(missing) > 0:
