@@ -321,7 +321,7 @@ def get_fps(
     ]
 
     fps1 = subprocess.check_output(cmd1, shell=False).decode().strip()
-    fps2 = subprocess.check_output(cmd2 shell=False).decode().strip()
+    fps2 = subprocess.check_output(cmd2, shell=False).decode().strip()
     if len(fps1) == 0 and len(fps2) == 0:
         return None
 
