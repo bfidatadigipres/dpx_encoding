@@ -299,7 +299,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     else:
         arg = 'TAR'
 
-    if arg is 'DPX':
+    if arg == 'DPX':
         if not folder_size or not cspace or not bdepth or not width:
             log_data.append("Folder metadata could not be extracted. Assessment failed.")
             arguments = (
