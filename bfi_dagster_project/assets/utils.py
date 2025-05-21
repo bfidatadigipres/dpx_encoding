@@ -299,7 +299,6 @@ def count_folder_depth(
             return '4'
     return False
 
-
 def get_fps(
     ipath: str
 ) -> Optional[int]:
@@ -307,16 +306,16 @@ def get_fps(
     Get frames per second from image/video stream
     '''
     cmd1 = [
-        'mediainfo', '-f',
-        '--Language=RAW',
-        '--Ouput=Image%FrameRate',
+        "mediainfo", "-f,
+        "--Language=RAW",
+        "--Ouput=Image%FrameRate%",
         ipath
     ]
 
     cmd2 = [
-        'mediainfo', '-f',
-        '--Language=RAW',
-        '--Ouput=Video%FrameRate',
+        "mediainfo", "-f",
+        "--Language=RAW",
+        "--Ouput=Video%FrameRate%",
         ipath
     ]
 
