@@ -244,6 +244,25 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     else:
         log_data.append("Sequence is not DPX and will not have folder structure assessed.")
 
+    framerate = utils.get_fps(first_image)
+    if framerate is None:
+        pass
+    elif framerate < 16:
+        log_data.append(f"WARNING: Frame rate is too low: {framerate}")
+        arguments = (
+                ['status', 'Assessment failed'],
+                ['folder_path', image_sequence],
+                ['error_message', f'Sequence FPS is too low: {framerate}']
+            )
+        log_data.append("Frame rate is low. Assessment failed.")
+        return {
+            "sequence": image_sequence,
+            "success": False,
+            "encoding_choice": None,
+            "db_arguments": arguments,
+            "logs": log_data
+        }
+
     folder_size = utils.get_folder_size(image_sequence)
     cspace = utils.get_metadata('pix_fmt', first_image)
     log_data.append(f"Image colourspace: {cspace}")
