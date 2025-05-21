@@ -306,7 +306,7 @@ def get_fps(
     Get frames per second from image/video stream
     '''
     cmd1 = [
-        "mediainfo", "-f,
+        "mediainfo", "-f",
         "--Language=RAW",
         "--Ouput=Image%FrameRate%",
         ipath
