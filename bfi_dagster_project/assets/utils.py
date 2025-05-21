@@ -300,6 +300,42 @@ def count_folder_depth(
     return False
 
 
+def get_fps(
+    ipath: str
+) -> Optional[int]:
+    '''
+    Get frames per second from image/video stream
+    '''
+    cmd1 = [
+        'mediainfo', '-f',
+        '--Language=RAW',
+        '--Ouput=Image%FrameRate',
+        ipath
+    ]
+
+    cmd2 = [
+        'mediainfo', '-f',
+        '--Language=RAW',
+        '--Ouput=Video%FrameRate',
+        ipath
+    ]
+
+    fps1 = subprocess.check_output(cmd1, shell=False).decode().strip()
+    fps2 = subprocess.check_output(cmd2 shell=False).decode().strip()
+    if len(fps1) == 0 and len(fps2) == 0:
+        return None
+
+    if len(fps1) > 0:
+        fps = fps1
+    elif len(fps2) > 0:
+        fps = fps2
+    if '.' in fps:
+        framerate = int(fps.split('.')[0].strip())
+        if isinstance(framerate, int):
+            return framerate
+    return None
+
+
 def get_file_type(
     seq: str
 ) -> tuple[str, str]:
