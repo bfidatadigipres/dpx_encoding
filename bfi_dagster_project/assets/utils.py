@@ -305,41 +305,21 @@ def get_fps(
     '''
     Get frames per second from image/video stream
     '''
-    cmd1 = [
-        'mediainfo', '--Full',
-        '--Language=raw',
-        '--Ouput=Image%FrameRate%',
-        ipath
-    ]
-
-    cmd2 = [
-        'mediainfo', '--Full',
-        '--Language=raw',
-        '--Ouput=Video%FrameRate%',
+    cmd = [
+        'exiftool', '-framerate',
         ipath
     ]
     try:
-        fps1 = subprocess.check_output(cmd1, shell=False).decode().strip()
+        fps = subprocess.check_output(cmd, shell=False).decode().split(': ')[-1]
     except subprocess.CalledProcessError as err:
         print(err)
-        fps1 = ''
-    try:
-        fps2 = subprocess.check_output(cmd2, shell=False).decode().strip()
-    except subprocess.CalledProcessError as err:
-        print(err)
-        fps2 = ''
+        fps = ''
 
-    if len(fps1) == 0 and len(fps2) == 0:
-        return None
-
-    if len(fps1) > 0:
-        fps = fps1
-    elif len(fps2) > 0:
-        fps = fps2
-    if '.' in fps:
-        framerate = int(fps.split('.')[0].strip())
+    if len(fps) > 0:
+        framerate = int(fps)
         if isinstance(framerate, int):
             return framerate
+
     return None
 
 
