@@ -306,21 +306,29 @@ def get_fps(
     Get frames per second from image/video stream
     '''
     cmd1 = [
-        "mediainfo", "-f",
-        "--Language=RAW",
-        "--Ouput=Image%FrameRate%",
+        'mediainfo', '--Full',
+        '--Language=raw',
+        '--Ouput=Image%FrameRate%',
         ipath
     ]
 
     cmd2 = [
-        "mediainfo", "-f",
-        "--Language=RAW",
-        "--Ouput=Video%FrameRate%",
+        'mediainfo', '--Full',
+        '--Language=raw',
+        '--Ouput=Video%FrameRate%',
         ipath
     ]
+    try:
+        fps1 = subprocess.check_output(cmd1, shell=False).decode().strip()
+    except subprocess.CalledProcessError as err:
+        print(err)
+        fps1 = ''
+    try:
+        fps2 = subprocess.check_output(cmd2, shell=False).decode().strip()
+    except subprocess.CalledProcessError as err:
+        print(err)
+        fps2 = ''
 
-    fps1 = subprocess.check_output(cmd1, shell=False).decode().strip()
-    fps2 = subprocess.check_output(cmd2, shell=False).decode().strip()
     if len(fps1) == 0 and len(fps2) == 0:
         return None
 
