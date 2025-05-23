@@ -192,7 +192,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
         arguments = (
                 ['status', 'Assessment failed'],
                 ['folder_path', image_sequence],
-                ['error_message', f'No DPX or TIFF files found in sequence.']
+                ['error_message', 'No DPX or TIFF files found in sequence.']
             )
         log_data.append("No first or last DPX/TIFF found. Assessment failed.")
         return {
@@ -263,7 +263,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     framerate = utils.get_fps(first_image)
     if framerate is None:
         pass
-    elif framerate < 16:
+    elif framerate < 12:
         log_data.append(f"WARNING: Frame rate is too low: {framerate}")
         arguments = (
                 ['status', 'Assessment failed'],

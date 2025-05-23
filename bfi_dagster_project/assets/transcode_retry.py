@@ -42,6 +42,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         attempt, retrieves database row data and begins re-encode attempt.
         List containing filepath is passed to validation asset.
         '''
+        context.log.info(context.op_config.get('sequence'))
         if not context.op_config.get('sequence'):
             return dg.Output(value={})
         log_prefix = f"[{key_prefix}] " if key_prefix else ""

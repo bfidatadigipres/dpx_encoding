@@ -43,8 +43,8 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
         context.log.info(f"{log_prefix}Last check time for retries: {last_check}")
 
         search = "SELECT * FROM encoding_status WHERE status='RAWcook failed'"
-
         failed_encodings = context.resources.database.retrieve_seq_id_row(context, search, 'fetchall')
+        context.log.info(f"{log_prefix}Found failed encodings: {failed_encodings}")
 
         if not failed_encodings:
             return dg.SensorResult(
@@ -55,7 +55,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
 
         # Group by batch size if needed
         for seq in failed_encodings:
-            print(seq)
+            context.log.info(f"{log_prefix}Processing sequence {seq}")
             seq_id = seq[1]
             spath = seq[3]
             if key_prefix not in spath:
