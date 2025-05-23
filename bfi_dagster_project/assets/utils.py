@@ -299,6 +299,7 @@ def count_folder_depth(
             return '4'
     return False
 
+
 def get_fps(
     ipath: str
 ) -> Optional[int]:
