@@ -60,6 +60,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
             spath = seq[3]
             key = seq[28]
             if key_prefix != key:
+                context.log.info(f"Key prefix {key_prefix} does not match sequence {key}")
                 continue
             retry_count = seq[17]
             if not retry_count.isnumeric():
