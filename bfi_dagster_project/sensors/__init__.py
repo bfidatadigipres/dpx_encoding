@@ -65,13 +65,15 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
             retry_count = seq[17]
             if not retry_count.isnumeric():
                 retry_count = 0
+            else:
+                retry_count = int(retry_count)
 
-            if int(retry_count) > 3:
+            if retry_count > 3:
                 context.log.warning(f"{log_prefix}Attempted encodings exceeded 3 attempts. Manual attention needed.")
                 arguments = (
                     ['status', 'Sequence failed repeatedly'],
                     ['error_message', 'Manual review needed, maximum retries met.'],  # Fixed missing comma
-                    ['encoding_retry', int(retry_count)]
+                    ['encoding_retry', retry_count]
                 )
                 entry = context.resources.database.append_to_database(context, seq_id, arguments)
                 context.log.info(f"{log_prefix}Skipping this sequence. Row updated: {entry}")
@@ -80,13 +82,13 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
             # Update retry count in database
             arguments = (
                 ['status', 'Pending retry'],
-                ['encoding_retry', int(retry_count) + 1]
+                ['encoding_retry', retry_count + 1]
             )
             entry = context.resources.database.append_to_database(context, seq_id, arguments)
             context.log.info(f"{log_prefix}Row updated: {entry}")
 
             # Create a run request for this sequence with proper asset key
-            run_key = f"{key_prefix}_retry_{seq_id}_{int(retry_count) + 1}"
+            run_key = f"{key_prefix}_retry_{seq_id}_{retry_count + 1}"
 
             yield dg.RunRequest(
                 run_key=run_key,
