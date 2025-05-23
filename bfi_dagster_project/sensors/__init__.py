@@ -42,7 +42,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
         last_check = datetime.datetime.fromisoformat(last_check_time)
         context.log.info(f"{log_prefix}Last check time for retries: {last_check}")
 
-        search = "SELECT * FROM encoding_status WHERE status='RAWcook failed'"
+        search = "SELECT * FROM encoding_status WHERE status = 'RAWcook failed'"
         failed_encodings = context.resources.database.retrieve_seq_id_row(context, search, 'fetchall')
         context.log.info(f"{log_prefix}Found failed encodings: {failed_encodings}")
 
@@ -58,7 +58,8 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
             context.log.info(f"{log_prefix}Processing sequence {seq}")
             seq_id = seq[1]
             spath = seq[3]
-            if key_prefix not in spath:
+            key = seq[28]
+            if key_prefix != key:
                 continue
             retry_count = seq[17]
             if not retry_count.isnumeric():
