@@ -17,7 +17,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
     job = dg.define_asset_job(name=job_name, selection=[asset])
 
     # Determine the asset key for run config
-    asset_key_str = f"{key_prefix}/reencode_failed_asset"
+    asset_key_str = f"{key_prefix}__reencode_failed_asset"
 
     # Set sensor name with optional prefix
     sensor_name = f"{key_prefix}_failed_encoding_retry_sensor"
@@ -73,7 +73,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
                 context.log.warning(f"{log_prefix}Attempted encodings exceeded 3 attempts. Manual attention needed.")
                 arguments = (
                     ['status', 'Sequence failed repeatedly'],
-                    ['error_message', 'Manual review needed, maximum retries met.'],  # Fixed missing comma
+                    ['error_message', 'Manual review needed, maximum retries met.'],
                     ['encoding_retry', retry_count]
                 )
                 entry = context.resources.database.append_to_database(context, seq_id, arguments)
