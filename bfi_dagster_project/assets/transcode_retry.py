@@ -53,6 +53,11 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         search = "SELECT * FROM encoding_status WHERE seq_id=?"
         data = context.resources.database.retrieve_seq_id_row(context, search, 'fetchone', (seq,))
         context.log.info(f"{log_prefix}Row retrieved: {data}")
+        retry_count = data[17]
+        if not retry_count.isnumeric():
+            retry_count = 0
+        else:
+            retry_count = int(retry_count)
         status = data[2]
         choice = data[15]
         context.log.info(f"{log_prefix}==== Retry RAWcook encoding: {fullpath} ====")
@@ -131,7 +136,8 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             utils.move_log_to_dest(log_path, 'failures')
             arguments = (
                 ['status', 'RAWcook failed'],
-                ['encoding_complete', str(datetime.datetime.today())[:19]]
+                ['encoding_complete', str(datetime.datetime.today())[:19]],
+                ['encoding_retry', retry_count + 1]
             )
             context.log.warning(f"{log_prefix}RAWcooked encoding failed. Updating database:\n{arguments}")
             entry = context.resources.database.append_to_database(context, seq, arguments)
@@ -146,7 +152,8 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             ['encoding_log', log_path],
             ['derivative_path', ffv1_path],
             ['derivative_size', utils.get_folder_size(ffv1_path)],
-            ['derivative_md5', checksum_data]
+            ['derivative_md5', checksum_data],
+            ['encoding_retry', retry_count + 1]
         )
         context.log.info(f"RAWcook completed successfully. Updating database:\n{arguments}")
         entry = context.resources.database.append_to_database(context, seq, arguments)
