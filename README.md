@@ -228,4 +228,3 @@ POLICY_TIFF=“dpx_encoding/rawcooked_tiff_policy.xml”
 UNWRAP_RAWCOOK="automation/unwrap_rawcook_mkv/"
 TAR_PRES="automation/tar_preservation/"
 DPX_WRAP="automation/tar_preservation/for_tar_wrap/"
-
