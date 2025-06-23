@@ -29,8 +29,8 @@
       <rule name="Video minimum slice count" value="Format_Settings_SliceCount" tracktype="Video" occurrence="*" operator="&gt;=">16</rule>
     </policy>
     <rule name="Duration field exists" value="Duration" tracktype="Video" occurrence="*"/>
-    <rule name="Height is gt/et 1280" value="Height" tracktype="Video" occurrence="*" operator="&gt;=">900</rule>
-    <rule name="Width is gt/et 2048" value="Width" tracktype="Video" occurrence="*" operator="&gt;=">1000</rule>
+    <rule name="Height is gt/et 600" value="Height" tracktype="Video" occurrence="*" operator="&gt;=">600</rule>
+    <rule name="Width is gt/et 1000" value="Width" tracktype="Video" occurrence="*" operator="&gt;=">1000</rule>
     <rule name="Compression mode is Lossless" value="Compression_Mode" tracktype="Video" occurrence="*" operator="=">Lossless</rule>
     <rule name="Pixel aspect ratio is 1.0" value="PixelAspectRatio" tractype="Video" occurrence="*" operator="=">1.000</rule>
     <policy type="or" name="Colourspace check RGB or Y luma only">
