@@ -1,13 +1,16 @@
-import dagster as dg
-from typing import Optional, List, Callable
-from ..assets.transcode_retry import reencode_failed_asset, build_transcode_retry_asset
 import datetime
+from typing import Callable, List, Optional
+
+import dagster as dg
+
+from ..assets.transcode_retry import (build_transcode_retry_asset,
+                                      reencode_failed_asset)
 
 
 def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
-    '''
+    """
     Factory function that creates a sensor with optional key prefix.
-    '''
+    """
 
     # Get the appropriate asset based on prefix
     asset = build_transcode_retry_asset(key_prefix)
@@ -26,14 +29,14 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
         name=sensor_name,
         job=job,
         minimum_interval_seconds=3600,
-        required_resource_keys={'database', 'process_pool'}
+        required_resource_keys={"database", "process_pool"},
     )
     def failed_encoding_retry_sensor(
         context: dg.SensorEvaluationContext,
     ):
-        '''
+        """
         Detects failed encodings that need to be retried based on database records
-        '''
+        """
 
         # Add prefix to logging for clarity in multi-project setups
         log_prefix = f"[{key_prefix}] "
@@ -43,15 +46,19 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
         context.log.info(f"{log_prefix}Last check time for retries: {last_check}")
 
         search = "SELECT * FROM encoding_status WHERE status = 'RAWcook failed'"
-        failed_encodings = context.resources.database.retrieve_seq_id_row(context, search, 'fetchall')
+        failed_encodings = context.resources.database.retrieve_seq_id_row(
+            context, search, "fetchall"
+        )
         context.log.info(f"{log_prefix}Found failed encodings: {failed_encodings}")
 
         if not failed_encodings:
             return dg.SensorResult(
                 skip_reason=f"{log_prefix}No failed encodings to retry",
-                cursor=datetime.datetime.now().isoformat()
+                cursor=datetime.datetime.now().isoformat(),
             )
-        context.log.info(f"{log_prefix}{len(failed_encodings)} rows retrieved: {failed_encodings}")
+        context.log.info(
+            f"{log_prefix}{len(failed_encodings)} rows retrieved: {failed_encodings}"
+        )
 
         # Group by batch size if needed
         for seq in failed_encodings:
@@ -61,7 +68,9 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
             key = seq[28]
             print(f"{key_prefix} : {key}")
             if key_prefix != key:
-                context.log.info(f"Key prefix {key_prefix} does not match sequence {key}")
+                context.log.info(
+                    f"Key prefix {key_prefix} does not match sequence {key}"
+                )
                 continue
             retry_count = seq[17]
             if not retry_count.isnumeric():
@@ -70,21 +79,27 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
                 retry_count = int(retry_count)
 
             if retry_count > 3:
-                context.log.warning(f"{log_prefix}Attempted encodings exceeded 3 attempts. Manual attention needed.")
-                arguments = (
-                    ['status', 'Sequence failed repeatedly'],
-                    ['error_message', 'Manual review needed, maximum retries met.'],
-                    ['encoding_retry', retry_count]
+                context.log.warning(
+                    f"{log_prefix}Attempted encodings exceeded 3 attempts. Manual attention needed."
                 )
-                entry = context.resources.database.append_to_database(context, seq_id, arguments)
-                context.log.info(f"{log_prefix}Skipping this sequence. Row updated: {entry}")
+                arguments = (
+                    ["status", "Sequence failed repeatedly"],
+                    ["error_message", "Manual review needed, maximum retries met."],
+                    ["encoding_retry", retry_count],
+                )
+                entry = context.resources.database.append_to_database(
+                    context, seq_id, arguments
+                )
+                context.log.info(
+                    f"{log_prefix}Skipping this sequence. Row updated: {entry}"
+                )
                 continue
 
             # Update retry count in database
-            arguments = (
-                ['status', 'Pending retry']
+            arguments = ["status", "Pending retry"]
+            entry = context.resources.database.append_to_database(
+                context, seq_id, arguments
             )
-            entry = context.resources.database.append_to_database(context, seq_id, arguments)
             context.log.info(f"{log_prefix}Row updated: {entry}")
 
             # Create a run request for this sequence with proper asset key
@@ -99,10 +114,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
                         }
                     }
                 },
-                tags={
-                    "retry_attempt": str(retry_count + 1),
-                    "project": key_prefix
-                }
+                tags={"retry_attempt": str(retry_count + 1), "project": key_prefix},
             )
 
     return failed_encoding_retry_sensor

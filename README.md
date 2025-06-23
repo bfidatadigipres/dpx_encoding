@@ -1,53 +1,53 @@
 ## BFI National Archive Image Sequence Processing
 
-The BFI National Archive developed workflows using open source software RAWcooked to convert 2K and 4K DPX and TIFF film scans into FFV1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these automation workflows. The aim of these scripts is to turn large image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX/TIFF sequences to FFV1 can reduce the overall file size by half (2K RGB files), and allow the DPX image sequence to be played in VLC or similar software for instant review.  
-  
-These scripts are available under the MIT licence. Though originally a mix of Bash and Python code, they have recently evolved to run within a Dagster orchestrator which provides a Webserver interface providing realtime feedback of processes to our Developer team.  If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.  
-   
+The BFI National Archive developed workflows using open source software RAWcooked to convert 2K and 4K DPX and TIFF film scans into FFV1 Matroska video files for preservation. This has involved working with Media Area’s Jérôme Martinez, developer of RAWcooked, to help test and refine features. This repository contains the RAWcooked encoding (and TAR preservation scripts) used for these automation workflows. The aim of these scripts is to turn large image sequences into RAWcooked FFV1 Matroska files for preservation within the BFI's Digital Preservation Infrastructure (DPI). Encoding DPX/TIFF sequences to FFV1 can reduce the overall file size by half (2K RGB files), and allow the DPX image sequence to be played in VLC or similar software for instant review.
+
+These scripts are available under the MIT licence. Though originally a mix of Bash and Python code, they have recently evolved to run within a Dagster orchestrator which provides a Webserver interface providing realtime feedback of processes to our Developer team.  If you wish to test these yourself please create a safe environment to use this code separate from preservation critical files. All comments and feedback welcome.
+
 
 ## Overview of bfi_dagster_project scripts:
 
-These Python scripts contained with bfi_dagster_project are designed to be run from within a Dagster orchestrator (dagster.io) within a Python virtual environment (venv) with Python requirements installed.  Please refer to this README and the script comments for information about script functionality.  
-  
-These scripts handle the complete encoding process from start to finish, including assessment of the image sequences suitability for RAWcooked encoding, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of image sequences. If an image sequence does not meet the basic DPX or TIFF Mediaconch policies (included in this repository) it therefor fails requirements for RAWcooked encoding. The sequence is failed and passed to a TAR wrap preservation path. These scripts also manage the demuxing of RAWcooked FFV1 Matroska files back to an image sequence, and the unpacking to Python tarfile wrapped TAR sequences.  
-   
-To launch the Dagster project in the active venv navigate into dpx_encoding repository and call:   
-```dagster dev -w workspace.yaml -h 0.0.0.0 -p 8000```  
-   
-For an overview of how Dagster projects can be configured we recommend the Dagster Documentation, and their Dagster University.    
-   
+These Python scripts contained with bfi_dagster_project are designed to be run from within a Dagster orchestrator (dagster.io) within a Python virtual environment (venv) with Python requirements installed.  Please refer to this README and the script comments for information about script functionality.
+
+These scripts handle the complete encoding process from start to finish, including assessment of the image sequences suitability for RAWcooked encoding, encoding, failure assessment of the Matroska, and clean up of completed processes with deletion of image sequences. If an image sequence does not meet the basic DPX or TIFF Mediaconch policies (included in this repository) it therefor fails requirements for RAWcooked encoding. The sequence is failed and passed to a TAR wrap preservation path. These scripts also manage the demuxing of RAWcooked FFV1 Matroska files back to an image sequence, and the unpacking to Python tarfile wrapped TAR sequences.
+
+To launch the Dagster project in the active venv navigate into dpx_encoding repository and call: 
+```dagster dev -w workspace.yaml -h 0.0.0.0 -p 8000```
+
+For an overview of how Dagster projects can be configured we recommend the Dagster Documentation, and their Dagster University.
+
 ![Dagster run overview](/images/dagster_run_overview.png) [Dagster run overview](https://docs.dagster.io/)
- 
-## Overview of encoding_ui scripts:      
-    
-RAWcooked encoding is adaptable depending on requests fed into the code from a Flask web application broadcasting within the BFI DPI network. This allows colleagues to switch on/off the ```--no-accept-gaps``` feature of RAWcooked, to force the ```-framerate``` flag for 16 or 24 where image sequence frame rates are inaccurate. The code also senses if a previous encoding pass has run and failed due to information stored in the padding data, triggering a RAWcooked ```--output-version 2``` pass. The Flask web application also provides an overview of each sequences settings for the first image sequence, and reports at various stages of the transcoding allowing colleagues an overview of their sequence progress, whether RAWcooked encoded or TAR wrapped.  
-  
-![Flask app view of input options for colleagues](/images/flask_request.png)  
-   
+
+## Overview of encoding_ui scripts:
+
+RAWcooked encoding is adaptable depending on requests fed into the code from a Flask web application broadcasting within the BFI DPI network. This allows colleagues to switch on/off the ```--no-accept-gaps``` feature of RAWcooked, to force the ```-framerate``` flag for 16 or 24 where image sequence frame rates are inaccurate. The code also senses if a previous encoding pass has run and failed due to information stored in the padding data, triggering a RAWcooked ```--output-version 2``` pass. The Flask web application also provides an overview of each sequences settings for the first image sequence, and reports at various stages of the transcoding allowing colleagues an overview of their sequence progress, whether RAWcooked encoded or TAR wrapped.
+
+![Flask app view of input options for colleagues](/images/flask_request.png)
+
 ## Additional code (detailed notes below):
-   
-```tar_wrapping_launch.sh``` / ```tar_wrapping_checksum.py```   
-```unwrap_mkv_rawcook.sh```   
-```unwrap_tar_checksum.py```   
+
+```tar_wrapping_launch.sh``` / ```tar_wrapping_checksum.py``` 
+```unwrap_mkv_rawcook.sh```
+```unwrap_tar_checksum.py```
 
 ## Dependencies
 
 Linux system programmes for the shell launched scripts.
 
-Python library imports are listed in:   
-```requirements.txt```   
+Python library imports are listed in:
+```requirements.txt```
 
-These scripts are run from Ubuntu 24.04LTS installed server and rely upon several open source softwares Media Area and FFmpeg.  
-Please follow the links below to find out more:   
-- RAWcooked version 24.01 - https://mediaarea.net/rawcooked  
-(--output-version2 is not compatible with < RAWcooked V21.01)    
+These scripts are run from Ubuntu 24.04LTS installed server and rely upon several open source softwares Media Area and FFmpeg. 
+Please follow the links below to find out more: 
+- RAWcooked version 24.01 - https://mediaarea.net/rawcooked
+(--output-version2 is not compatible with < RAWcooked V21.01)  
 - FFmpeg Version 7 - https://ffmpeg.org/
 - MediaConch V24 - https://mediaarea.net/mediaconch
 - MediaInfo V24 - https://mediaarea.net/mediainfo
-  
-This code base uses BFI_scripts adlib_v3.py library which is used across all BFI National Archive code base to POST and GET data between the code and our Axiell Collections Information Database. If you want to run this code this dependency will register as missing.  I recommend you remove any imports of adlib_v3 to Python scripts and also remove adlib blocks of code where found. If you have an Axiell database with API access you may view/try this library and you can find it in our [BFI_scripts repository](https://github.com/bfidatadigipres/BFI_scripts/blob/main/adlib_v3.py). We currently run adlib against the latest API version using the 'jsonv1' JSON formatting response (including 'spans' as per previous API version), and anticipate updates to this script in coming months.  
-  
-## Environmental variable storage  
+
+This code base uses BFI_scripts adlib_v3.py library which is used across all BFI National Archive code base to POST and GET data between the code and our Axiell Collections Information Database. If you want to run this code this dependency will register as missing.  I recommend you remove any imports of adlib_v3 to Python scripts and also remove adlib blocks of code where found. If you have an Axiell database with API access you may view/try this library and you can find it in our [BFI_scripts repository](https://github.com/bfidatadigipres/BFI_scripts/blob/main/adlib_v3.py). We currently run adlib against the latest API version using the 'jsonv1' JSON formatting response (including 'spans' as per previous API version), and anticipate updates to this script in coming months.
+
+## Environmental variable storage
 
 These scripts are being operated on each server using environmental variables that store all path and key data for the script operations. These environmental variables are persistent so can be called indefinitely. They are imported to Python scripts near the beginning using ```os.environ.get('VARIABLE')```, and are called in shell scripts like ```"${VARIABLE}"```. They are saved into the /etc/environment file.
 See list at bottom for variable links to folder paths.
@@ -58,73 +58,73 @@ See list at bottom for variable links to folder paths.
 The scripts operate within a defined folder structure. These automation_dpx folders are deposited at various storage locations, and the dpx_encoding repository scripts are broken into folder path names to reflect this, eg ‘film_operations’, ‘qnap_film’ etc. The automation_dpx folder contents is always formatted like this so the scripts work across locations:
 
 ```bash
-automation  
-├── image_sequence_processing  
-│   ├── processing   
-│   │   ├── N_3623230_04of04   
-│   │   └── N_3623278_01of02  
-│   ├── ffv1_transcoding  
-│   │   ├── N_3623278_01of02.mkv.txt  
-│   │   └── N_3623278_01of02.mkv  
-│   ├── tar_wrapping  
-│   │   ├── N_3623284_03of03.tar  
-│   │   └── N_3623284_03of03_tar.log  
-│   ├── failures  
-│   │   ├── N_294553_01of03  
-│   │   └── N_294553_01of03.mkv  
-│   └── logs  
-│          ├── transcode_logs  
-│          ├── tar_logs  
-│          ├── check_logs  
-│          └── failures  
-├── tar_preservation  
-│   ├── for_tar_wrap  
-│   │   ├── N_3623230_01of04  
-│   │   └── N_3623278_02of02  
-│   ├── failures  
-│   ├── checksum_manifests  
-│   └── tar_wrapping_checksum.log  
-├── unwrap_rawcook_mkv  
-│   ├── N_123589_01of04.mkv  
-│   └── completed  
-└── unwrap_tar  
-       ├── completed  
-       ├── failures  
-       └── unwrapped_tar_checksum.log  
+automation
+├── image_sequence_processing
+│   ├── processing
+│   │   ├── N_3623230_04of04
+│   │   └── N_3623278_01of02
+│   ├── ffv1_transcoding
+│   │   ├── N_3623278_01of02.mkv.txt
+│   │   └── N_3623278_01of02.mkv
+│   ├── tar_wrapping
+│   │   ├── N_3623284_03of03.tar
+│   │   └── N_3623284_03of03_tar.log
+│   ├── failures
+│   │   ├── N_294553_01of03
+│   │   └── N_294553_01of03.mkv
+│   └── logs
+│          ├── transcode_logs
+│          ├── tar_logs
+│          ├── check_logs
+│          └── failures
+├── tar_preservation
+│   ├── for_tar_wrap
+│   │   ├── N_3623230_01of04
+│   │   └── N_3623278_02of02
+│   ├── failures
+│   ├── checksum_manifests
+│   └── tar_wrapping_checksum.log
+├── unwrap_rawcook_mkv
+│   ├── N_123589_01of04.mkv
+│   └── completed
+└── unwrap_tar
+       ├── completed
+       ├── failures
+       └── unwrapped_tar_checksum.log
 ```
 
 ## Supporting crontab actions
 
-The RAWcooked and TAR scripts are launched from a server /etc/crontab which schedules their run.    
+The RAWcooked and TAR scripts are launched from a server /etc/crontab which schedules their run.
 To prevent the scripts from running multiple versions at once and overburdening the server RAM the crontab calls the scripts via Linux Flock lock files (called from /usr/bin/flock shown below). These are manually created in the /var/run folder, and the script ```flock_rebuild.sh``` regularly checks for their presence, and if absent recreates them. It is common for the lock files to disappear when a server is rebooted, etc.
 
-The scripts for encoding and automation activities will run frequently throughout the day. Each of the first three scripts will have 12 different entries each with a different 'DG' path (see environments below) and a unique Flock lock, but call the same code:     
+The scripts for encoding and automation activities will run frequently throughout the day. Each of the first three scripts will have 12 different entries each with a different 'DG' path (see environments below) and a unique Flock lock, but call the same code:
 
-DPX Encoding script crontab entries:   
-```bash 
+DPX Encoding script crontab entries:
+```bash
     0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dpx_tar_script03.lock  ${DPX_SCRIPTS}tar_wrapping_launch.sh ${DG1_QNAP03}
-    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_mkv_rawcook10.lock  ${DPX_SCRIPTS}unwrap_rawcook.sh ${DG10_QNAP11}  
+    0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_mkv_rawcook10.lock  ${DPX_SCRIPTS}unwrap_rawcook.sh ${DG10_QNAP11}
     0     22    *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/unwrap_tar06.lock  ${PYENV3}  ${DPX_SCRIPTS}unwrap_tar_checksum.py ${DG6_FILM_LAB}
-    */1   *     *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dag_app.lock   ${PYENV3}  ${DPX_SCRIPTS}encoding_ui/app.py   
-    */5   *     *    *    *    user   /mnt/path/dpx_encoding/flock_rebuild.sh  
-```    
- 
-### BFI server and storage configuration  
+    */1   *     *    *    *    user   /usr/bin/flock -w 0 --verbose /var/run/dag_app.lock   ${PYENV3}  ${DPX_SCRIPTS}encoding_ui/app.py
+    */5   *     *    *    *    user   /mnt/path/dpx_encoding/flock_rebuild.sh
+```
 
-The FFV1 codec was developed with SliceCRCs which compliment the multithreading feature of FFmpeg, enabling fast encoding by splitting encoding processes across the slices of each frame. Our server has 64 CPUs allowing better multithreading capability. The SliceCRCs also embed 64 CRC checksum across each frame, so if your file suffers any damage over time you can exactly pinpoint where in the sequence it is by running the MKV through FFmpeg.  
+### BFI server and storage configuration
 
-BFI RAWcooked server (retrieved using Linux ```lscpu```):  
-- Architecture X86-64  
-- CPU op-mode 64-bit  
-- CPU(s) 64  
-- Model Intel(R) Xeon(R) Gold 5218 CPU @2.30GHz  
-- RAM 252GB  
-- Threads (per core) 2  
-- Cores (per socket) 16  
-- Sockets 2  
-The 64 CPUs are calculated Threads x Cores x Sockets.  
+The FFV1 codec was developed with SliceCRCs which compliment the multithreading feature of FFmpeg, enabling fast encoding by splitting encoding processes across the slices of each frame. Our server has 64 CPUs allowing better multithreading capability. The SliceCRCs also embed 64 CRC checksum across each frame, so if your file suffers any damage over time you can exactly pinpoint where in the sequence it is by running the MKV through FFmpeg.
 
-In addition to plenty of CPUs it is good to have storage communication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thoroughly: https://github.com/MediaArea/RAWcooked/issues/375  
+BFI RAWcooked server (retrieved using Linux ```lscpu```):
+- Architecture X86-64
+- CPU op-mode 64-bit
+- CPU(s) 64
+- Model Intel(R) Xeon(R) Gold 5218 CPU @2.30GHz
+- RAM 252GB
+- Threads (per core) 2
+- Cores (per socket) 16
+- Sockets 2
+The 64 CPUs are calculated Threads x Cores x Sockets.
+
+In addition to plenty of CPUs it is good to have storage communication speeds that match CPU speeds. The BFI have networked access storage connected at either 10Gb or 25Gb fibre optic. To understand this more we recommend reviewing GitHub issue 375 which discusses this more thoroughly: https://github.com/MediaArea/RAWcooked/issues/375
 
 
 ## NON-DAGSTER SCRIPTS
@@ -193,39 +193,39 @@ Loads with a list of flock lock paths. A for loop checks if each path in the lis
 
 #### Paths to different storage devices used at launch of Dagster project:
 
-DG1_QNAP03   
-DG2_FILM_OPS   
-DG3_FILM_PRES   
-DG4_FILM_SCAN    
-DG5_FILM_QC    
-DG6_FILM_LAB    
-DG7_FILM_MICRL    
-DG8_DIGIOPS    
-DG9_QNAP10    
-DG10_QNAP11    
-DG11_QNAP06    
-DG12_EDIT_DIR    
-  
-#### Automation folder variables:  
-Dagster home allows logs to persist across launches of Dagster software:    
-DAGSTER_HOME=“/home/user/code/git/dagster_home/”   
-    
-SQLite database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:    
-DATABASE=“dpx_encoding/encoding_database.db”    
-    
-Environmental vars needed for crontab script launches:    
-DPX_SCRIPTS="/home/user/code/git/dpx_encoding/"    
-PYENV3="/home/user/code/ENV3/bin/python3"   
+DG1_QNAP03 
+DG2_FILM_OPS 
+DG3_FILM_PRES 
+DG4_FILM_SCAN
+DG5_FILM_QC
+DG6_FILM_LAB 
+DG7_FILM_MICRL 
+DG8_DIGIOPS 
+DG9_QNAP10 
+DG10_QNAP11 
+DG11_QNAP06 
+DG12_EDIT_DIR
 
-Variable used in calling adlib_v3 library (neighbouring BFI_scripts repository code):   
-CODE="/home/user/code/git/BFI_scripts"   
-CID_API* is an Axiell API Rest HTTP address for the Adlib library to POST/GET to Axiell   
-    
-Addition script variables:    
-POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml"    
-POLICY_DPX=“dpx_encoding/rawcooked_dpx_policy.xml"    
-POLICY_TIFF=“dpx_encoding/rawcooked_tiff_policy.xml”    
-UNWRAP_RAWCOOK="automation/unwrap_rawcook_mkv/"    
-TAR_PRES="automation/tar_preservation/"    
-DPX_WRAP="automation/tar_preservation/for_tar_wrap/"    
-  
+#### Automation folder variables:
+Dagster home allows logs to persist across launches of Dagster software:
+DAGSTER_HOME=“/home/user/code/git/dagster_home/”
+
+SQLite database called in Dagster to update Flask app for colleagues and pass information to the RAWcooked encoding scripts:
+DATABASE=“dpx_encoding/encoding_database.db”
+
+Environmental vars needed for crontab script launches:
+DPX_SCRIPTS="/home/user/code/git/dpx_encoding/"
+PYENV3="/home/user/code/ENV3/bin/python3"
+
+Variable used in calling adlib_v3 library (neighbouring BFI_scripts repository code):
+CODE="/home/user/code/git/BFI_scripts"
+CID_API* is an Axiell API Rest HTTP address for the Adlib library to POST/GET to Axiell
+
+Addition script variables:
+POLICY_RAWCOOK="dpx_encoding/rawcooked_mkv_policy.xml" 
+POLICY_DPX=“dpx_encoding/rawcooked_dpx_policy.xml"
+POLICY_TIFF=“dpx_encoding/rawcooked_tiff_policy.xml”
+UNWRAP_RAWCOOK="automation/unwrap_rawcook_mkv/"
+TAR_PRES="automation/tar_preservation/"
+DPX_WRAP="automation/tar_preservation/for_tar_wrap/"
+

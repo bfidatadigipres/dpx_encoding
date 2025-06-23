@@ -27,7 +27,7 @@ body {
     grid-template-columns: 2fr 1fr 1fr;
     gap: 20px
   }
-  
+
   tr:nth-child(even) {
     background-color: #f2f2f2;
   }
