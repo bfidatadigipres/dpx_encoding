@@ -362,12 +362,12 @@ def ffv1_validate(fullpath):
         if not os.path.exists(cpath):
             os.makedirs(cpath, exist_ok=True, mode=0o777)
         shutil.move(dpath, os.path.join(cpath, seq))
-        seq_del = "Moved to for_deletion folder"
         log_data.append(f"Image sequence moved to {cpath}")
-        # success = utils.delete_sequence(os.path.join(move_to, seq)))
-        # seq_del = 'No'
-        # if success:
-        #     seq_del = 'Yes'
+        success = utils.delete_sequence(os.path.join(cpath, seq))
+        seq_del = 'Deletion failed'
+        if success:
+            log_data.append("Image sequence deleted")
+            seq_del = 'Sequence deleted'
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)
