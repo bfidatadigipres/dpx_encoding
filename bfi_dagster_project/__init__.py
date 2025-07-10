@@ -3,15 +3,13 @@ from typing import Dict, List, Optional
 
 import dagster as dg
 
-# Resource imports
+# Imports
 from . import resources
 from .assets.archiving import build_archiving_asset
 from .assets.assessment import build_assess_sequence_asset
-# Asset imports
 from .assets.get_sequences import build_target_sequences_asset
 from .assets.transcode_retry import build_transcode_retry_asset
 from .assets.transcoding import build_transcode_ffv1_asset
-# Sensor imports
 from .sensors import build_failed_encoding_retry_sensor
 
 # Global environment variables
