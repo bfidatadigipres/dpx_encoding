@@ -34,8 +34,6 @@ import logging
 import os
 import shutil
 import sys
-import tarfile
-
 # import tarfile
 import tarfile
 
