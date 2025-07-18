@@ -34,11 +34,11 @@ import logging
 import os
 import shutil
 import sys
+import tarfile
 import tempfile
 
 # import tarfile
 import py7zr
-import tarfile
 
 sys.path.append(os.environ["CODE"])
 import adlib_v3 as adlib
