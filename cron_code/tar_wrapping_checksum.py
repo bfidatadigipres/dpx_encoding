@@ -34,9 +34,10 @@ import logging
 import os
 import shutil
 import sys
+import tempfile
+
 # import tarfile
 import py7zr
-import tempfile
 
 sys.path.append(os.environ["CODE"])
 import adlib_v3 as adlib
@@ -115,7 +116,7 @@ def tar_item(fpath):
         return None
 
     try:
-        with py7zr.SevenZipFile('tar_path', mode='w') as z:
+        with py7zr.SevenZipFile("tar_path", mode="w") as z:
             z.write(fpath, arcname=f"{split_path[1]}")
         return tar_path
 
@@ -129,20 +130,20 @@ def get_tar_checksums(tar_path, folder):
     Open tar file and read/generate MD5 sums
     and return dct {filename: hex}
     """
-    data ={}
+    data = {}
     with tempfile.TemporaryDirectory() as tmpdir:
-        with py7zr.SevenZipFile(tar_path, mode='r') as archive:
+        with py7zr.SevenZipFile(tar_path, mode="r") as archive:
             archive.extractall(path=tmpdir)
-        
+
         for root, _, files in os.walk(tmpdir):
             for f in files:
                 rel_path = os.path.relpath(os.path.join(root, f), tmpdir)
 
                 hash_md5 = hashlib.md5()
-                with open(os.path.join(root, f), 'rb') as file:
+                with open(os.path.join(root, f), "rb") as file:
                     for chunk in iter(lambda: file.read(65536), b""):
                         hash_md5.update(chunk)
-                
+
                 if not folder:
                     file_key = os.path.basename(rel_path)
                     data[file_key] = hash_md5.hexdigest()
@@ -377,7 +378,7 @@ def main():
         LOGGER.info("TAR checksum manifest created. Adding to TAR file %s", tar_path)
         try:
             arc_path = os.path.split(md5_manifest)
-            with py7zr.SevenZipFile('tar_path', mode='w') as z:
+            with py7zr.SevenZipFile("tar_path", mode="w") as z:
                 z.write(md5_manifest, arcname=f"{arc_path[1]}")
         except Exception as exc:
             LOGGER.warning(
