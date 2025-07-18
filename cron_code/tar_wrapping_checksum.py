@@ -34,10 +34,6 @@ import logging
 import os
 import shutil
 import sys
-import tempfile
-
-# import tarfile
-import py7zr
 import tarfile
 
 sys.path.append(os.environ["CODE"])
