@@ -39,9 +39,6 @@ import tempfile
 # import tarfile
 import py7zr
 
-sys.path.append(os.environ["CODE"])
-import adlib_v3 as adlib
-
 if not len(sys.argv) >= 2:
     sys.exit("Exiting. Supplied path argument is missing.")
 if not os.path.exists(sys.argv[1]):
@@ -69,37 +66,6 @@ LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
 
 
-def get_cid_data(fname):
-    """
-    Use requests to retrieve priref for associated item object number
-    """
-    ob_num_split = fname.split("_")
-    if len(ob_num_split) == 3:
-        ob_num = "-".join(ob_num_split[0:2])
-    elif len(ob_num_split) == 4:
-        ob_num = "-".join(ob_num_split[0:3])
-    else:
-        LOGGER.warning("Incorrect filename formatting. Script exiting.")
-        sys.exit(f"Incorrect filename formatting {fname}. Script exiting.")
-
-    search = f"object_number='{ob_num}'"
-    record = adlib.retrieve_record(
-        CID_API, "items", search, "1", ["priref", "file_type"]
-    )[1]
-    if not record:
-        return None
-
-    try:
-        priref = adlib.retrieve_field_name(record[0], "priref")[0]
-    except (IndexError, KeyError):
-        priref = ""
-    try:
-        file_type = adlib.retrieve_field_name(record[0], "file_type")[0]
-    except (IndexError, KeyError):
-        file_type = ""
-
-    return priref, file_type
-
 
 def tar_item(fpath):
     """
@@ -114,7 +80,7 @@ def tar_item(fpath):
         return None
 
     try:
-        with py7zr.SevenZipFile("tar_path", mode="w") as z:
+        with py7zr.SevenZipFile(tar_path, mode="w") as z:
             z.write(fpath, arcname=f"{split_path[1]}")
         return tar_path
 
