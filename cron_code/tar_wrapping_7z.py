@@ -66,7 +66,6 @@ LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
 
 
-
 def tar_item(fpath):
     """
     Make tar path from supplied filepath
