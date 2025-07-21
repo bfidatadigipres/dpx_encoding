@@ -328,10 +328,10 @@ def ffv1_validate(spath):
         log_data.append(f"Image sequence moved to {cpath}")
 
         success = utils.delete_sequence(os.path.join(cpath, seq))
-        seq_del = 'Deletion failed'
+        seq_del = "Deletion failed"
         if success:
             log_data.append("Image sequence deleted")
-            seq_del = 'Sequence deleted'
+            seq_del = "Sequence deleted"
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)

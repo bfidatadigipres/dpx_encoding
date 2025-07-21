@@ -34,11 +34,10 @@ import logging
 import os
 import shutil
 import sys
-# import tarfile
-import tarfile
+import tempfile
 
-sys.path.append(os.environ["CODE"])
-import adlib_v3 as adlib
+# import tarfile
+import py7zr
 
 if not len(sys.argv) >= 2:
     sys.exit("Exiting. Supplied path argument is missing.")
@@ -53,10 +52,8 @@ COMPLETED = os.path.join(AUTO_TAR, "completed/")
 CHECKSUM = os.path.join(AUTO_TAR, "checksum_manifests/")
 if "/mnt/bp_nas" in LOCAL_PATH:
     parent_path = LOCAL_PATH.split("tar_preservation")[0]
-    AUTOINGEST = os.path.join(parent_path, os.environ["AUTOINGEST_STORE"])
 else:
     parent_path = LOCAL_PATH.split("/automation")[0]
-    AUTOINGEST = os.path.join(parent_path, os.environ["AUTOINGEST_STORE"])
 LOG = os.path.join(AUTO_TAR, "tar_wrapping_checksum.log")
 CID_API = os.environ["CID_API4"]
 
@@ -67,38 +64,6 @@ formatter = logging.Formatter("%(asctime)s\t%(levelname)s\t%(message)s")
 hdlr.setFormatter(formatter)
 LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
-
-
-def get_cid_data(fname):
-    """
-    Use requests to retrieve priref for associated item object number
-    """
-    ob_num_split = fname.split("_")
-    if len(ob_num_split) == 3:
-        ob_num = "-".join(ob_num_split[0:2])
-    elif len(ob_num_split) == 4:
-        ob_num = "-".join(ob_num_split[0:3])
-    else:
-        LOGGER.warning("Incorrect filename formatting. Script exiting.")
-        sys.exit(f"Incorrect filename formatting {fname}. Script exiting.")
-
-    search = f"object_number='{ob_num}'"
-    record = adlib.retrieve_record(
-        CID_API, "items", search, "1", ["priref", "file_type"]
-    )[1]
-    if not record:
-        return None
-
-    try:
-        priref = adlib.retrieve_field_name(record[0], "priref")[0]
-    except (IndexError, KeyError):
-        priref = ""
-    try:
-        file_type = adlib.retrieve_field_name(record[0], "file_type")[0]
-    except (IndexError, KeyError):
-        file_type = ""
-
-    return priref, file_type
 
 
 def tar_item(fpath):
@@ -114,14 +79,12 @@ def tar_item(fpath):
         return None
 
     try:
-        tarring = tarfile.open(tar_path, "w:")
-        tarring.add(fpath, arcname=f"{split_path[1]}")
-        tarring.close()
+        with py7zr.SevenZipFile(tar_path, mode="w") as z:
+            z.write(fpath, arcname=f"{split_path[1]}")
         return tar_path
 
     except Exception as exc:
         LOGGER.warning("tar_item(): ERROR WITH TAR WRAP %s", exc)
-        tarring.close()
         return None
 
 
@@ -131,38 +94,26 @@ def get_tar_checksums(tar_path, folder):
     and return dct {filename: hex}
     """
     data = {}
-    tar = tarfile.open(tar_path, "r|")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with py7zr.SevenZipFile(tar_path, mode="r") as archive:
+            archive.extractall(path=tmpdir)
 
-    for item in tar:
-        item_name = item.name
-        if item.isdir():
-            continue
+        for root, _, files in os.walk(tmpdir):
+            for f in files:
+                rel_path = os.path.relpath(os.path.join(root, f), tmpdir)
 
-        pth, fname = os.path.split(item_name)
-        if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
-            folder_prefix = os.path.basename(pth)
-            fname = f"{folder_prefix}_{fname}"
-        print(item_name, fname, item)
+                hash_md5 = hashlib.md5()
+                with open(os.path.join(root, f), "rb") as file:
+                    for chunk in iter(lambda: file.read(65536), b""):
+                        hash_md5.update(chunk)
 
-        try:
-            f = tar.extractfile(item)
-        except Exception as exc:
-            LOGGER.warning(
-                "get_tar_checksums(): Unable to extract from tar file\n%s", exc
-            )
-            continue
+                if not folder:
+                    file_key = os.path.basename(rel_path)
+                    data[file_key] = hash_md5.hexdigest()
+                else:
+                    data[rel_path] = hash_md5.hexdigest()
 
-        hash_md5 = hashlib.md5()
-        for chunk in iter(lambda: f.read(65536), b""):
-            hash_md5.update(chunk)
-
-        if not folder:
-            file = os.path.basename(fname)
-            data[file] = hash_md5.hexdigest()
-        else:
-            data[fname] = hash_md5.hexdigest()
-
-    return data
+        return data
 
 
 def get_checksum(fpath):
@@ -207,7 +158,7 @@ def main():
     Generate checksums for all folder contents/single file
     TAR Wrap, then make checksum for inside of TAR contents
     Compare checksum manifests, if match add into TAR and close.
-    Delete original file, move TAR to autoingest path.
+    Delete original file, move TAR to completed folder.
     """
 
     if len(sys.argv) != 2:
@@ -226,52 +177,8 @@ def main():
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
     LOGGER.info("==== TAR Wrapping Check script start ===============================")
-    LOGGER.info("Path received for TAR wrap using Python3 tarfile: %s", fullpath)
+    LOGGER.info("Path received for TAR wrap using Python3 py7zr: %s", fullpath)
     tar_source = os.path.basename(fullpath)
-
-    # Validate filename and retrieve priref/file_type
-    fname_split = tar_source.split("_")
-    if "of" not in str(fname_split[-1:]):
-        LOGGER.warning(
-            "Script exiting. Poorly formed partWhole for filename %s", tar_source
-        )
-        error_mssg1 = f"Part whole for TAR file is poorly formed {tar_source}\n\tPlease correct the part whole for this DPX folder"
-        error_mssg2 = None
-        error_log(
-            os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
-        )
-        sys.exit("Filename  not formed correctly, script exiting.")
-
-    priref, file_type = get_cid_data(tar_source)
-    if not priref:
-        LOGGER.warning(
-            "No CID item record found to match TAR source file. Script exitings"
-        )
-        error_mssg1 = f"No CID item record found to match {tar_source}\n\tPlease check the folder number is named after the CID item record for the DPX sequence"
-        error_mssg2 = None
-        error_log(
-            os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
-        )
-        sys.exit(f"No CID item record found to match TAR file {tar_source}. Exiting.")
-    LOGGER.info(
-        "File for TAR wrapping %s has matching CID Item record: %s. File type: %s",
-        tar_source,
-        priref,
-        file_type,
-    )
-
-    if file_type.lower() not in ["dpx", "dcp", "dcdm", "wav", "tar", "tif", "tiff"]:
-        LOGGER.warning(
-            "File type absent or doesn't match DPX, DCP, DCDM or WAV. Script exiting"
-        )
-        error_mssg1 = f"File type absent or doesn't match DPX, DCP, DCDM or WAV: {file_type}\n\tPlease check 'file_type' field for CID item record {priref}"
-        error_mssg2 = None
-        error_log(
-            os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
-        )
-        sys.exit(
-            f"File type absent or doesn't match those for TAR: {file_type}. Exiting."
-        )
 
     # Calculate checksum manifest for supplied fullpath
     local_md5 = {}
@@ -320,7 +227,6 @@ def main():
     # Tar folder
     log.append("Beginning TAR wrap now...")
     tar_path = tar_item(fullpath)
-    tar_file = os.path.split(tar_path)[1]
     if not tar_path:
         log.append("TAR WRAP FAILED. SCRIPT EXITING!")
         LOGGER.warning("TAR wrap failed for file: %s", fullpath)
@@ -389,11 +295,11 @@ def main():
             sys.exit("Script exit: TAR file MD5 Manifest failed to create")
 
         LOGGER.info("TAR checksum manifest created. Adding to TAR file %s", tar_path)
+        # # check with dms team to see if they want a manifest file in the root directory of the TAR?
         try:
             arc_path = os.path.split(md5_manifest)
-            tar = tarfile.open(tar_path, "a:")
-            tar.add(md5_manifest, arcname=f"{arc_path[1]}")
-            tar.close()
+            with py7zr.SevenZipFile("tar_path", mode="w") as z:
+                z.write(md5_manifest, arcname=f"{arc_path[1]}")
         except Exception as exc:
             LOGGER.warning(
                 "Unable to add MD5 manifest to TAR file. Moving TAR file to failures folder.\n%s",
@@ -429,11 +335,6 @@ def main():
         LOGGER.info("File size is %s bytes.", file_size)
 
         try:
-            LOGGER.info("Moving %s to %s", tar_path, AUTOINGEST)
-            shutil.move(tar_path, AUTOINGEST)
-        except Exception as err:
-            LOGGER.warning("File move to autoingest failed:\n%s", err)
-        try:
             LOGGER.info("Moving sequence to completed/: %s", fullpath)
             shutil.move(fullpath, COMPLETED)
         except Exception as err:
@@ -450,25 +351,6 @@ def main():
             os.rename(
                 os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
                 os.path.join(TAR_FAIL, resolved_error_log),
-            )
-
-        # Delete source for TAR wrapped file/folder
-        if os.path.isdir(os.path.join(COMPLETED, tar_source)):
-            LOGGER.info("Deleting source folder %s", tar_source)
-            shutil.rmtree(os.path.join(COMPLETED, tar_source))
-        elif os.path.isfile(os.path.join(COMPLETED, tar_source)):
-            LOGGER.info("Deleting source file %s", tar_source)
-            os.remove(os.path.join(COMPLETED, tar_source))
-
-        # Write note to CID Item record that file has been wrapped using Python tarfile module.
-        success = write_to_cid(priref, tar_file)
-        if not success:
-            error_mssg1 = f"Failed to write Python tarfile message to CID item record: {priref} {tar_file}. Please add manually."
-            error_mssg2 = None
-            error_log(
-                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
-                error_mssg1,
-                error_mssg2,
             )
     else:
         LOGGER.warning(
@@ -543,30 +425,6 @@ def error_log(fpath, message, kandc):
                 f"- Please contact the Knowledge and Collections Developer {kandc}.\n\n"
             )
             log.close()
-
-
-def write_to_cid(priref, fname):
-    """
-    Make payload and write to CID
-    """
-    name = "datadigipres"
-    method = "TAR wrapping method:"
-    text = f"For preservation to DPI the item {fname} was wrapped using Python tarfile module, and the TAR includes checksum manifests of all contents."
-    date = str(datetime.datetime.now())[:10]
-    time = str(datetime.datetime.now())[11:19]
-    notes = "Automated TAR wrapping script."
-    payload_head = f"<adlibXML><recordList><record priref='{priref}'>"
-    payload_addition = (
-        f"<utb.fieldname>{method}</utb.fieldname><utb.content>{text}</utb.content>"
-    )
-    payload_edit = f"<edit.name>{name}</edit.name><edit.date>{date}</edit.date><edit.time>{time}</edit.time><edit.notes>{notes}</edit.notes>"
-    payload_end = "</record></recordList></adlibXML>"
-    payload = payload_head + payload_addition + payload_edit + payload_end
-
-    record = adlib.post(CID_API, payload, "items", "updaterecord")
-    if record is None:
-        return False
-    return True
 
 
 if __name__ == "__main__":
