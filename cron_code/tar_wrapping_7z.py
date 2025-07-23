@@ -80,7 +80,7 @@ def tar_item(fpath):
 
     try:
         with py7zr.SevenZipFile(tar_path, mode="w") as z:
-            z.write(fpath, arcname=f"{split_path[1]}")
+            z.writeall(fpath, arcname=f"{split_path[1]}")
         return tar_path
 
     except Exception as exc:
