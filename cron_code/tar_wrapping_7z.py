@@ -130,7 +130,7 @@ def get_checksum(fpath):
     with open(fpath, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
             hash_md5.update(chunk)
-        data[file] = hash_md5.hexdigest()
+            data[fpath] = hash_md5.hexdigest()
         f.close()
     return data
 
