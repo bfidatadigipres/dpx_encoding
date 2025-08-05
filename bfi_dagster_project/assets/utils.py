@@ -169,7 +169,9 @@ def mediaconch(ipath: str, arg: str) -> List:
 
     try:
         result = subprocess.check_output(cmd, shell=False).decode()
-        if str(result).startswith(f"pass! {ipath}"):
+        if len(result) == 0:
+            raise Exception("No response received, attempt mediaconch retry!")
+        elif str(result).startswith(f"pass! {ipath}"):
             return ["Pass", str(result)]
         else:
             return ["Fail", str(result)]
@@ -187,9 +189,12 @@ def mediaconch_mkv(dpath: str) -> List:
 
     try:
         result = subprocess.check_output(cmd, shell=False).decode()
-        if str(result).startswith(f"pass! {dpath}"):
+        if len(result) == 0:
+            raise Exception("No response received, attempt mediaconch retry!")
+        elif str(result).startswith(f"pass! {dpath}"):
             return ["Pass", result]
-        return ["Fail", result]
+        else:
+            return ["Fail", result]
     except Exception as err:
         raise err
 
