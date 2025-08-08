@@ -73,11 +73,11 @@ jobs:
         id: check-pr
         if: github.event_name == 'push' && github.ref != 'refs/heads/main'
         run: |
-            echo "Checking for PR in bfidatadigipres/BFI_scripts for branch: $BRANCH_NAME"
+            echo "Checking for PR in bfidatadigipres/dpx_encoding for branch: $BRANCH_NAME"
 
             # Query the GitHub API to check for existing PRs
             PR_EXISTS=$(gh pr list \
-                --repo "bfidatadigipres/BFI_scripts" \
+                --repo "bfidatadigipres/dpx_encoding" \
                 --head "${BRANCH_NAME}" \
                 --base main \
                 --state open \
@@ -180,7 +180,7 @@ jobs:
           run: |
             echo "Checking for PR on branch: $BRANCH_NAME"
 
-            PR_NUMBER=$(gh pr list --repo "bfidatadigipres/BFI_scripts" --head "$BRANCH_NAME" --state open --json number --jq '.[0].number' 2>/dev/null || echo "error")
+            PR_NUMBER=$(gh pr list --repo "bfidatadigipres/dpx_encoding" --head "$BRANCH_NAME" --state open --json number --jq '.[0].number' 2>/dev/null || echo "error")
 
             echo "Found PR number: $PR_NUMBER"
             if [  "$PR_NUMBER" != "error" ]; then
@@ -196,7 +196,7 @@ jobs:
           with:
             issue-number: ${{ steps.check-pr.outputs.number }}
             edit-mode: replace
-            repository: bfidatadigipres/BFI_scripts
+            repository: bfidatadigipres/dpx_encoding
             body: |
               **Automated Pylint Report** 🧑‍💻
 
