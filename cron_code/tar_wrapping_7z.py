@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 USES SYS.ARGV[] to receive path to item for TAR.
 Complete TAR wrapping using Python3 tarfile
@@ -26,7 +25,6 @@ Steps:
 
 2025
 """
-
 import datetime
 import hashlib
 import json
@@ -224,7 +222,7 @@ def main():
             LOGGER.info("\t%s", data)
             log.append(f"\t{data}")
 
-    # Tar folder
+    # Tar folder, creating tar folder
     log.append("Beginning TAR wrap now...")
     tar_path = tar_item(fullpath)
     if not tar_path:

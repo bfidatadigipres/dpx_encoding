@@ -291,9 +291,9 @@ def get_fps(ipath: str) -> Optional[int]:
     except subprocess.CalledProcessError as err:
         print(err)
         fps = ""
-    fps = str(fps).rstrip('/n')
-    if '.' in fps:
-        fps = fps.split('.')[0]
+    fps = str(fps).rstrip("/n")
+    if "." in fps:
+        fps = fps.split(".")[0]
     if len(fps) > 0:
         framerate = int(fps)
         if isinstance(framerate, int):
