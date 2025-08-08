@@ -81,11 +81,11 @@ jobs:
         id: check-pr
         if: github.event_name == 'push' && github.ref != 'refs/heads/main'
         run: |
-            echo "Checking for PR in bfidatadigipres/dpx_encoding for branch: $BRANCH_NAME"
+            echo "Checking for PR in bfidatadigipres/BFI_scripts for branch: $BRANCH_NAME"
 
             # Query the GitHub API to check for existing PRs
             PR_EXISTS=$(gh pr list \
-                --repo "bfidatadigipres/dpx_encoding" \
+                --repo "bfidatadigipres/BFI_scripts" \
                 --head "${BRANCH_NAME}" \
                 --base main \
                 --state open \
@@ -113,7 +113,7 @@ jobs:
         run: |
               echo "Creating PR for branch $REF_NAME"
               gh pr create \
-                --repo "bfidatadigipres/dpx_encoding" \
+                --repo "bfidatadigipres/BFI_scripts" \
                 --base main \
                 --head "$REPO_OWNER:$REF_NAME" \
                 --title "Automated PR for branch: $REF_NAME" \
@@ -152,8 +152,14 @@ jobs:
         - id: pylint
           run: |
             export LANG=en_US.UTF-8
+            changed_files=($(git diff --name-only HEAD~1 HEAD | grep '\.py$'))
             mkdir -p reports
-            python -m pylint *.py > reports/pylint-report.txt || true
+            if [ ${#changed_files[@]} -gt 0 ]; then
+                python -m pylint "${changed_files[@]}" > reports/pylint-report.txt || true
+            else
+                echo "help breaking"
+                # python -m pylint *.py > reports/pylint-report.txt || true
+            fi
             sed -i 's/\(.*:[0-9]\+:[0-9]\+:[[:space:]]*\)\(E[0-9]\{4\}\)/\1🚨 \2/' reports/pylint-report.txt
             sed -i 's/\(.*:[0-9]\+:[0-9]\+:[[:space:]]*\)\(W[0-9]\{4\}\)/\1⚠️ \2/' reports/pylint-report.txt
             sed -i 's/\(.*:[0-9]\+:[0-9]\+:[[:space:]]*\)\(I[0-9]\{4\}\)/\1ℹ️ \2/' reports/pylint-report.txt
@@ -182,7 +188,7 @@ jobs:
           run: |
             echo "Checking for PR on branch: $BRANCH_NAME"
 
-            PR_NUMBER=$(gh pr list --repo "bfidatadigipres/dpx_encoding" --head "$BRANCH_NAME" --state open --json number --jq '.[0].number' 2>/dev/null || echo "error")
+            PR_NUMBER=$(gh pr list --repo "bfidatadigipres/BFI_scripts" --head "$BRANCH_NAME" --state open --json number --jq '.[0].number' 2>/dev/null || echo "error")
 
             echo "Found PR number: $PR_NUMBER"
             if [  "$PR_NUMBER" != "error" ]; then
@@ -198,7 +204,7 @@ jobs:
           with:
             issue-number: ${{ steps.check-pr.outputs.number }}
             edit-mode: replace
-            repository: bfidatadigipres/dpx_encoding
+            repository: bfidatadigipres/BFI_scripts
             body: |
               **Automated Pylint Report** 🧑‍💻
 
