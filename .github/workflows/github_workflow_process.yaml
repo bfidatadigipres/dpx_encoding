@@ -105,7 +105,7 @@ jobs:
         run: |
               echo "Creating PR for branch $REF_NAME"
               gh pr create \
-                --repo "bfidatadigipres/BFI_scripts" \
+                --repo "bfidatadigipres/dpx_encoding" \
                 --base main \
                 --head "$REPO_OWNER:$REF_NAME" \
                 --title "Automated PR for branch: $REF_NAME" \
