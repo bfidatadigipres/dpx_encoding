@@ -224,7 +224,7 @@ def main():
             LOGGER.info("\t%s", data)
             log.append(f"\t{data}")
 
-    # Tar folder
+    # Tar folder, creating tar folder
     log.append("Beginning TAR wrap now...")
     tar_path = tar_item(fullpath)
     if not tar_path:
