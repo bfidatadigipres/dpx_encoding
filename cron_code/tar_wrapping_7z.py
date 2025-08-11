@@ -51,7 +51,7 @@ AUTO_TAR = LOCAL_PATH.split("7zip")[0]
 TAR_FAIL = os.path.join(LOCAL_PATH, "failures/")
 COMPLETED = os.path.join(LOCAL_PATH, "completed/")
 CHECKSUM = os.path.join(LOCAL_PATH, "checksum_manifests/")
-LOCAL_LOG = os.environ['LOG_PATH']
+LOCAL_LOG = os.environ["LOG_PATH"]
 # if "/mnt/bp_nas" in LOCAL_PATH:
 #     parent_path = LOCAL_PATH.split("tar_preservation")[0]
 # else:
@@ -84,7 +84,9 @@ def tar_item(fpath):
         return None
 
     try:
-        with py7zr.SevenZipFile(tar_path, mode="w", filters=[{'id': py7zr.FILTER_COPY}]) as z:
+        with py7zr.SevenZipFile(
+            tar_path, mode="w", filters=[{"id": py7zr.FILTER_COPY}]
+        ) as z:
             z.writeall(fpath, arcname=f"{split_path[1]}")
         return tar_path
 
@@ -157,8 +159,9 @@ def make_manifest(tar_path, md5_dct):
     if os.path.exists(md5_path):
         return md5_path
 
+
 def get_valid_folder_and_files(fullpath):
-    skip_folder = {'completed', 'failures', 'checksum_manifests'}
+    skip_folder = {"completed", "failures", "checksum_manifests"}
 
     valid_folder_and_file = []
 
@@ -169,27 +172,31 @@ def get_valid_folder_and_files(fullpath):
 
         for file in files:
             full_file_path = os.path.join(dirpath, file)
-            if os.path.isfile(full_file_path) and not file.endswith((".dpx",
-                ".DPX",
-                ".tif",
-                ".TIF",
-                ".tiff",
-                ".TIFF",
-                ".jp2",
-                ".j2k",
-                ".jpf",
-                ".jpm",
-                ".jpg2",
-                ".j2c",
-                ".jpc",
-                ".jpx",
-                ".mj2",
-                ".log",
-                ".tar",
-                ".md5",
-            )):
+            if os.path.isfile(full_file_path) and not file.endswith(
+                (
+                    ".dpx",
+                    ".DPX",
+                    ".tif",
+                    ".TIF",
+                    ".tiff",
+                    ".TIFF",
+                    ".jp2",
+                    ".j2k",
+                    ".jpf",
+                    ".jpm",
+                    ".jpg2",
+                    ".j2c",
+                    ".jpc",
+                    ".jpx",
+                    ".mj2",
+                    ".log",
+                    ".tar",
+                    ".md5",
+                )
+            ):
                 valid_folder_and_file.append(full_file_path)
         return valid_folder_and_file
+
 
 def main():
     """
@@ -220,11 +227,12 @@ def main():
     # # print(f"parent files: {parent_path}")
     # # print(f'filesss :{os.path.split(sys.argv[1])}')
 
-
     for struct_file in file_folder_list:
         log = []
         log.append(f"==== New path for TAR wrap: {struct_file} ====")
-        LOGGER.info("==== TAR Wrapping Check script start ===============================")
+        LOGGER.info(
+            "==== TAR Wrapping Check script start ==============================="
+        )
         LOGGER.info("Path received for TAR wrap using Python3 py7zr: %s", struct_file)
         tar_source = os.path.basename(struct_file)
         # Calculate checksum manifest for supplied fullpath
@@ -232,7 +240,7 @@ def main():
         print(struct_file)
         directory = False
         if os.path.isdir(struct_file):
-            print('its a folder')
+            print("its a folder")
             log.append("Supplied path for TAR wrap is directory")
             LOGGER.info("Supplied path for TAR wrap is directory")
             directory = True
@@ -281,12 +289,12 @@ def main():
             LOGGER.warning("TAR wrap failed for file: %s", struct_file)
             for item in log:
                 local_logs(LOCAL_PATH, item)
-            error_mssg1 = (
-                f"TAR wrap failed for folder {tar_source}. No TAR file found:\n\t{tar_path}"
-            )
+            error_mssg1 = f"TAR wrap failed for folder {tar_source}. No TAR file found:\n\t{tar_path}"
             error_mssg2 = "if the TAR wrap has failed for an inexplicable reason"
             error_log(
-                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
+                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
+                error_mssg1,
+                error_mssg2,
             )
             sys.exit(f"EXIT: TAR wrap failed for {struct_file}")
 
@@ -296,8 +304,12 @@ def main():
         else:
             tar_content_md5 = get_tar_checksums(tar_path, "")
 
-        log.append("Checksums from TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
-        LOGGER.info("Checksums for TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
+        log.append(
+            "Checksums from TAR wrapped contents (excluding DPX, TIF, JPEG2000):"
+        )
+        LOGGER.info(
+            "Checksums for TAR wrapped contents (excluding DPX, TIF, JPEG2000):"
+        )
         for key, val in tar_content_md5.items():
             if not key.endswith(
                 (
@@ -328,7 +340,7 @@ def main():
                 if key in value:
                     local_md5[key] = local_md5.pop(value)
                 else:
-                    local_logs(struct_file, 'it doesnt match')
+                    local_logs(struct_file, "it doesnt match")
 
         # Compare manifests
         if local_md5 == tar_content_md5:
@@ -352,7 +364,9 @@ def main():
                 )
                 sys.exit("Script exit: TAR file MD5 Manifest failed to create")
 
-            LOGGER.info("TAR checksum manifest created. Adding to TAR file %s", tar_path)
+            LOGGER.info(
+                "TAR checksum manifest created. Adding to TAR file %s", tar_path
+            )
             # # check with dms team to see if they want a manifest file in the root directory of the TAR?
             try:
                 arc_path = os.path.split(md5_manifest)
@@ -396,11 +410,15 @@ def main():
                 LOGGER.info("Moving sequence to completed/: %s", struct_file)
                 shutil.move(struct_file, COMPLETED)
             except Exception as err:
-                LOGGER.warning("Source folder failed to move to completed/ path:\n%s", err)
+                LOGGER.warning(
+                    "Source folder failed to move to completed/ path:\n%s", err
+                )
             try:
-                LOGGER.info("Moving MD5 manifest to checksum_manifest folder %s", CHECKSUM)
+                LOGGER.info(
+                    "Moving MD5 manifest to checksum_manifest folder %s", CHECKSUM
+                )
                 print(CHECKSUM)
-                print(f'{md5_manifest}, {CHECKSUM}')
+                print(f"{md5_manifest}, {CHECKSUM}")
                 shutil.move(md5_manifest, CHECKSUM)
             except Exception as err:
                 LOGGER.warning("MD5 manifest move failed:\n%s", err)
@@ -414,9 +432,13 @@ def main():
                 )
         else:
             LOGGER.warning(
-                "Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5
+                "Manifests do not match.\nLocal:\n%s\nTAR:\n%s",
+                local_md5,
+                tar_content_md5,
             )
-            LOGGER.warning("Moving TAR file to failures, leaving file/folder for retry.")
+            LOGGER.warning(
+                "Moving TAR file to failures, leaving file/folder for retry."
+            )
             log.append(
                 "MD5 manifests do not match. Moving TAR file to failures folder for retry"
             )
@@ -424,16 +446,22 @@ def main():
             error_mssg1 = f"MD5 checksum manifests do not match for source folder and TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
             error_mssg2 = "if this checksum comparison fails multiple times"
             error_log(
-                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
+                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
+                error_mssg1,
+                error_mssg2,
             )
 
         log.append(f"==== Log actions complete: {struct_file} ====")
-        log.append("==== TAR Wrapping Check script END =================================")
+        log.append(
+            "==== TAR Wrapping Check script END ================================="
+        )
         # Write all log items in block
         for item in log:
             local_logs(LOCAL_PATH, item)
 
-        LOGGER.info("==== TAR Wrapping Check script END =================================")
+        LOGGER.info(
+            "==== TAR Wrapping Check script END ================================="
+        )
 
 
 def md5_hash(tar_file):
@@ -487,8 +515,9 @@ def error_log(fpath, message, kandc):
             )
             log.close()
 
+
 if __name__ == "__main__":
     start_time = time.time()
     main()
-    end_time =  time.time()
+    end_time = time.time()
     print(f"time it took to run the code: {end_time-start_time}")
