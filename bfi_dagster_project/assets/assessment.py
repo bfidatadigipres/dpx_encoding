@@ -105,6 +105,7 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
     accept_gaps = False
     if image_sequence.startswith("GAPS_"):
         accept_gaps = True
+        log_data.append(f"Accept gaps has been selected: {image_sequence}")
         image_sequence = image_sequence.split("_", 1)[-1]
 
     seq = os.path.basename(image_sequence)
