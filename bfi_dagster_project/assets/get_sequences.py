@@ -47,7 +47,7 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
             dpath = os.path.join(seq_supply, dr)
             context.log.info(f"{log_prefix}Directory path: %s", dpath)
 
-            search = "SELECT status FROM encoding_status WHERE seq_id=?"
+            search = "SELECT * FROM encoding_status WHERE seq_id=?"
             result = context.resources.database.retrieve_seq_id_row(
                 context, search, "fetchall", (dr,)
             )
