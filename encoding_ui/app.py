@@ -89,7 +89,7 @@ def reset_request():
             with sqlite3.connect(DBASE) as users:
                 cursor = users.cursor()
                 cursor.execute(
-                    f"""
+                    """
                     UPDATE encoding_status SET
                         status = ?,
                         folder_path = '',
@@ -135,7 +135,7 @@ def reset_request():
             with sqlite3.connect(DBASE) as users:
                 cursor = users.cursor()
                 cursor.execute(
-                    f"""
+                    """
                     UPDATE encoding_status SET
                         status = ?,
                         folder_path = '',
@@ -183,7 +183,7 @@ def reset_request():
             with sqlite3.connect(DBASE) as users:
                 cursor = users.cursor()
                 cursor.execute(
-                    f"""
+                    """
                     UPDATE encoding_status SET
                         status = ?,
                         folder_path = '',
@@ -244,7 +244,7 @@ def encodings():
     connect.execute("PRAGMA wal_checkpoint(FULL)")
     cursor = connect.cursor()
     cursor.execute(
-        f"SELECT * FROM encoding_status where last_updated >= datetime('now','-100 days')"
+        "SELECT * FROM encoding_status where last_updated >= datetime('now','-100 days')"
     )
     data = cursor.fetchall()
     return render_template("encodings.html", data=data)
