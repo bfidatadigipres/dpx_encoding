@@ -245,21 +245,18 @@ def main():
         log.append("Beginning TAR wrap now...")
         tar_path = tar_item(tar_file)
         ## do validationnnnn hereeeeee!!!!!
-        valid_checks, errors = quick_integrity_test(tar_path)
-        if not valid_checks:
-            log.append(f"Validation failed for TAR file: {tar_path}")
-            LOGGER.warning("Validation failed for TAR file: %s", tar_path)
+        valid_check, file_count, errors = minimal_archive_test(tar_path)
+        if not valid_check:
+            log.append(f"Minimal archive test failed for: {tar_path}")
+            LOGGER.warning("Minimal archive test failed for: %s", tar_path)
             if errors:
                 for error in errors:
                     log.append(f"Error: {error}")
-                    LOGGER.error("Error during validation: %s", error)
+                    LOGGER.warning("Error: %s", error)
             shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
             for item in log:
                 local_logs(LOCAL_PATH, item)
-            sys.exit(f"EXIT: Validation failed for {tar_file}")
-        else:
-            log.append(f"Validation successful for TAR file: {tar_path}")
-            LOGGER.info("Validation successful for TAR file: %s", tar_path)
+            sys.exit(f"EXIT: Minimal archive test failed for {tar_file}")
 
         ### if tar_path is None, then we have a problem
         if not tar_path:
