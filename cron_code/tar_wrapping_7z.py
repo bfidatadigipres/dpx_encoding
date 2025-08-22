@@ -67,7 +67,7 @@ hdlr.setFormatter(formatter)
 LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
 
-
+# run validation if tar path is valid, 
 def tar_item(fpath):
     """
     Make tar path from supplied filepath
@@ -89,10 +89,10 @@ def tar_item(fpath):
         ) as z:
             z.writeall(fpath, arcname=f"{split_path[1]}")
         return tar_path
-
+    
     except py7zr.exceptions.CrcError as crc:
-        print("checksum mismatch incoming")
-        LOGGER.warning("Tar path: %s: checksum mismatch error!!!", tar_path)
+        print('checksum mismatch incoming')
+        LOGGER.warning('Tar path: %s: checksum mismatch error!!!', tar_path)
         return None
 
     except Exception as exc:
@@ -118,6 +118,36 @@ def get_checksum(fpath):
             data[fpath] = hash_md5.hexdigest()
         f.close()
     return data
+
+def quick_integrity_test(archive_path):
+    """
+    Quick integrity test without extracting files
+    Only uses py7zr's built-in test method
+    """
+    errors = []
+    
+    try:
+        with py7zr.SevenZipFile(archive_path, mode="r", filters=[{"id": py7zr.FILTER_COPY}]) as archive:
+            # Use built-in test - this checks CRCs without full extraction
+            test_result = archive.test()
+            if not test_result:
+                errors.append("Archive integrity test failed")
+                return False, errors
+            
+            # Get file count for reporting
+            file_list = archive.list()
+            print(f"✓ Archive integrity verified for {len(file_list)} files")
+            
+            return True, errors
+            
+    except py7zr.Bad7zFile as e:
+        errors.append(f"Corrupted 7z file: {e}")
+    except py7zr.exceptions.CrcError as e:
+        errors.append(f"CRC check failed: {e}")
+    except Exception as e:
+        errors.append(f"Error during test: {e}")
+    
+    return False, errors
 
 
 def make_manifest(tar_path, md5_dct):
@@ -197,6 +227,7 @@ def main():
     if fullpath.endswith(".md5"):
         sys.exit("Supplied path is MD5. Skipping.")
 
+
     for tar_file in file_folder_list:
         log = []
         log.append(f"==== New path for TAR wrap: {tar_file} ====")
@@ -213,10 +244,28 @@ def main():
         else:
             print(f"It's a file: {tar_file}")
             log.append("Supplied path for TAR wrap is a file.")
-            LOGGER.info("Supplied path for TAR wrap is a file.")
-
+            LOGGER.info("Supplied path for TAR wrap is a file.") 
+        
         log.append("Beginning TAR wrap now...")
         tar_path = tar_item(tar_file)
+        ## do validationnnnn hereeeeee!!!!!
+        valid_checks, errors = quick_integrity_test(tar_path)
+        if not valid_checks:
+            log.append(f"Validation failed for TAR file: {tar_path}")
+            LOGGER.warning("Validation failed for TAR file: %s", tar_path)
+            if errors:
+                for error in errors:
+                    log.append(f"Error: {error}")
+                    LOGGER.error("Error during validation: %s", error)
+            shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
+            for item in log:
+                local_logs(LOCAL_PATH, item)
+            sys.exit(f"EXIT: Validation failed for {tar_file}")
+        else:
+            log.append(f"Validation successful for TAR file: {tar_path}")
+            LOGGER.info("Validation successful for TAR file: %s", tar_path)
+
+        ### if tar_path is None, then we have a problem
         if not tar_path:
             log.append("TAR WRAP FAILED. SCRIPT EXITING!")
             LOGGER.warning("TAR wrap failed for file: %s", tar_file)
@@ -237,10 +286,10 @@ def main():
         if os.path.isfile(tar_path):
             whole_md5 = md5_hash(tar_path)
             if whole_md5:
-                log.append(f"Whole TAR MD5 checksum for TAR file: {whole_md5}")
-                LOGGER.info("Whole TAR MD5 checksum for TAR file: %s", whole_md5)
+                    log.append(f"Whole TAR MD5 checksum for TAR file: {whole_md5}")
+                    LOGGER.info("Whole TAR MD5 checksum for TAR file: %s", whole_md5)
             else:
-                LOGGER.warning("Failed to retrieve whole TAR MD5 sum")
+                    LOGGER.warning("Failed to retrieve whole TAR MD5 sum")
 
             # Get complete size of file following TAR wrap
             file_stats = os.stat(tar_path)
