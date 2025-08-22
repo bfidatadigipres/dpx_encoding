@@ -323,7 +323,9 @@ def main():
         log.append("Beginning TAR wrap now...")
         tar_path = tar_item(tar_file)
         ## do validationnnnn hereeeeee!!!!!
-        success, errors, extracted_files = full_integrity_check_with_extraction(tar_path)
+        success, errors, extracted_files = full_integrity_check_with_extraction(
+            tar_path
+        )
         if not success:
             log.append(f"Integrity test failed for TAR file: {tar_path}")
             LOGGER.warning("Integrity test failed for TAR file: %s", tar_path)
