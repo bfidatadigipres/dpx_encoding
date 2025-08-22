@@ -121,30 +121,35 @@ def get_checksum(fpath):
     return data
 
 
-def minimal_archive_test(archive_path):
+def quick_integrity_test(archive_path):
     """
-    Minimal test - just try to open and read file list
+    Quick integrity test without extracting files
+    Only uses py7zr's built-in test method
     """
     errors = []
-    file_count = 0
     
     try:
         with py7zr.SevenZipFile(archive_path, mode="r") as archive:
-            # Just try to list files
-            archive_files = archive.list()
-            file_count = len(archive_files)
-            print(f"✓ Archive can be opened and contains {file_count} files")
+            # Use built-in test - this checks CRCs without full extraction
+            test_result = archive.test()
+            if not test_result:
+                errors.append("Archive integrity test failed")
+                return False, errors
             
-            return True, file_count, errors
+            # Get file count for reporting
+            file_list = archive.list()
+            print(f"✓ Archive integrity verified for {len(file_list)} files")
+            
+            return True, errors
             
     except py7zr.Bad7zFile as e:
-        errors.append(f"Bad 7z file: {e}")
+        errors.append(f"Corrupted 7z file: {e}")
     except py7zr.exceptions.CrcError as e:
-        errors.append(f"CRC error reading archive: {e}")
+        errors.append(f"CRC check failed: {e}")
     except Exception as e:
-        errors.append(f"Error opening archive: {e}")
+        errors.append(f"Error during test: {e}")
     
-    return False, file_count, errors
+    return False, errors
 
 
 def make_manifest(tar_path, md5_dct):
@@ -245,18 +250,19 @@ def main():
         log.append("Beginning TAR wrap now...")
         tar_path = tar_item(tar_file)
         ## do validationnnnn hereeeeee!!!!!
-        valid_check, file_count, errors = minimal_archive_test(tar_path)
-        if not valid_check:
-            log.append(f"Minimal archive test failed for: {tar_path}")
-            LOGGER.warning("Minimal archive test failed for: %s", tar_path)
-            if errors:
-                for error in errors:
-                    log.append(f"Error: {error}")
-                    LOGGER.warning("Error: %s", error)
+        valid_checks, errors = quick_integrity_test(tar_path)
+        if not valid_checks:
+            log.append(f"Integrity test failed for TAR file: {tar_path}")
+            LOGGER.warning("Integrity test failed for TAR file: %s", tar_path)
+            for err in errors:
+                log.append(f"Error: {err}")
+                LOGGER.error("Error during integrity test: %s", err)
+
+            # Move the faulty TAR to failures folder
             shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
             for item in log:
                 local_logs(LOCAL_PATH, item)
-            sys.exit(f"EXIT: Minimal archive test failed for {tar_file}")
+            sys.exit(f"EXIT: Integrity test failed for {tar_file}")
 
         ### if tar_path is None, then we have a problem
         if not tar_path:
