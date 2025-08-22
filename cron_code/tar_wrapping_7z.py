@@ -127,7 +127,7 @@ def quick_integrity_test(archive_path):
     Only uses py7zr's built-in test method
     """
     errors = []
-    
+
     try:
         with py7zr.SevenZipFile(archive_path, mode="r") as archive:
             # Use built-in test - this checks CRCs without full extraction
@@ -135,20 +135,20 @@ def quick_integrity_test(archive_path):
             if not test_result:
                 errors.append("Archive integrity test failed")
                 return False, errors
-            
+
             # Get file count for reporting
             file_list = archive.list()
             print(f"✓ Archive integrity verified for {len(file_list)} files")
-            
+
             return True, errors
-            
+
     except py7zr.Bad7zFile as e:
         errors.append(f"Corrupted 7z file: {e}")
     except py7zr.exceptions.CrcError as e:
         errors.append(f"CRC check failed: {e}")
     except Exception as e:
         errors.append(f"Error during test: {e}")
-    
+
     return False, errors
 
 
