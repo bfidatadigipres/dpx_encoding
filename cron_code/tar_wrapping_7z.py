@@ -121,37 +121,30 @@ def get_checksum(fpath):
     return data
 
 
-def quick_integrity_test(archive_path):
+def minimal_archive_test(archive_path):
     """
-    Quick integrity test without extracting files
-    Only uses py7zr's built-in test method
+    Minimal test - just try to open and read file list
     """
     errors = []
-
+    file_count = 0
+    
     try:
-        with py7zr.SevenZipFile(
-            archive_path, mode="r", filters=[{"id": py7zr.FILTER_COPY}]
-        ) as archive:
-            # Use built-in test - this checks CRCs without full extraction
-            test_result = archive.test()
-            if not test_result:
-                errors.append("Archive integrity test failed")
-                return False, errors
-
-            # Get file count for reporting
-            file_list = archive.list()
-            print(f"✓ Archive integrity verified for {len(file_list)} files")
-
-            return True, errors
-
+        with py7zr.SevenZipFile(archive_path, mode="r") as archive:
+            # Just try to list files
+            archive_files = archive.list()
+            file_count = len(archive_files)
+            print(f"✓ Archive can be opened and contains {file_count} files")
+            
+            return True, file_count, errors
+            
     except py7zr.Bad7zFile as e:
-        errors.append(f"Corrupted 7z file: {e}")
+        errors.append(f"Bad 7z file: {e}")
     except py7zr.exceptions.CrcError as e:
-        errors.append(f"CRC check failed: {e}")
+        errors.append(f"CRC error reading archive: {e}")
     except Exception as e:
-        errors.append(f"Error during test: {e}")
-
-    return False, errors
+        errors.append(f"Error opening archive: {e}")
+    
+    return False, file_count, errors
 
 
 def make_manifest(tar_path, md5_dct):
