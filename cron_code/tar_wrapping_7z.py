@@ -323,7 +323,7 @@ def main():
         log.append("Beginning TAR wrap now...")
         tar_path = tar_item(tar_file)
         ## do validationnnnn hereeeeee!!!!!
-        success, errors = full_integrity_check_with_extraction(tar_path)
+        success, errors, extracted_files = full_integrity_check_with_extraction(tar_path)
         if not success:
             log.append(f"Integrity test failed for TAR file: {tar_path}")
             LOGGER.warning("Integrity test failed for TAR file: %s", tar_path)
@@ -335,6 +335,7 @@ def main():
             shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
             for item in log:
                 local_logs(LOCAL_PATH, item)
+            LOGGER.warning("Tar wrapping has failed as the integrity test has failed.")
             sys.exit(f"EXIT: Integrity test failed for {tar_file}")
 
         ### if tar_path is None, then we have a problem
@@ -353,6 +354,7 @@ def main():
             shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
             for item in log:
                 local_logs(LOCAL_PATH, item)
+            LOGGER.warning("Tar wrapping has failed, Script Exiting!!!!")
             sys.exit(f"EXIT: TAR wrap failed for {tar_file}")
 
         if os.path.isfile(tar_path):
@@ -376,7 +378,7 @@ def main():
                 LOGGER.warning(
                     "Source folder failed to move to completed/ path:\n%s", err
                 )
-
+        LOGGER.info("Tar wrapping has successfully completed for %s!! Woow!!", tar_file)
         log.append(f"==== Log actions complete: {tar_file} ====")
         log.append(
             "==== TAR Wrapping Check script END ================================="
