@@ -127,23 +127,23 @@ def minimal_archive_test(archive_path):
     """
     errors = []
     file_count = 0
-    
+
     try:
         with py7zr.SevenZipFile(archive_path, mode="r") as archive:
             # Just try to list files
             archive_files = archive.list()
             file_count = len(archive_files)
             print(f"✓ Archive can be opened and contains {file_count} files")
-            
+
             return True, file_count, errors
-            
+
     except py7zr.Bad7zFile as e:
         errors.append(f"Bad 7z file: {e}")
     except py7zr.exceptions.CrcError as e:
         errors.append(f"CRC error reading archive: {e}")
     except Exception as e:
         errors.append(f"Error opening archive: {e}")
-    
+
     return False, file_count, errors
 
 
