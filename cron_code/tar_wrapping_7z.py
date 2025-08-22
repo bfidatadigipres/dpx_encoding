@@ -89,10 +89,10 @@ def tar_item(fpath):
         ) as z:
             z.writeall(fpath, arcname=f"{split_path[1]}")
         return tar_path
-    
+
     except py7zr.exceptions.CrcError as crc:
-        print('checksum mismatch incoming')
-        LOGGER.warning('Tar path: %s: checksum mismatch error!!!', tar_path)
+        print("checksum mismatch incoming")
+        LOGGER.warning("Tar path: %s: checksum mismatch error!!!", tar_path)
         return None
 
     except Exception as exc:
@@ -197,7 +197,6 @@ def main():
     if fullpath.endswith(".md5"):
         sys.exit("Supplied path is MD5. Skipping.")
 
-
     for tar_file in file_folder_list:
         log = []
         log.append(f"==== New path for TAR wrap: {tar_file} ====")
@@ -214,8 +213,8 @@ def main():
         else:
             print(f"It's a file: {tar_file}")
             log.append("Supplied path for TAR wrap is a file.")
-            LOGGER.info("Supplied path for TAR wrap is a file.") 
-        
+            LOGGER.info("Supplied path for TAR wrap is a file.")
+
         log.append("Beginning TAR wrap now...")
         tar_path = tar_item(tar_file)
         if not tar_path:
@@ -238,10 +237,10 @@ def main():
         if os.path.isfile(tar_path):
             whole_md5 = md5_hash(tar_path)
             if whole_md5:
-                    log.append(f"Whole TAR MD5 checksum for TAR file: {whole_md5}")
-                    LOGGER.info("Whole TAR MD5 checksum for TAR file: %s", whole_md5)
+                log.append(f"Whole TAR MD5 checksum for TAR file: {whole_md5}")
+                LOGGER.info("Whole TAR MD5 checksum for TAR file: %s", whole_md5)
             else:
-                    LOGGER.warning("Failed to retrieve whole TAR MD5 sum")
+                LOGGER.warning("Failed to retrieve whole TAR MD5 sum")
 
             # Get complete size of file following TAR wrap
             file_stats = os.stat(tar_path)
