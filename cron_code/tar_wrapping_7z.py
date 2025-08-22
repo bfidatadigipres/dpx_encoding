@@ -127,7 +127,7 @@ def full_integrity_check_with_extraction(archive_path):
     """
     errors = []
     extracted_files = []
-    
+
     try:
         if not os.path.exists(archive_path):
             errors.append(f"Archive file not found: {archive_path}")
@@ -135,7 +135,7 @@ def full_integrity_check_with_extraction(archive_path):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             print(f"Extracting archive to temporary directory...")
-            
+
             # Extract everything
             with py7zr.SevenZipFile(archive_path, mode="r") as archive:
                 # Get expected file list first
@@ -143,10 +143,14 @@ def full_integrity_check_with_extraction(archive_path):
                 expected_files = [f for f in file_list if f.uncompressed > 0]
                 expected_dirs = len(file_list) - len(expected_files)
 
-                expected_files_dict = {entry.filename: entry for entry in expected_files}
-                
-                print(f"Expected: {len(expected_files)} files, {expected_dirs} directories")
-                
+                expected_files_dict = {
+                    entry.filename: entry for entry in expected_files
+                }
+
+                print(
+                    f"Expected: {len(expected_files)} files, {expected_dirs} directories"
+                )
+
                 # Extract all
                 archive.extractall(path=tmpdir)
 
@@ -156,48 +160,60 @@ def full_integrity_check_with_extraction(archive_path):
                 for f in files:
                     full_path = os.path.join(root, f)
                     rel_path = os.path.relpath(full_path, tmpdir)
-                    normalized_path = rel_path.replace(os.sep, '/')
-                    
+                    normalized_path = rel_path.replace(os.sep, "/")
+
                     # Check if file exists and is readable
                     if os.path.exists(full_path):
                         try:
                             file_size = os.path.getsize(full_path)
                             matching_entry = expected_files_dict.get(normalized_path)
-                            
+
                             if matching_entry:
                                 if file_size == matching_entry.uncompressed:
-                                    extracted_files.append({
-                                        'path': rel_path,
-                                        'size': file_size,
-                                        'verified': True
-                                    })
+                                    extracted_files.append(
+                                        {
+                                            "path": rel_path,
+                                            "size": file_size,
+                                            "verified": True,
+                                        }
+                                    )
                                 else:
-                                    errors.append(f"Size mismatch in {rel_path}: {file_size:,} vs {matching_entry.uncompressed:,}")
+                                    errors.append(
+                                        f"Size mismatch in {rel_path}: {file_size:,} vs {matching_entry.uncompressed:,}"
+                                    )
                             else:
                                 # File extracted but not in archive listing (shouldn't happen)
-                                extracted_files.append({
-                                    'path': rel_path,
-                                    'size': file_size,
-                                    'verified': False
-                                })
-                                
+                                extracted_files.append(
+                                    {
+                                        "path": rel_path,
+                                        "size": file_size,
+                                        "verified": False,
+                                    }
+                                )
+
                         except Exception as e:
-                            errors.append(f"Error reading extracted file {rel_path}: {e}")
+                            errors.append(
+                                f"Error reading extracted file {rel_path}: {e}"
+                            )
                     else:
                         errors.append(f"Expected file not found: {rel_path}")
 
             # Summary
-            verified_count = sum(1 for f in extracted_files if f['verified'])
-            total_size = sum(f['size'] for f in extracted_files)
-            
+            verified_count = sum(1 for f in extracted_files if f["verified"])
+            total_size = sum(f["size"] for f in extracted_files)
+
             print(f"✓ Extraction completed: {len(extracted_files)} files extracted")
-            print(f"✓ Verification: {verified_count}/{len(extracted_files)} files verified")
+            print(
+                f"✓ Verification: {verified_count}/{len(extracted_files)} files verified"
+            )
             print(f"✓ Total size: {total_size:,} bytes")
-            
+
             # Check if we got all expected files
             if len(extracted_files) != len(expected_files):
-                errors.append(f"File count mismatch: extracted {len(extracted_files)}, expected {len(expected_files)}")
-            
+                errors.append(
+                    f"File count mismatch: extracted {len(extracted_files)}, expected {len(expected_files)}"
+                )
+
             success = len(errors) == 0 and verified_count == len(extracted_files)
             return success, errors
 
