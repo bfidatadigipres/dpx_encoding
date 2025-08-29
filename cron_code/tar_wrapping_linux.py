@@ -68,22 +68,28 @@ def tar_item(fpath):
     Use tarfile to create TAR
     """
     split_path = os.path.split(fpath)
+    print(split_path)
     tfile = f"{split_path[1]}.tar"
-    tar_path = os.path.join(split_path[0], tfile)
+    tar_path = os.path.join(split_path[0], 'tar_gen', tfile)
     if os.path.exists(tar_path):
-        LOGGER.warning("tar_item(): FILE ALREADY EXISTS %s", tar_path)
+        print("tar_item(): FILE ALREADY EXISTS %s", tar_path)
         return None
 
+    print(tar_path)
+    print(f"{split_path[0]}/{split_path[1]}/")
+
     try:
-        command = ["tar", "-cvf", f"gen_tar/{tar_path}", fpath]
+        command = ["/bin/tar", "-cvf", tar_path, '-C', os.path.dirname(fpath), os.path.basename(fpath) ]
+        print(command)
         result = subprocess.run(command, check=True, text=True, capture_output=True)
         print("Extraction successful.")
         print("Output:\n", result.stdout)
+        return tar_path
     except subprocess.CalledProcessError as e:
         print("An error occurred while extracting the tar file:")
         print(e.stderr)
     except Exception as exc:
-        LOGGER.warning("tar_item(): ERROR WITH TAR WRAP %s", exc)
+        print("tar_item(): ERROR WITH TAR WRAP %s", exc)
         return None
 
 
@@ -93,38 +99,44 @@ def get_tar_checksums(tar_path, folder):
     and return dct {filename: hex}
     """
     data = {}
-    tar = tarfile.open(tar_path, "r|")
+    cmd = ["/bin/tar", "-xvf", tar_path, "-C", folder]
 
-    for item in tar:
-        item_name = item.name
-        if item.isdir():
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+    # Each line of stdout corresponds to an extracted file
+    extracted_files = result.stdout.strip().split("\n")
+
+    for item in extracted_files:
+        print(item)
+        if os.path.isdir(item):
             continue
+        
 
-        pth, fname = os.path.split(item_name)
-        if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
-            folder_prefix = os.path.basename(pth)
-            fname = f"{folder_prefix}_{fname}"
-        print(item_name, fname, item)
+    #     pth, fname = os.path.split(item_name)
+    #     if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
+    #         folder_prefix = os.path.basename(pth)
+    #         fname = f"{folder_prefix}_{fname}"
+    #     print(item_name, fname, item)
 
-        try:
-            f = tar.extractfile(item)
-        except Exception as exc:
-            LOGGER.warning(
-                "get_tar_checksums(): Unable to extract from tar file\n%s", exc
-            )
-            continue
+    #     try:
+    #         f = tar.extractfile(item)
+    #     except Exception as exc:
+    #         LOGGER.warning(
+    #             "get_tar_checksums(): Unable to extract from tar file\n%s", exc
+    #         )
+    #         continue
 
-        hash_md5 = hashlib.md5()
-        for chunk in iter(lambda: f.read(65536), b""):
-            hash_md5.update(chunk)
+    #     hash_md5 = hashlib.md5()
+    #     for chunk in iter(lambda: f.read(65536), b""):
+    #         hash_md5.update(chunk)
 
-        if not folder:
-            file = os.path.basename(fname)
-            data[file] = hash_md5.hexdigest()
-        else:
-            data[fname] = hash_md5.hexdigest()
+    #     if not folder:
+    #         file = os.path.basename(fname)
+    #         data[file] = hash_md5.hexdigest()
+    #     else:
+    #         data[fname] = hash_md5.hexdigest()
 
-    return data
+    # return data
 
 
 def get_checksum(fpath):
