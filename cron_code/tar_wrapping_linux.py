@@ -70,7 +70,7 @@ def tar_item(fpath):
     split_path = os.path.split(fpath)
     print(split_path)
     tfile = f"{split_path[1]}.tar"
-    tar_path = os.path.join(split_path[0], 'tar_gen', tfile)
+    tar_path = os.path.join(split_path[0], "tar_gen", tfile)
     if os.path.exists(tar_path):
         print("tar_item(): FILE ALREADY EXISTS %s", tar_path)
         return None
@@ -79,7 +79,14 @@ def tar_item(fpath):
     print(f"{split_path[0]}/{split_path[1]}/")
 
     try:
-        command = ["/bin/tar", "-cvf", tar_path, '-C', os.path.dirname(fpath), os.path.basename(fpath) ]
+        command = [
+            "/bin/tar",
+            "-cvf",
+            tar_path,
+            "-C",
+            os.path.dirname(fpath),
+            os.path.basename(fpath),
+        ]
         print(command)
         result = subprocess.run(command, check=True, text=True, capture_output=True)
         print("Extraction successful.")
@@ -110,7 +117,6 @@ def get_tar_checksums(tar_path, folder):
         print(item)
         if os.path.isdir(item):
             continue
-        
 
     #     pth, fname = os.path.split(item_name)
     #     if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
