@@ -35,8 +35,8 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 import tempfile
+import time
 
 sys.path.append(os.environ["CODE"])
 import adlib_v3 as adlib
@@ -47,7 +47,7 @@ if not os.path.exists(sys.argv[1]):
     sys.exit(f"Exiting. Supplied path does not exist: {sys.argv[1]}")
 
 # Global paths
-#LOCAL_PATH = os.path.split(sys.argv[1])[0]
+# LOCAL_PATH = os.path.split(sys.argv[1])[0]
 LOCAL_PATH = sys.argv[1]
 TAR_FAIL = os.path.join(LOCAL_PATH, "failures/")
 COMPLETED = os.path.join(LOCAL_PATH, "completed/")
@@ -97,15 +97,15 @@ def tar_item(fpath, retries=3, delay=2):
 
     for attempt in range(1, retries + 1):
         try:
-            result = subprocess.run(
-                command, check=True, text=True, capture_output=True
-            )
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("[OK] Tar creation successful on attempt", attempt)
             print("Files included:\n", result.stdout)
             return tar_path
         except subprocess.CalledProcessError as e:
             if "Stale file handle" in e.stderr and attempt < retries:
-                print(f"[WARN] Stale file handle → retrying in {delay}s (attempt {attempt})")
+                print(
+                    f"[WARN] Stale file handle → retrying in {delay}s (attempt {attempt})"
+                )
                 time.sleep(delay)
                 continue
             print(f"[ERROR] tar failed (attempt {attempt}):\n{e.stderr}")
@@ -190,11 +190,12 @@ def make_manifest(tar_path, md5_dct):
         LOGGER.warning("make_manifest(): FAILED to create JSON %s", exc)
 
     if os.path.exists(md5_path):
-        return md5_path.replace('/generate_tar', '')
+        return md5_path.replace("/generate_tar", "")
 
-#N_10635929_08of08_short
+
+# N_10635929_08of08_short
 def get_valid_folder_and_files(fullpath):
-    skip_folder = {"completed", "failures", "checksum_manifests", 'generate_tar'}
+    skip_folder = {"completed", "failures", "checksum_manifests", "generate_tar"}
 
     valid_folder_and_file = []
 
@@ -251,7 +252,7 @@ def main():
         sys.exit("Supplied path does not exists. Please try again.")
 
     for tar_file in file_folder_list:
-        print(f'file processing: {tar_file}')
+        print(f"file processing: {tar_file}")
         log = []
         log.append(f"==== New path for TAR wrap: {fullpath} ====")
         LOGGER.info(
@@ -278,7 +279,7 @@ def main():
         else:
             local_md5 = get_checksum(fullpath)
             log.append("Path is not a directory and will be wrapped alone")
-        print(f'local_md5: {local_md5}')
+        print(f"local_md5: {local_md5}")
 
         LOGGER.info("Checksums for local files (excluding DPX, TIF):")
         log.append("Checksums for local files (excluding DPX, TIF):")
@@ -308,7 +309,7 @@ def main():
 
         # Tar folder
         log.append(f"Beginning TAR wrap now for {tar_file}...")
-        print(f'tar_file: {tar_file}')
+        print(f"tar_file: {tar_file}")
         tar_path = tar_item(tar_file)
         print(tar_path)
         tar_files = os.path.split(tar_path)[1]
@@ -362,10 +363,10 @@ def main():
                 data = f"{val} -- {key}"
                 LOGGER.info("\t%s", data)
                 log.append(f"\t{data}")
-        print(f'tar_content_md5: {tar_content_md5}')
+        print(f"tar_content_md5: {tar_content_md5}")
 
-        log.append(f'tar_content_md5: {tar_content_md5}')
-        log.append(f'local_md5: {local_md5}')
+        log.append(f"tar_content_md5: {tar_content_md5}")
+        log.append(f"local_md5: {local_md5}")
 
         # Compare manifests
         if local_md5 == tar_content_md5:
