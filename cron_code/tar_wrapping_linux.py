@@ -35,6 +35,8 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+import tempfile
 
 sys.path.append(os.environ["CODE"])
 import adlib_v3 as adlib
@@ -45,7 +47,8 @@ if not os.path.exists(sys.argv[1]):
     sys.exit(f"Exiting. Supplied path does not exist: {sys.argv[1]}")
 
 # Global paths
-LOCAL_PATH = os.path.split(sys.argv[1])[0]
+#LOCAL_PATH = os.path.split(sys.argv[1])[0]
+LOCAL_PATH = sys.argv[1]
 TAR_FAIL = os.path.join(LOCAL_PATH, "failures/")
 COMPLETED = os.path.join(LOCAL_PATH, "completed/")
 CHECKSUM = os.path.join(LOCAL_PATH, "checksum_manifests/")
@@ -62,105 +65,114 @@ LOGGER.addHandler(hdlr)
 LOGGER.setLevel(logging.INFO)
 
 
-def tar_item(fpath):
+def tar_item(fpath, retries=3, delay=2):
     """
-    Make tar path from supplied filepath
-    Use tarfile to create TAR
+    Create a tar archive of the supplied file/directory using GNU tar.
+    Adds retry logic to handle NFS 'Stale file handle' errors.
     """
     split_path = os.path.split(fpath)
-    print(split_path)
     tfile = f"{split_path[1]}.tar"
-    tar_path = os.path.join(split_path[0], "tar_gen", tfile)
-    if os.path.exists(tar_path):
-        print("tar_item(): FILE ALREADY EXISTS %s", tar_path)
-        return None
+    tar_path = os.path.join(split_path[0], tfile)
 
-    print(tar_path)
-    print(f"{split_path[0]}/{split_path[1]}/")
+    os.makedirs(os.path.dirname(tar_path), exist_ok=True)
 
     try:
-        command = [
-            "/bin/tar",
-            "-cvf",
-            tar_path,
-            "-C",
-            os.path.dirname(fpath),
-            os.path.basename(fpath),
-        ]
-        print(command)
-        result = subprocess.run(command, check=True, text=True, capture_output=True)
-        print("Extraction successful.")
-        print("Output:\n", result.stdout)
-        return tar_path
-    except subprocess.CalledProcessError as e:
-        print("An error occurred while extracting the tar file:")
-        print(e.stderr)
-    except Exception as exc:
-        print("tar_item(): ERROR WITH TAR WRAP %s", exc)
+        os.stat(fpath)
+    except FileNotFoundError:
+        print(f"[ERROR] tar_item(): path does not exist → {fpath}")
         return None
+    except OSError as e:
+        print(f"[ERROR] tar_item(): cannot stat {fpath}: {e}")
+        return None
+
+    command = [
+        "/bin/tar",
+        "-cvf",
+        tar_path,
+        "-C",
+        os.path.dirname(fpath),
+        os.path.basename(fpath),
+    ]
+    print("Command:", " ".join(command))
+
+    for attempt in range(1, retries + 1):
+        try:
+            result = subprocess.run(
+                command, check=True, text=True, capture_output=True
+            )
+            print("[OK] Tar creation successful on attempt", attempt)
+            print("Files included:\n", result.stdout)
+            return tar_path
+        except subprocess.CalledProcessError as e:
+            if "Stale file handle" in e.stderr and attempt < retries:
+                print(f"[WARN] Stale file handle → retrying in {delay}s (attempt {attempt})")
+                time.sleep(delay)
+                continue
+            print(f"[ERROR] tar failed (attempt {attempt}):\n{e.stderr}")
+            return None
+        except Exception as exc:
+            print("tar_item(): unexpected error:", exc)
+            return None
+
+    return tar_path
 
 
 def get_tar_checksums(tar_path, folder):
     """
-    Open tar file and read/generate MD5 sums
-    and return dct {filename: hex}
+    Extract tar file into a temp dir and compute MD5 for each file.
+    Returns {filename: checksum}.
     """
     data = {}
-    cmd = ["/bin/tar", "-xvf", tar_path, "-C", folder]
 
-    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cmd = ["/bin/tar", "-C", tmpdir, "-xvf", tar_path]
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
-    # Each line of stdout corresponds to an extracted file
-    extracted_files = result.stdout.strip().split("\n")
+        extracted_files = result.stdout.strip().split("\n")
+        print(extracted_files)
 
-    for item in extracted_files:
-        print(item)
-        if os.path.isdir(item):
-            continue
+        for file in extracted_files:
+            item = os.path.join(tmpdir, file)
+            if os.path.isdir(item):
+                print(f"{item} is a dir")
+                continue
 
-    #     pth, fname = os.path.split(item_name)
-    #     if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
-    #         folder_prefix = os.path.basename(pth)
-    #         fname = f"{folder_prefix}_{fname}"
-    #     print(item_name, fname, item)
+            pth, fname = os.path.split(item)
+            if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
+                folder_prefix = os.path.basename(pth)
+                fname = f"{folder_prefix}_{fname}"
 
-    #     try:
-    #         f = tar.extractfile(item)
-    #     except Exception as exc:
-    #         LOGGER.warning(
-    #             "get_tar_checksums(): Unable to extract from tar file\n%s", exc
-    #         )
-    #         continue
+            hash_md5 = hashlib.md5()
+            with open(item, "rb") as f:
+                for chunk in iter(lambda: f.read(65536), b""):
+                    hash_md5.update(chunk)
 
-    #     hash_md5 = hashlib.md5()
-    #     for chunk in iter(lambda: f.read(65536), b""):
-    #         hash_md5.update(chunk)
+            if not folder:
+                data[os.path.basename(fname)] = hash_md5.hexdigest()
+            else:
+                data[fname] = hash_md5.hexdigest()
 
-    #     if not folder:
-    #         file = os.path.basename(fname)
-    #         data[file] = hash_md5.hexdigest()
-    #     else:
-    #         data[fname] = hash_md5.hexdigest()
-
-    # return data
+    return data
 
 
 def get_checksum(fpath):
     """
-    Using file path, generate file checksum
-    return as list with filename
+    Compute MD5 checksum of a single file.
+    Returns {filename: checksum}.
     """
     data = {}
     pth, file = os.path.split(fpath)
+
     if file in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
         folder_prefix = os.path.basename(pth)
         file = f"{folder_prefix}_{file}"
+
     hash_md5 = hashlib.md5()
     with open(fpath, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
             hash_md5.update(chunk)
-        data[file] = hash_md5.hexdigest()
-        f.close()
+
+    data[file] = hash_md5.hexdigest()
     return data
 
 
@@ -178,11 +190,11 @@ def make_manifest(tar_path, md5_dct):
         LOGGER.warning("make_manifest(): FAILED to create JSON %s", exc)
 
     if os.path.exists(md5_path):
-        return md5_path
+        return md5_path.replace('/generate_tar', '')
 
-
+#N_10635929_08of08_short
 def get_valid_folder_and_files(fullpath):
-    skip_folder = {"completed", "failures", "checksum_manifests"}
+    skip_folder = {"completed", "failures", "checksum_manifests", 'generate_tar'}
 
     valid_folder_and_file = []
 
@@ -234,12 +246,12 @@ def main():
 
     fullpath = sys.argv[1]
     file_folder_list = get_valid_folder_and_files(fullpath)
-    print(fullpath)
 
     if not os.path.exists(fullpath):
         sys.exit("Supplied path does not exists. Please try again.")
 
     for tar_file in file_folder_list:
+        print(f'file processing: {tar_file}')
         log = []
         log.append(f"==== New path for TAR wrap: {fullpath} ====")
         LOGGER.info(
@@ -251,20 +263,22 @@ def main():
         # Calculate checksum manifest for supplied fullpath
         local_md5 = {}
         directory = False
-        if os.path.isdir(fullpath):
+        if os.path.isdir(tar_file):
             log.append("Supplied path for TAR wrap is directory")
             LOGGER.info("Supplied path for TAR wrap is directory")
             directory = True
 
         if directory:
-            for root, _, files in os.walk(fullpath):
+            for root, _, files in os.walk(tar_file):
                 for file in files:
+                    print(file)
                     dct = get_checksum(os.path.join(root, file))
                     local_md5.update(dct)
 
         else:
             local_md5 = get_checksum(fullpath)
             log.append("Path is not a directory and will be wrapped alone")
+        print(f'local_md5: {local_md5}')
 
         LOGGER.info("Checksums for local files (excluding DPX, TIF):")
         log.append("Checksums for local files (excluding DPX, TIF):")
@@ -293,22 +307,25 @@ def main():
                 log.append(f"\t{data}")
 
         # Tar folder
-        log.append("Beginning TAR wrap now...")
-        tar_path = tar_item(fullpath)
-        tar_file = os.path.split(tar_path)[1]
+        log.append(f"Beginning TAR wrap now for {tar_file}...")
+        print(f'tar_file: {tar_file}')
+        tar_path = tar_item(tar_file)
+        print(tar_path)
+        tar_files = os.path.split(tar_path)[1]
+        print(tar_files)
         if not tar_path:
             log.append("TAR WRAP FAILED. SCRIPT EXITING!")
-            LOGGER.warning("TAR wrap failed for file: %s", fullpath)
+            LOGGER.warning("TAR wrap failed for file: %s", tar_files)
             for item in log:
                 local_logs(LOCAL_PATH, item)
-            error_mssg1 = f"TAR wrap failed for folder {tar_source}. No TAR file found:\n\t{tar_path}"
+            error_mssg1 = f"TAR wrap failed for folder {tar_source}. No TAR file found:\n\t{tar_files}"
             error_mssg2 = "if the TAR wrap has failed for an inexplicable reason"
             error_log(
                 os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
                 error_mssg1,
                 error_mssg2,
             )
-            sys.exit(f"EXIT: TAR wrap failed for {fullpath}")
+            sys.exit(f"EXIT: TAR wrap failed for {tar_files}")
 
         # Calculate checksum manifest for TAR folder
         if directory:
@@ -345,6 +362,10 @@ def main():
                 data = f"{val} -- {key}"
                 LOGGER.info("\t%s", data)
                 log.append(f"\t{data}")
+        print(f'tar_content_md5: {tar_content_md5}')
+
+        log.append(f'tar_content_md5: {tar_content_md5}')
+        log.append(f'local_md5: {local_md5}')
 
         # Compare manifests
         if local_md5 == tar_content_md5:
@@ -355,7 +376,7 @@ def main():
             md5_manifest = make_manifest(tar_path, tar_content_md5)
             if not md5_manifest:
                 LOGGER.warning("Failed to write TAR checksum manifest to JSON file.")
-                shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
+                shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_file}.tar"))
                 for item in log:
                     local_logs(LOCAL_PATH, item)
                 error_mssg1 = f"TAR checksum manifest was not created for new TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
@@ -384,8 +405,8 @@ def main():
             LOGGER.info("File size is %s bytes.", file_size)
 
             try:
-                LOGGER.info("Moving sequence to completed/: %s", fullpath)
-                shutil.move(fullpath, COMPLETED)
+                LOGGER.info("Moving sequence to completed/: %s", tar_file)
+                shutil.move(tar_file, COMPLETED)
             except Exception as err:
                 LOGGER.warning(
                     "Source folder failed to move to completed/ path:\n%s", err
@@ -399,10 +420,10 @@ def main():
                 LOGGER.warning("MD5 manifest move failed:\n%s", err)
 
             # Tidy away error_log following successful creation
-            resolved_error_log = f"resolved_{tar_source}_errors.log"
-            if os.path.isfile(os.path.join(TAR_FAIL, f"{tar_source}_errors.log")):
+            resolved_error_log = f"resolved_{tar_file}_errors.log"
+            if os.path.isfile(os.path.join(TAR_FAIL, f"{tar_file}_errors.log")):
                 os.rename(
-                    os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
+                    os.path.join(TAR_FAIL, f"{tar_file}_errors.log"),
                     os.path.join(TAR_FAIL, resolved_error_log),
                 )
 
@@ -426,7 +447,7 @@ def main():
             log.append(
                 "MD5 manifests do not match. Moving TAR file to failures folder for retry"
             )
-            shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
+            shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_file}.tar"))
             error_mssg1 = f"MD5 checksum manifests do not match for source folder and TAR file:\n\t{tar_path}\n\tTAR file moved to failures folder"
             error_mssg2 = "if this checksum comparison fails multiple times"
             error_log(
@@ -466,7 +487,7 @@ def local_logs(fullpath, data):
     Output local log data for team
     to monitor TAR wrap process
     """
-    local_log = os.path.join(fullpath, "tar_wrapping_checksum.log")
+    local_log = os.path.join(fullpath, "tar_wrapping_linux_checksum.log")
     timestamp = str(datetime.datetime.now())
 
     if not os.path.isfile(local_log):
@@ -498,4 +519,7 @@ def error_log(fpath, message, kandc):
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    end_time = time.time()
+    print(f"time it took to run the code: {end_time-start_time}")
