@@ -46,7 +46,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         for_rawcooking = []
         for fpath in assessment["RAWcook"]:
             root, seq = os.path.split(fpath)
-            search = "SELECT status FROM encoding_status WHERE seq_id=?"
+            search = "SELECT * FROM encoding_status WHERE seq_id=?"
             result = context.resources.database.retrieve_seq_id_row(
                 context, search, "fetchall", (seq,)
             )

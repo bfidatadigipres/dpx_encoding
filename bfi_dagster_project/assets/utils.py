@@ -294,10 +294,8 @@ def get_fps(ipath: str) -> Optional[int]:
     fps = str(fps).rstrip("/n")
     if "." in fps:
         fps = fps.split(".")[0]
-    if len(fps) > 0:
-        framerate = int(fps)
-        if isinstance(framerate, int):
-            return framerate
+    if len(fps) > 0 and fps.isnumeric():
+        return int(fps)
 
     return None
 
