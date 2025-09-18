@@ -37,6 +37,7 @@ import subprocess
 import sys
 import tempfile
 import time
+
 from deepdiff import DeepDiff
 
 sys.path.append(os.environ["CODE"])
@@ -132,7 +133,6 @@ def get_tar_checksums(tar_path, folder):
         extracted_files = result.stdout.strip().split("\n")
         print(extracted_files)
 
-        
         print("tar stdout:\n", result.stdout)
         print("tar stderr:\n", result.stderr)
         print("exit code:", result.returncode)
