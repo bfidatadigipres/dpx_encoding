@@ -37,6 +37,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from deepdiff import DeepDiff
 
 sys.path.append(os.environ["CODE"])
 import adlib_v3 as adlib
@@ -126,10 +127,20 @@ def get_tar_checksums(tar_path, folder):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         cmd = ["/bin/tar", "-C", tmpdir, "-xvf", tar_path]
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
         extracted_files = result.stdout.strip().split("\n")
         print(extracted_files)
+
+        
+        print("tar stdout:\n", result.stdout)
+        print("tar stderr:\n", result.stderr)
+        print("exit code:", result.returncode)
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"[ERROR] tar extraction failed for {tar_path} (exit {result.returncode})"
+            )
 
         for file in extracted_files:
             item = os.path.join(tmpdir, file)
@@ -195,7 +206,7 @@ def make_manifest(tar_path, md5_dct):
 
 # N_10635929_08of08_short
 def get_valid_folder_and_files(fullpath):
-    skip_folder = {"completed", "failures", "checksum_manifests", "generate_tar"}
+    skip_folder = {"completed", "failures", "checksum_manifests"}
 
     valid_folder_and_file = []
 
@@ -437,11 +448,13 @@ def main():
                 os.remove(os.path.join(COMPLETED, tar_source))
 
         else:
+            diff_md5 = DeepDiff(local_md5, tar_content_md5)
             LOGGER.warning(
                 "Manifests do not match.\nLocal:\n%s\nTAR:\n%s",
                 local_md5,
                 tar_content_md5,
             )
+            LOGGER.warning("Difference between md5: \n", diff_md5)
             LOGGER.warning(
                 "Moving TAR file to failures, leaving file/folder for retry."
             )
