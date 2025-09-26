@@ -34,7 +34,6 @@ import logging
 import os
 import shutil
 import sys
-# import tarfile
 import tarfile
 
 sys.path.append(os.environ["CODE"])
@@ -220,8 +219,8 @@ def main():
     if not os.path.exists(fullpath):
         sys.exit("Supplied path does not exists. Please try again.")
 
-    if fullpath.endswith(".md5"):
-        sys.exit("Supplied path is MD5. Skipping.")
+    if fullpath.endswith((".md5", ".txt")):
+        sys.exit("Supplied path is MD5/TXT. Skipping.")
 
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
