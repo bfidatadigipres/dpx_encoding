@@ -79,6 +79,7 @@ def main():
             total_before = df['seq_size'].sum() / (1024 ** 4)
             total_after = df['derivative_size'].sum() / (1024 ** 4)
             total_saved = df['savings'].sum() / (1024 ** 4)
+            total_files = df['seq_id'].nunique()
 
             mini_fig = go.Figure(data=[go.Pie(
                 labels=["Total size before (TB)", "Total size after (TB)", "Savings (TB)"],
@@ -88,9 +89,9 @@ def main():
                 textinfo="label+percent"
             )])
             mini_fig.update_layout(title_text="Total Size (TB)", showlegend=True)
-
             # Display as mini pie chart
             st.plotly_chart(mini_fig, use_container_width=True)
+            st.markdown(f"Total sequences RAWcooked: {total_files}")
 
         except Exception as err:
             st.error(f"Error: {err}")

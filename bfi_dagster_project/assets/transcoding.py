@@ -357,12 +357,14 @@ def ffv1_validate(fullpath):
         }
 
     else:
-        # Delete image sequence
+        # 00Delete image sequence
+
         cpath = os.path.join(str(Path(spath).parents[1]), "processing/for_deletion/")
         if not os.path.exists(cpath):
             os.makedirs(cpath, exist_ok=True, mode=0o777)
         shutil.move(dpath, os.path.join(cpath, seq))
         log_data.append(f"Image sequence moved to {cpath}")
+
         success = utils.delete_sequence(os.path.join(cpath, seq))
         seq_del = "Deletion failed"
         if success:
