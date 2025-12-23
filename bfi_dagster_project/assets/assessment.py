@@ -293,6 +293,8 @@ def run_assessment(image_sequence: str) -> Dict[str, Any]:
 
     folder_size = utils.get_folder_size(image_sequence)
     cspace = utils.get_metadata("pix_fmt", first_image)
+    if not cspace:
+        cspace = utils.get_metadata("color_space", first_image)
     log_data.append(f"Image colourspace: {cspace}")
 
     bdepth = utils.get_metadata("bits_per_raw_sample", first_image)
