@@ -176,7 +176,7 @@ def reset_request():
                     ),
                 )
                 users.commit()
-        elif req == "Force 16 FPS" or req == "Force 24 FPS":
+        elif "FPS" in req:
             status = "Triggered assessment"
             instruction = req
             date_stamp = str(datetime.datetime.today())[:19]
@@ -184,43 +184,44 @@ def reset_request():
                 cursor = users.cursor()
                 cursor.execute(
                     """
-                    UPDATE encoding_status SET
-                        status = ?,
-                        folder_path = '',
-                        first_image = NULL,
-                        last_image = NULL,
-                        gaps_in_sequence = NULL,
-                        assessment_pass = NULL,
-                        assessment_complete = NULL,
-                        colourspace = NULL,
-                        seq_size = NULL,
-                        bitdepth = NULL,
-                        image_width = NULL,
-                        image_height = NULL,
-                        process_start = ?,
-                        encoding_choice = NULL,
-                        encoding_log = NULL,
-                        encoding_retry = NULL,
-                        encoding_complete = NULL,
-                        derivative_path = NULL,
-                        derivative_size = NULL,
-                        derivative_md5 = NULL,
-                        validation_complete = NULL,
-                        validation_success = NULL,
-                        error_message = NULL,
-                        last_updated = ?,
-                        sequence_deleted = NULL,
-                        moved_to_autoingest = NULL,
-                        Instruction = ?
-                    WHERE seq_id = ?
-                """,
-                    (
-                        status,
-                        date_stamp,
-                        date_stamp,
-                        instruction,
-                        seq_id,
-                    ),
+                    INSERT INTO encoding_status (status, last_updated, Instruction, seq_id)
+                        VALUES (?, CURRENT_TIMESTAMP, ?, ?)
+                        ON CONFLICT(seq_id) DO UPDATE SET
+                            status = ?,
+                            folder_path = '',
+                            first_image = NULL,
+                            last_image = NULL,
+                            gaps_in_sequence = NULL,
+                            assessment_pass = NULL,
+                            assessment_complete = NULL,
+                            colourspace = NULL,
+                            seq_size = NULL,
+                            bitdepth = NULL,
+                            image_width = NULL,
+                            image_height = NULL,
+                            process_start = NULL,
+                            encoding_choice = NULL,
+                            encoding_log = NULL,
+                            encoding_retry = NULL,
+                            encoding_complete = NULL,
+                            derivative_path = NULL,
+                            derivative_size = NULL,
+                            derivative_md5 = NULL,
+                            validation_complete = NULL,
+                            validation_success = NULL,
+                            error_message = NULL,
+                            last_updated = ?,
+                            sequence_deleted = NULL,
+                            moved_to_autoingest = NULL,
+                            Instruction = ?
+                        WHERE seq_id = ?
+                    """,
+                        (
+                            status,
+                            instruction,
+                            date_stamp,
+                            seq_id,
+                        ),
                 )
                 users.commit()
         elif req == "Remove":
