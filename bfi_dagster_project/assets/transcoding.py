@@ -51,13 +51,16 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                 context, search, "fetchall", (seq,)
             )
             context.log.info(f"{log_prefix}Received row {result}")
-
+            try:
+                instructions = result[0][29]
+            except IndexError:
+                instructions = None
+        
             if "Accept gaps" in str(result):
                 for_rawcooking.append(os.path.join(root, f"GAPS_{seq}"))
-            elif "Force 24 FPS" in str(result):
-                for_rawcooking.append(os.path.join(root, f"24FPS_{seq}"))
-            elif "Force 16 FPS" in str(result):
-                for_rawcooking.append(os.path.join(root, f"16FPS_{seq}"))
+            elif instructions and "FPS" in instructions:
+                fps_str = instructions.replace(" ", "")
+                for_rawcooking.append(os.path.join(root, f"{fps_str}_{seq}"))
             else:
                 for_rawcooking.append(fpath)
 
@@ -126,22 +129,36 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     """Complete transcodes in parallel"""
     log_data = []
 
-    gaps = fps24 = fps16 = False
+    gaps = fps16 = fps18 = fps24 = fps25 = fps30 = fps48 = fps50 = fps60 = False
     root, seq = os.path.split(fullpath[0])
     if seq.startswith("GAPS_"):
         gaps = True
         seq = seq.split("_", 1)[-1]
-        fullpath = os.path.join(root, seq)
-    elif seq.startswith("24FPS_"):
-        fps24 = True
-        seq = seq.split("_", 1)[-1]
-        fullpath = os.path.join(root, seq)
     elif seq.startswith("16FPS_"):
         fps16 = True
         seq = seq.split("_", 1)[-1]
-        fullpath = os.path.join(root, seq)
-    else:
-        fullpath = fullpath[0]
+    elif seq.startswith("18FPS_"):
+        fps18 = True
+        seq = seq.split("_", 1)[-1]
+    elif seq.startswith("24FPS_"):
+        fps24 = True
+        seq = seq.split("_", 1)[-1]
+    elif seq.startswith("25FPS_"):
+        fps25 = True
+        seq = seq.split("_", 1)[-1]
+    elif seq.startswith("30FPS_"):
+        fps30 = True
+        seq = seq.split("_", 1)[-1]
+    elif seq.startswith("48FPS_"):
+        fps48 = True
+        seq = seq.split("_", 1)[-1]
+    elif seq.startswith("50FPS_"):
+        fps50 = True
+        seq = seq.split("_", 1)[-1]
+    elif seq.startswith("60FPS_"):
+        fps60 = True
+        seq = seq.split("_", 1)[-1]
+    fullpath = os.path.join(root, seq)
 
     transcodes_path = os.path.join(str(Path(fullpath).parents[1]), "ffv1_transcoding/")
     log_data.append("Encoding choice is RAWcooked")
@@ -179,8 +196,20 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
 
     if fps16 is True:
         cmd.extend(["--framerate", "16"])
+    if fps18 is True:
+        cmd.extend(["--framerate", "18"])
     if fps24 is True:
         cmd.extend(["--framerate", "24"])
+    if fps25 is True:
+        cmd.extend(["--framerate", "25"])
+    if fps30 is True:
+        cmd.extend(["--framerate", "30"])
+    if fps48 is True:
+        cmd.extend(["--framerate", "48"])
+    if fps50 is True:
+        cmd.extend(["--framerate", "50"])
+    if fps60 is True:
+        cmd.extend(["--framerate", "60"])
 
     cmd.extend(
         [
@@ -189,9 +218,6 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             f"{fullpath}",
             "-o",
             f"{ffv1_path}",
-            ">>",
-            f"{log_path}",
-            "2>&1",
         ]
     )
 
@@ -199,10 +225,18 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         f"Calling RAWcooked with specific sequence command: {' '.join(cmd)}"
     )
     tic = time.perf_counter()
-    try:
-        subprocess.run(" ".join(cmd), shell=True, check=True)
-    except subprocess.CalledProcessError as err:
-        print(err)
+    # Alternative method for stderr stdout capture for RAWcooked/FFmpeg command
+    with open(log_path, "a") as log_file:
+        try:
+            subprocess.run(
+                cmd,
+                shell=False,
+                check=True,
+                stdout=log_file,
+                stderr=log_file
+            )
+        except subprocess.CalledProcessError as err:
+            print(err)
 
     toc = time.perf_counter()
     mins = (toc - tic) // 60

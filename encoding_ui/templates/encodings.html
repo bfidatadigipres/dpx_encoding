@@ -172,33 +172,36 @@ function sortTable(n) {
             <th onclick="sortTable(0)">Folder path</th>
             <th onclick="sortTable(1)">Sequence name</th>
             <th onclick="sortTable(2)">Status</th>
-            <th onclick="sortTable(3)">First image</th>
-            <th onclick="sortTable(4)">Last image</th>
-            <th onclick="sortTable(5)">Sequence gaps</th>
-            <th onclick="sortTable(6)">Assessment pass</th>
-            <th onclick="sortTable(8)">Colourspace</th>
-            <th onclick="sortTable(9)">Sequence byte size</th>
-            <th onclick="sortTable(10)">Bit depth</th>
-            <th onclick="sortTable(11)">Width</th>
-            <th onclick="sortTable(12)">Height</th>
-            <th onclick="sortTable(13)">Encoding start</th>
-            <th onclick="sortTable(14)">Encoding type</th>
-            <th onclick="sortTable(15)">Encoding instructions</th>
-            <th onclick="sortTable(16)">Retry count</th>
-            <th onclick="sortTable(17)">Encoding end</th>
-            <th onclick="sortTable(19)">New file size</th>
-            <th onclick="sortTable(20)">New file MD5</th>
-            <th onclick="sortTable(22)">Validation pass</th>
-            <th onclick="sortTable(23)">Error message</th>
-            <th onclick="sortTable(24)">Last update</th>
-            <th onclick="sortTable(25)">Sequence deleted</th>
-            <th onclick="sortTable(26)">Moved to autoingest</th>
+            <th onclick="sortTable(3)">Errors</th>
+            <th onclick="sortTable(4)">Sequence deleted</th>
+            <th onclick="sortTable(5)">Moved to autoingest</th>
+            <th onclick="sortTable(6)">First image</th>
+            <th onclick="sortTable(7)">Last image</th>
+            <th onclick="sortTable(8)">Sequence gaps</th>
+            <th onclick="sortTable(9)">Assessment pass</th>
+            <th onclick="sortTable(10)">Colourspace</th>
+            <th onclick="sortTable(11)">Sequence byte size</th>
+            <th onclick="sortTable(12)">Bit depth</th>
+            <th onclick="sortTable(13)">Width</th>
+            <th onclick="sortTable(14)">Height</th>
+            <th onclick="sortTable(15)">Encoding start</th>
+            <th onclick="sortTable(16)">Encoding type</th>
+            <th onclick="sortTable(17)">Encoding instructions</th>
+            <th onclick="sortTable(18)">Retry count</th>
+            <th onclick="sortTable(19)">Encoding end</th>
+            <th onclick="sortTable(21)">New file size</th>
+            <th onclick="sortTable(22)">New file MD5</th>
+            <th onclick="sortTable(24)">Validation pass</th>
+            <th onclick="sortTable(25)">Last update</th>
           </tr>
           {%for downloads in data%}
             <tr>
               <td>{{downloads[3]}}</td>
               <td>{{downloads[1]}}</td>
               <td>{{downloads[2]}}</td>
+              <td>{{downloads[24]}}</td>
+              <td>{{downloads[26]}}</td>
+              <td>{{downloads[27]}}</td>
               <td>{{downloads[4]}}</td>
               <td>{{downloads[5]}}</td>
               <td>{{downloads[6]}}</td>
@@ -216,10 +219,7 @@ function sortTable(n) {
               <td>{{downloads[20]}}</td>
               <td>{{downloads[21]}}</td>
               <td>{{downloads[23]}}</td>
-              <td>{{downloads[24]}}</td>
               <td>{{downloads[25]}}</td>
-              <td>{{downloads[26]}}</td>
-              <td>{{downloads[27]}}</td>
             </tr>
           {%endfor%}
       </table>

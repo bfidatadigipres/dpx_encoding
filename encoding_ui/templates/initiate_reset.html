@@ -9,10 +9,10 @@
             <p>View image sequence encoding progress and request refresh of sequence to trigger encoding restart.</p>
         </div>
         <div class="topnav">
-          <a href="{{ url_for('reset_request') }}">Refresh request</a>
-          <a href="{{ url_for('encodings') }}">View encodings</a>
-          <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/article/4051402810">Instructions</a>
-          <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/group/-1" class="split">Service Desk</a>
+            <a href="{{ url_for('reset_request') }}">Refresh request</a>
+            <a href="{{ url_for('encodings') }}">View encodings</a>
+            <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/article/4051402810">Instructions</a>
+            <a href="https://bficollectionssystems.atlassian.net/servicedesk/customer/portal/1/group/-1" class="split">Service Desk</a>
         </div>
         <form method="POST">
             <!-- <label id="label">Enter name (surname and initial):</label> -->
@@ -24,9 +24,15 @@
                 <option value="" disabled selected>Select action below. Please manually move sequence into 'processing' folder also.</option>
                 <option value="Full reset">Refresh sequence for new encoding attempt</option>
                 <option value="Accept gaps">Accept gaps in sequence for long-term preservation</option>
-                <option value="Remove">Delete sequence row from database</option>
-                <option value="Force 16 FPS">Force FFV1 MKV encoding framerate to 16 FPS</option>
-                <option value="Force 24 FPS">Force FFV1 MKV encoding framerate to 24 FPS</option>
+                <option value="16 FPS">Set FFV1 MKV encoding framerate to 16 FPS. Add sequence to 'processing' now.</option>
+                <option value="18 FPS">Set FFV1 MKV encoding framerate to 18 FPS. Add sequence to 'processing' now.</option>
+                <option value="24 FPS">Set FFV1 MKV encoding framerate to 24 FPS. Add sequence to 'processing' now.</option>
+                <option value="25 FPS">Set FFV1 MKV encoding framerate to 25 FPS. Add sequence to 'processing' now.</option>
+                <option value="30 FPS">Set FFV1 MKV encoding framerate to 30 FPS. Add sequence to 'processing' now.</option>
+                <option value="48 FPS">Set FFV1 MKV encoding framerate to 48 FPS. Add sequence to 'processing' now.</option>
+                <option value="50 FPS">Set FFV1 MKV encoding framerate to 50 FPS. Add sequence to 'processing' now.</option>
+                <option value="60 FPS">Set FFV1 MKV encoding framerate to 60 FPS</option>
+                <option value="Remove">Delete sequence row from database - use carefully!</option>
             </select><br/>
             <input type="submit" value="submit"/><br/>
         </form>
