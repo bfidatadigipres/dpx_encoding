@@ -195,21 +195,21 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         cmd.extend(["--output-version", "2"])
 
     if fps16 is True:
-        cmd.extend(["--framerate", "16"])
+        cmd.extend(["-framerate", "16"])
     if fps18 is True:
-        cmd.extend(["--framerate", "18"])
+        cmd.extend(["-framerate", "18"])
     if fps24 is True:
-        cmd.extend(["--framerate", "24"])
+        cmd.extend(["-framerate", "24"])
     if fps25 is True:
-        cmd.extend(["--framerate", "25"])
+        cmd.extend(["-framerate", "25"])
     if fps30 is True:
-        cmd.extend(["--framerate", "30"])
+        cmd.extend(["-framerate", "30"])
     if fps48 is True:
-        cmd.extend(["--framerate", "48"])
+        cmd.extend(["-framerate", "48"])
     if fps50 is True:
-        cmd.extend(["--framerate", "50"])
+        cmd.extend(["-framerate", "50"])
     if fps60 is True:
-        cmd.extend(["--framerate", "60"])
+        cmd.extend(["-framerate", "60"])
 
     cmd.extend(
         [
@@ -228,7 +228,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     # Alternative method for stderr stdout capture for RAWcooked/FFmpeg command
     with open(log_path, "a") as log_file:
         try:
-            subprocess.run(
+            result = subprocess.run(
                 cmd,
                 shell=False,
                 check=True,
@@ -236,7 +236,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
                 stderr=log_file
             )
         except subprocess.CalledProcessError as err:
-            print(err)
+            log_data.append(f"RAWcooked failed: {err.returncode}")
 
     toc = time.perf_counter()
     mins = (toc - tic) // 60
