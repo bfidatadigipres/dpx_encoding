@@ -175,48 +175,118 @@ def reset_request():
                     ),
                 )
                 users.commit()
-        elif "FPS" in req:
+        elif " FPS" in req:
             status = "Triggered assessment"
             instruction = str(req)
-            date_stamp = str(datetime.datetime.today())[:19]
             with sqlite3.connect(DBASE) as users:
+                users.isolation_level = None
                 cursor = users.cursor()
-                cursor.execute(
-                    """
-                    INSERT INTO encoding_status (seq_id, status, Instruction, last_updated)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(seq_id) DO UPDATE SET
-                        status = excluded.status,
-                        folder_path = '',
-                        first_image = NULL,
-                        last_image = NULL,
-                        gaps_in_sequence = NULL,
-                        assessment_pass = NULL,
-                        assessment_complete = NULL,
-                        colourspace = NULL,
-                        seq_size = NULL,
-                        bitdepth = NULL,
-                        image_width = NULL,
-                        image_height = NULL,
-                        process_start = NULL,
-                        encoding_choice = NULL,
-                        encoding_log = NULL,
-                        encoding_retry = NULL,
-                        encoding_complete = NULL,
-                        derivative_path = NULL,
-                        derivative_size = NULL,
-                        derivative_md5 = NULL,
-                        validation_complete = NULL,
-                        validation_success = NULL,
-                        error_message = NULL,
-                        last_updated = CURRENT_TIMESTAMP,
-                        sequence_deleted = NULL,
-                        moved_to_autoingest = NULL,
-                        Instruction = excluded.Instruction
-                    """,
-                    (seq_id, status, instruction),
-                )
-                users.commit()
+                cursor.execute("BEGIN")
+                try:
+                    cursor.execute(
+                        """
+                        UPDATE encoding_status SET
+                            status = ?,
+                            folder_path = NULL,
+                            first_image = NULL,
+                            last_image = NULL,
+                            gaps_in_sequence = NULL,
+                            assessment_pass = NULL,
+                            assessment_complete = NULL,
+                            colourspace = NULL,
+                            seq_size = NULL,
+                            bitdepth = NULL,
+                            image_width = NULL,
+                            image_height = NULL,
+                            process_start = NULL,
+                            encoding_choice = NULL,
+                            encoding_log = NULL,
+                            encoding_retry = NULL,
+                            encoding_complete = NULL,
+                            derivative_path = NULL,
+                            derivative_size = NULL,
+                            derivative_md5 = NULL,
+                            validation_complete = NULL,
+                            validation_success = NULL,
+                            error_message = NULL,
+                            last_updated = CURRENT_TIMESTAMP,
+                            sequence_deleted = NULL,
+                            moved_to_autoingest = NULL,
+                            Instruction = ?
+                        WHERE seq_id = ?
+                        """,
+                        (status, instruction, seq_id),
+                    )
+                    
+                    if cursor.rowcount == 0:
+                        cursor.execute(
+                            """
+                            INSERT INTO encoding_status (
+                                seq_id,
+                                status,
+                                folder_path,
+                                first_image,
+                                last_image,
+                                gaps_in_sequence,
+                                assessment_pass,
+                                assessment_complete,
+                                colourspace,
+                                seq_size,
+                                bitdepth,
+                                image_width,
+                                image_height,
+                                process_start,
+                                encoding_choice,
+                                encoding_log,
+                                encoding_retry,
+                                encoding_complete,
+                                derivative_path,
+                                derivative_size,
+                                derivative_md5,
+                                validation_complete,
+                                validation_success,
+                                error_message,
+                                last_updated,
+                                sequence_deleted,
+                                moved_to_autoingest,
+                                Instruction
+                            ) VALUES (
+                                ?,
+                                ?,
+                                '',
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                CURRENT_TIMESTAMP,
+                                NULL,
+                                NULL,
+                                ?
+                            )
+                            """,
+                            (seq_id, status, instruction),
+                        )
+                    cursor.execute("COMMIT")
+                except Exception:
+                    cursor.execute("ROLLBACK")
+                    raise
         elif req == "Remove":
             with sqlite3.connect(DBASE) as users:
                 cursor = users.cursor()
