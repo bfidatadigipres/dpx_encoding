@@ -1,3 +1,4 @@
+import cmd
 import datetime
 import os
 import shutil
@@ -79,13 +80,25 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.info(f"{log_prefix}File path identified: {fullpath}")
 
         # Check for accepted gaps / forced framerates
-        gaps = fps24 = fps16 = False
+        gaps = fps16 = fps18 = fps24 = fps25 = fps30 = fps48 = fps50 = fps60 = False
         if "Accept gaps" in str(data):
             gaps = True
-        elif "Force 24 FPS" in str(data):
-            fps24 = True
-        elif "Force 16 FPS" in str(data):
+        elif "16 FPS" in str(data):
             fps16 = True
+        elif "18 FPS" in str(data):
+            fps18 = True
+        elif "24 FPS" in str(data):
+            fps24 = True
+        elif "25 FPS" in str(data):
+            fps25 = True
+        elif "30 FPS" in str(data):
+            fps30 = True
+        elif "48 FPS" in str(data):
+            fps48 = True
+        elif "50 FPS" in str(data):
+            fps50 = True
+        elif "60 FPS" in str(data):
+            fps60 = True
 
         transcodes_path = os.path.join(
             str(Path(fullpath).parents[1]), "ffv1_transcoding/"
@@ -111,9 +124,21 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             cmd.extend(["--output-version", "2"])
 
         if fps16 is True:
-            cmd.extend(["--framerate", "16"])
+            cmd.extend(["-framerate", "16"])
+        if fps18 is True:
+            cmd.extend(["-framerate", "18"])
         if fps24 is True:
-            cmd.extend(["--framerate", "24"])
+            cmd.extend(["-framerate", "24"])
+        if fps25 is True:
+            cmd.extend(["-framerate", "25"])
+        if fps30 is True:
+            cmd.extend(["-framerate", "30"])
+        if fps48 is True:
+            cmd.extend(["-framerate", "48"])
+        if fps50 is True:
+            cmd.extend(["-framerate", "50"])
+        if fps60 is True:
+            cmd.extend(["-framerate", "60"])
 
         cmd.extend(
             [
@@ -122,9 +147,6 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
                 f"{fullpath}",
                 "-o",
                 f"{ffv1_path}",
-                ">>",
-                f"{log_path}",
-                "2>&1",
             ]
         )
 
@@ -132,11 +154,19 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             f"Calling RAWcooked with specific sequence command: {' '.join(cmd)}"
         )
         tic = time.perf_counter()
-        try:
-            subprocess.run(" ".join(cmd), shell=True, check=True)
-        except subprocess.CalledProcessError as err:
-            print(err)
-
+        # Alternative method for stderr stdout capture for RAWcooked/FFmpeg command
+        with open(log_path, "a") as log_file:
+            try:
+                result = subprocess.run(
+                    cmd,
+                    shell=False,
+                    check=True,
+                    stdout=log_file,
+                    stderr=log_file
+                )
+                context.log.info(f"RAWcooked completed with return code: {result.returncode}")
+            except subprocess.CalledProcessError as err:
+                context.log.error(f"RAWcooked failed:\n{err.stderr}\n{err.stdout}")
         toc = time.perf_counter()
         mins = (toc - tic) // 60
         context.log.info(f"RAWcooked encoding took {mins} minutes")

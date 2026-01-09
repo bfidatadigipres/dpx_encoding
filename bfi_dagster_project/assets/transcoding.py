@@ -235,8 +235,9 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
                 stdout=log_file,
                 stderr=log_file
             )
+            log_data.append(f"RAWcooked completed with return code: {result.returncode}")
         except subprocess.CalledProcessError as err:
-            log_data.append(f"RAWcooked failed: {err.returncode}")
+            log_data.append(f"RAWcooked failed:\n{err.stderr}\n{err.stdout}")
 
     toc = time.perf_counter()
     mins = (toc - tic) // 60
