@@ -9,7 +9,6 @@ new requests, using POST. Viewed by teams, 100 day since last update.
 import datetime
 import os
 import sqlite3
-
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
@@ -178,50 +177,44 @@ def reset_request():
                 users.commit()
         elif "FPS" in req:
             status = "Triggered assessment"
-            instruction = req
+            instruction = str(req)
             date_stamp = str(datetime.datetime.today())[:19]
             with sqlite3.connect(DBASE) as users:
                 cursor = users.cursor()
                 cursor.execute(
                     """
-                    INSERT INTO encoding_status (status, last_updated, Instruction, seq_id)
-                        VALUES (?, CURRENT_TIMESTAMP, ?, ?)
-                        ON CONFLICT(seq_id) DO UPDATE SET
-                            status = ?,
-                            folder_path = '',
-                            first_image = NULL,
-                            last_image = NULL,
-                            gaps_in_sequence = NULL,
-                            assessment_pass = NULL,
-                            assessment_complete = NULL,
-                            colourspace = NULL,
-                            seq_size = NULL,
-                            bitdepth = NULL,
-                            image_width = NULL,
-                            image_height = NULL,
-                            process_start = NULL,
-                            encoding_choice = NULL,
-                            encoding_log = NULL,
-                            encoding_retry = NULL,
-                            encoding_complete = NULL,
-                            derivative_path = NULL,
-                            derivative_size = NULL,
-                            derivative_md5 = NULL,
-                            validation_complete = NULL,
-                            validation_success = NULL,
-                            error_message = NULL,
-                            last_updated = ?,
-                            sequence_deleted = NULL,
-                            moved_to_autoingest = NULL,
-                            Instruction = ?
-                        WHERE seq_id = ?
+                    INSERT INTO encoding_status (seq_id, status, Instruction, last_updated)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(seq_id) DO UPDATE SET
+                        status = excluded.status,
+                        folder_path = '',
+                        first_image = NULL,
+                        last_image = NULL,
+                        gaps_in_sequence = NULL,
+                        assessment_pass = NULL,
+                        assessment_complete = NULL,
+                        colourspace = NULL,
+                        seq_size = NULL,
+                        bitdepth = NULL,
+                        image_width = NULL,
+                        image_height = NULL,
+                        process_start = NULL,
+                        encoding_choice = NULL,
+                        encoding_log = NULL,
+                        encoding_retry = NULL,
+                        encoding_complete = NULL,
+                        derivative_path = NULL,
+                        derivative_size = NULL,
+                        derivative_md5 = NULL,
+                        validation_complete = NULL,
+                        validation_success = NULL,
+                        error_message = NULL,
+                        last_updated = CURRENT_TIMESTAMP,
+                        sequence_deleted = NULL,
+                        moved_to_autoingest = NULL,
+                        Instruction = excluded.Instruction
                     """,
-                        (
-                            status,
-                            instruction,
-                            date_stamp,
-                            seq_id,
-                        ),
+                    (seq_id, status, instruction),
                 )
                 users.commit()
         elif req == "Remove":
@@ -232,8 +225,8 @@ def reset_request():
                 )
                 users.commit()
         return render_template("index_reset.html")
-    else:
-        return render_template("initiate_reset.html")
+
+    return render_template("initiate_reset.html")
 
 
 @app.route("/encodings")
