@@ -68,7 +68,7 @@ def accepted_file_type(ext):
 
 def get_metadata(arg: str, dpath: str) -> str:
     """
-    Retrieve metadata with subprocess
+    Retrieve metadata with FFprobe
     for supplied stream/field arg
     """
     probe = ffmpeg.probe(dpath)
@@ -94,8 +94,8 @@ def write_dir_tree(dpath: str) -> str:
     try:
         subprocess.run(cmd, text=True, check=True, shell=False)
         return fpath
-    except Exception as err:
-        print(err)
+    except subprocess.CalledProcessError as err:
+        print(err.returncode, err.stderr, err.stdout)
         return False
 
 
@@ -122,7 +122,8 @@ def metadata_dump(dpath: str, file_path: str, ext: str) -> str:
         ]
         try:
             subprocess.run(command, check=True, shell=False)
-        except Exception as err:
+        except subprocess.CalledProcessError as err:
+            print(err.returncode, err.stderr, err.stdout)
             raise err
         if os.path.isfile(outpath):
             return outpath
@@ -144,7 +145,8 @@ def metadata_dump(dpath: str, file_path: str, ext: str) -> str:
         try:
             subprocess.run(command, check=True, shell=False)
             subprocess.run(command2, check=True, shell=False)
-        except Exception as err:
+        except subprocess.CalledProcessError as err:
+            print(err.returncode, err.stderr, err.stdout)
             raise err
 
         if os.path.isfile(outpath) and os.path.isfile(outpath2):
@@ -175,7 +177,8 @@ def mediaconch(ipath: str, arg: str) -> List:
             return ["Pass", str(result)]
         else:
             return ["Fail", str(result)]
-    except Exception as err:
+    except subprocess.CalledProcessError as err:
+        print(err.returncode, err.stderr, err.stdout)
         raise err
 
 
@@ -195,7 +198,8 @@ def mediaconch_mkv(dpath: str) -> List:
             return ["Pass", result]
         else:
             return ["Fail", result]
-    except Exception as err:
+    except subprocess.CalledProcessError as err:
+        print(err.returncode, err.stderr, err.stdout)
         raise err
 
 
@@ -289,7 +293,7 @@ def get_fps(ipath: str) -> Optional[int]:
     try:
         fps = subprocess.check_output(cmd, shell=False).decode().split(": ")[-1]
     except subprocess.CalledProcessError as err:
-        print(err)
+        print(err.returncode, err.stderr, err.stdout)
         fps = ""
     fps = str(fps).rstrip("/n")
     if "." in fps:
@@ -720,12 +724,20 @@ def check_file(mpath: str) -> bool:
     root, fname = os.path.split(mpath)
     log_name = f"check_log_{fname}.txt"
     log = os.path.join(root, log_name)
-    cmd = ["rawcooked", "--check", f"{mpath}", ">>", f"{log}", "2>&1"]
-    try:
-        subprocess.run(" ".join(cmd), shell=True, check=True)
-    except subprocess.CalledProcessError as err:
-        print(err)
-        raise err
+    cmd = ["rawcooked", "--check", f"{mpath}"]
+    with open(log, "a") as log_file:
+        try:
+            result = subprocess.run(
+                cmd,
+                shell=False,
+                check=True,
+                stdout=log_file,
+                stderr=log_file
+            )
+            print(f"RAWcooked --check completed with return code: {result.returncode}")
+        except subprocess.CalledProcessError as err:
+            print(f"RAWcooked --check failed:\n{err.stderr}\n{err.stdout}")
+            raise err
 
     with open(log, "r") as file:
         logs = file.readlines()
