@@ -737,7 +737,8 @@ def check_file(mpath: str) -> bool:
             print(f"RAWcooked --check completed with return code: {result.returncode}")
         except subprocess.CalledProcessError as err:
             print(f"RAWcooked --check failed:\n{err.stderr}\n{err.stdout}")
-            raise err
+            move_log_to_dest(log, "failures")
+            return False
 
     with open(log, "r") as file:
         logs = file.readlines()
