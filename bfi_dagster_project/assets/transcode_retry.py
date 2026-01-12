@@ -48,7 +48,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             return dg.Output(value={})
         log_prefix = f"[{key_prefix}] " if key_prefix else ""
         fullpath = context.op_config.get("sequence")
-        root, seq = os.path.split(fullpath)
+        seq = os.path.split(fullpath)[-1]
         context.log.info(f"{log_prefix}Received new encoding data: {fullpath}")
 
         search = "SELECT * FROM encoding_status WHERE seq_id=?"
@@ -56,15 +56,27 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             context, search, "fetchone", (seq,)
         )
         context.log.info(f"{log_prefix}Row retrieved: {data}")
-        retry_count = data[17]
-        if not retry_count.isnumeric():
+        try:
+            retry_count = data[17]
+        except IndexError:
+            retry_count = 0
+        if not retry_count:
+            retry_count = 0
+        elif not retry_count.isnumeric():
             retry_count = 0
         else:
             retry_count = int(retry_count)
-        status = data[2]
-        choice = data[15]
+        try:
+            status = data[2]
+        except IndexError:
+            status = None
+        try:
+            choice = data[15]
+        except IndexError:
+            choice = None
+
         context.log.info(f"{log_prefix}==== Retry RAWcook encoding: {fullpath} ====")
-        if status != "Pending retry":
+        if status != "RAWcooked failed":
             context.log.error(f"{log_prefix}Sequence not suitable for retry. Exiting.")
             return dg.Output(value={})
         context.log.info(f"{log_prefix}Status indicates selected for retry successful")

@@ -392,8 +392,7 @@ def ffv1_validate(fullpath):
         }
 
     else:
-        # 00Delete image sequence
-
+        # Delete image sequence
         cpath = os.path.join(str(Path(spath).parents[1]), "processing/for_deletion/")
         if not os.path.exists(cpath):
             os.makedirs(cpath, exist_ok=True, mode=0o777)
