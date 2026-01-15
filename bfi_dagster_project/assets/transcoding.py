@@ -246,9 +246,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         log_data.append(
             "WARNING: RAWcooked encoding failed. Moving to failures folder."
         )
-        if not os.path.isfile(ffv1_path):
-            log_data.append("WARNING: Cannot find file, moving to failures folder")
-            utils.move_to_failures(ffv1_path)
+        utils.move_to_failures(ffv1_path)
         utils.move_to_failures(fullpath)
         utils.move_log_to_dest(log_path, "failures")
         confirm = utils.check_for_version_two(log_path)
