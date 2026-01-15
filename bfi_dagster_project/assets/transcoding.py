@@ -237,7 +237,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             )
             log_data.append(f"RAWcooked completed with return code: {result.returncode}")
         except subprocess.CalledProcessError as err:
-            log_data.append(f"RAWcooked failed:\n{err.stderr}\n{err.stdout}")
+            log_data.append(f"RAWcooked failed in subprocess call: {result.returncode}")
 
     toc = time.perf_counter()
     mins = (toc - tic) // 60
@@ -251,9 +251,15 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
             utils.move_to_failures(ffv1_path)
         utils.move_to_failures(fullpath)
         utils.move_log_to_dest(log_path, "failures")
+        confirm = utils.check_for_version_two(log_path)
+        if confirm:
+            error_message = "Padding too large, refresh sequence for fixed encoding."
+        else:
+            error_message = "Please review failure log for details."
         arguments = (
             ["status", "RAWcook failed"],
             ["encoding_complete", str(datetime.datetime.today())[:19]],
+            ["error_message", error_message],
         )
 
         return {
