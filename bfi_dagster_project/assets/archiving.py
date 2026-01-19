@@ -435,9 +435,9 @@ def tar_validate(fullpath):
         shutil.move(dpath, os.path.join(cpath, seq))
         log_data.append(f"Image sequence moved to {cpath}")
         success = utils.delete_sequence(dpath)
-        seq_del = 'No'
+        seq_del = "No"
         if success:
-            seq_del = 'Yes'
+            seq_del = "Yes"
 
         # Move file to ingest
         success = utils.move_to_autoingest(spath)

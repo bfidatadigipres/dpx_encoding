@@ -170,13 +170,11 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         with open(log_path, "a") as log_file:
             try:
                 result = subprocess.run(
-                    cmd,
-                    shell=False,
-                    check=True,
-                    stdout=log_file,
-                    stderr=log_file
+                    cmd, shell=False, check=True, stdout=log_file, stderr=log_file
                 )
-                context.log.info(f"RAWcooked completed with return code: {result.returncode}")
+                context.log.info(
+                    f"RAWcooked completed with return code: {result.returncode}"
+                )
             except subprocess.CalledProcessError as err:
                 context.log.error(f"RAWcooked failed:\n{err.stderr}\n{err.stdout}")
         toc = time.perf_counter()
