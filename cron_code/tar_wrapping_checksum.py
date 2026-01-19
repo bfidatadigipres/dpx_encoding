@@ -531,16 +531,13 @@ def error_log(fpath, message, kandc):
     for incomplete sequences.
     """
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    if not kandc:
+    if TAR_FAIL in fpath:
         with open(fpath, "a+") as log:
-            log.write(f"tar_wrapping {ts}: {message}.\n\n")
-            log.close()
-    else:
-        with open(fpath, "a+") as log:
-            log.write(f"tar_wrapping {ts}: {message}.\n")
-            log.write(
-                f"- Please contact the Knowledge and Collections Developer {kandc}.\n\n"
-            )
+            log.write(f"tar_wrapping {ts}: {message}.\n\n"
+            if kandc:
+                log.write(
+                    f"- Please contact the Knowledge and Collections Developer {kandc}.\n\n"
+                )
             log.close()
 
 

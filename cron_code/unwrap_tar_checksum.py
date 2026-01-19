@@ -27,7 +27,6 @@ import datetime
 import hashlib
 import json
 import logging
-# Global import
 import os
 import shutil
 import subprocess
@@ -88,9 +87,10 @@ def python_tarfile(fpath, untar_fpath):
     if not os.path.exists(untar_fpath):
         os.makedirs(untar_fpath, mode=0o777)
 
-    tar_file = tarfile.open(fpath)
-    tar_file.extractall(untar_fpath)
-    tar_file.close()
+    if "automation/unwrap_tar" in fpath:
+        tar_file = tarfile.open(fpath)
+        tar_file.extractall(untar_fpath)
+        tar_file.close()
 
     if os.listdir(untar_fpath):
         return True
