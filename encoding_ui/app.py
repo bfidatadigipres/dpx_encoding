@@ -9,6 +9,7 @@ new requests, using POST. Viewed by teams, 100 day since last update.
 import datetime
 import os
 import sqlite3
+
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
@@ -22,8 +23,7 @@ def index():
 
 DBASE = os.environ.get("DATABASE")
 CONNECT = sqlite3.connect(DBASE)
-CONNECT.execute(
-    """
+CONNECT.execute("""
                 CREATE TABLE IF NOT EXISTS encoding_status (
                     process_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     seq_id TEXT NOT NULL,
@@ -56,8 +56,7 @@ CONNECT.execute(
                     project TEXT
                     Instruction TEXT
                 )
-            """
-)
+            """)
 
 
 @app.route("/reset_request", methods=["GET", "POST"])
@@ -217,7 +216,7 @@ def reset_request():
                         """,
                         (status, instruction, seq_id),
                     )
-                    
+
                     if cursor.rowcount == 0:
                         cursor.execute(
                             """
