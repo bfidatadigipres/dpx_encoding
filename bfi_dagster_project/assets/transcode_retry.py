@@ -336,6 +336,28 @@ def ffv1_validate(spath):
         error_message = "Error found in RAWcooked log"
     log_data.append("Log for MKV passed checks")
 
+    if validation is False:
+        # Move files/logs to failure path
+        log_data.append(f"WARNING: RAWcook MKV failed: {error_message}")
+        utils.move_to_failures(spath)
+        utils.move_to_failures(dpath)
+        for line in log_data:
+            utils.append_to_log(log, line)
+        utils.move_log_to_dest(log, "failures")
+
+        arguments = (
+            ["status", "RAWcook failed"],
+            ["validation_success", "No"],
+            ["validation_complete", str(datetime.datetime.today())[:19]],
+            ["error_message", error_message],
+        )
+        return {
+            "sequence": seq,
+            "success": validation,
+            "db_arguments": arguments,
+            "logs": log_data,
+        }
+
     # Run RAWcook check pass
     success = utils.check_file(spath)
     if success is False:
