@@ -48,9 +48,11 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             return dg.Output(value={})
         log_prefix = f"[{key_prefix}] " if key_prefix else ""
         fullpath = context.op_config.get("sequence")
-        root, seq = os.path.split(fullpath)
-        basepath = os.path.split(root)[0]
-        failpath = os.path.join(basepath, "failures", seq)
+        seq = os.path.split(fullpath)[-1]
+        failures = os.path.join(
+            str(Path(fullpath).parents[1]), "failures/"
+        )
+        failpath = os.path.join(failures, seq)
         context.log.info(f"{log_prefix}Received new encoding path data:\n{fullpath}\n{failpath}")
 
         search = "SELECT * FROM encoding_status WHERE seq_id=?"
