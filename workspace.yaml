@@ -8,7 +8,7 @@ load_from:
   - python_module:
       module_name: bfi_dagster_project
       attribute: project02_defs
-      location_name: bfi_dasgter_project02
+      location_name: bfi_dagster_project02
   # Third module instance
   - python_module:
       module_name: bfi_dagster_project
@@ -23,7 +23,7 @@ load_from:
   - python_module:
       module_name: bfi_dagster_project
       attribute: project05_defs
-      location_name: bfi_dasgter_project05
+      location_name: bfi_dagster_project05
   # Sixth module instance
   - python_module:
       module_name: bfi_dagster_project
@@ -38,7 +38,7 @@ load_from:
   - python_module:
       module_name: bfi_dagster_project
       attribute: project08_defs
-      location_name: bfi_dasgter_project08
+      location_name: bfi_dagster_project08
   # Ninth module instance
   - python_module:
       module_name: bfi_dagster_project
