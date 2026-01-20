@@ -178,6 +178,18 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.info(
             f"Calling RAWcooked with specific sequence command: {' '.join(cmd)}"
         )
+        # Update database about transcoding start
+        arguments = (
+            ["status", "RAWcook retry started"],
+            ["encoding_complete", str(datetime.datetime.today())[:19]],
+            ["encoding_retry", retry_count + 1],
+        )
+        context.log.warning(
+            f"{log_prefix}RAWcooked encoding starting. Updating database:\n{arguments}"
+        )
+        entry = context.resources.database.append_to_database(
+            context, seq, arguments
+        )
         tic = time.perf_counter()
         # Alternative method for stderr stdout capture for RAWcooked/FFmpeg command
         with open(log_path, "a") as log_file:
@@ -229,7 +241,6 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             ["derivative_path", ffv1_path],
             ["derivative_size", utils.get_folder_size(ffv1_path)],
             ["derivative_md5", checksum_data],
-            ["encoding_retry", retry_count + 1],
         )
         context.log.info(
             f"RAWcook completed successfully. Updating database:\n{arguments}"
