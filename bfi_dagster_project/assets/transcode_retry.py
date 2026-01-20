@@ -78,7 +78,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             choice = None
 
         context.log.info(f"{log_prefix}==== Retry RAWcook encoding: {fullpath} ====")
-        if status.strip() not in ("RAWcooked failed", "Pending retry"):
+        if status.strip() not in ("RAWcook failed", "Pending retry"):
             context.log.error(f"{log_prefix}Sequence not suitable for retry. Exiting.")
             return dg.Output(value={})
         context.log.info(f"{log_prefix}Status indicates selected for retry successful")
