@@ -251,7 +251,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
         utils.move_log_to_dest(log_path, "failures")
         confirm = utils.check_for_version_two(log_path)
         if confirm:
-            error_message = "Padding too large, refresh sequence for fixed encoding."
+            error_message = "Non-zero padding data present. Re-transcode required."
         else:
             error_message = "Please review failure log for details."
         arguments = (
