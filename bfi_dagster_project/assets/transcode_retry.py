@@ -39,7 +39,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context: dg.AssetExecutionContext,
     ) -> dg.Output:
         """
-        Receive context op_config containting folder path for failed transcode
+        Receive context op_config containing folder path for failed transcode
         attempt, retrieves database row data and begins re-encode attempt.
         List containing filepath is passed to validation asset.
         """
@@ -76,7 +76,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             choice = None
 
         context.log.info(f"{log_prefix}==== Retry RAWcook encoding: {fullpath} ====")
-        if status != "RAWcooked failed" or status != "Pending retry":
+        if status.strip() not in ("RAWcooked failed", "Pending retry"):
             context.log.error(f"{log_prefix}Sequence not suitable for retry. Exiting.")
             return dg.Output(value={})
         context.log.info(f"{log_prefix}Status indicates selected for retry successful")
