@@ -48,8 +48,10 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             return dg.Output(value={})
         log_prefix = f"[{key_prefix}] " if key_prefix else ""
         fullpath = context.op_config.get("sequence")
-        seq = os.path.split(fullpath)[-1]
-        context.log.info(f"{log_prefix}Received new encoding data: {fullpath}")
+        root, seq = os.path.split(fullpath)
+        basepath = os.path.split(root)[0]
+        failpath = os.path.join(basepath, "failures")
+        context.log.info(f"{log_prefix}Received new encoding path data:\n{fullpath}\n{failpath}")
 
         search = "SELECT * FROM encoding_status WHERE seq_id=?"
         data = context.resources.database.retrieve_seq_id_row(
@@ -86,10 +88,19 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             )
             return dg.Output(value={})
         context.log.info("{log_prefix}Encoding choice is RAWcooked")
-        if not os.path.exists(fullpath):
-            context.log.error(f"{log_prefix}Failed to find path {fullpath}. Exiting.")
-            return dg.Output(value={})
-        context.log.info(f"{log_prefix}File path identified: {fullpath}")
+        
+        # Manage move of pth from failures/ to processing/
+        if not os.path.exists(failpath):
+            context.log.info(f"{log_prefix}Failed to find path {failpath}. Checking processing/.")
+            if not os.path.exists(fullpath):
+                context.log.error(f"{log_prefix}Failed to find path {fullpath}. Exiting.")
+                return dg.Output(value={})
+            else:
+                context.log.info(f"{log_prefix}Fullpath identified and useable {fullpath}")
+        else:
+            context.log.info(f"{log_prefix}File path identified and moving to processing: {failpath}")
+            shutil.move(failpath, fullpath)
+
 
         # Check for accepted gaps / forced framerates
         gaps = fps16 = fps18 = fps24 = fps25 = fps30 = fps48 = fps50 = fps60 = False
