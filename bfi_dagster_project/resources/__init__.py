@@ -232,14 +232,14 @@ class SQLiteResource(dg.ConfigurableResource):
 
     @with_retries()
     def append_to_database(
-        self, context: dg.AssetExecutionContext, seq_id: str, arguments: str
+        self, context: dg.AssetExecutionContext, seq_id: str, arguments: tuple[list[str], ...]
     ):
         """
         Using seq_id field, indentify row and update with supplied argument string
         """
         # Prepare column names and placeholders
         column_names = [arg_pair[0] for arg_pair in arguments] + ["last_updated"]
-        placeholders = ", ".join(["?" for _ in range(len(column_names))])
+        # placeholders = ", ".join(["?" for _ in range(len(column_names))])
         set_clause = ", ".join([f"{col} = ?" for col in column_names])
 
         # Prepare values

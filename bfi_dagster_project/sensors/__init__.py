@@ -94,7 +94,7 @@ def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
                 continue
 
             # Update retry count in database
-            arguments = ["status", "Pending retry"]
+            arguments = (["status", "Pending retry"],)
             entry = context.resources.database.append_to_database(
                 context, seq_id, arguments
             )
