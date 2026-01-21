@@ -187,7 +187,7 @@ def reset_request():
                         """
                         UPDATE encoding_status SET
                             status = ?,
-                            folder_path = ''
+                            folder_path = '',
                             first_image = NULL,
                             last_image = NULL,
                             gaps_in_sequence = NULL,
@@ -217,7 +217,7 @@ def reset_request():
                         """,
                         (status, instruction, seq_id),
                     )
-                    
+
                     if cursor.rowcount == 0:
                         cursor.execute(
                             """
