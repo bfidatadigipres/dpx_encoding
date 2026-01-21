@@ -250,8 +250,8 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         # Validate in function
         results = ffv1_validate(ffv1_path)
         validated_files = {
-            "valid": [r["sequence"] for r in results if r["success"] is not False],
-            "invalid": [r["sequence"] for r in results if r["success"] is False],
+            "valid": [results["sequence"]] if results["success"] is True else [],
+            "invalid": [results["sequence"]] if results["success"] is False else [],
         }
         context.log.info(
             f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
