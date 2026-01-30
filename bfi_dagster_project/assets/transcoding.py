@@ -70,7 +70,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         results = context.resources.process_pool.map(transcode, transcode_tasks)
 
         # Filter out None vals
-        completed_files = [r["path"] for r in results if r["success"] is not None]
+        completed_files = [r["path"] for r in results if r["success"] is True]
         context.log.info(f"Completed {len(completed_files)} RAWcooked transcodes.")
 
         for data in results:
@@ -91,7 +91,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
         validation_tasks = [(folder,) for folder in completed_files]
         results = context.resources.process_pool.map(ffv1_validate, validation_tasks)
         validated_files = {
-            "valid": [r["sequence"] for r in results if r["success"] is not False],
+            "valid": [r["sequence"] for r in results if r["success"] is True],
             "invalid": [r["sequence"] for r in results if r["success"] is False],
         }
         context.log.info(
