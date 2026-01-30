@@ -533,7 +533,7 @@ def error_log(fpath, message, kandc):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if TAR_FAIL in fpath:
         with open(fpath, "a+") as log:
-            log.write(f"tar_wrapping {ts}: {message}.\n\n"
+            log.write(f"tar_wrapping {ts}: {message}.\n\n")
             if kandc:
                 log.write(
                     f"- Please contact the Knowledge and Collections Developer {kandc}.\n\n"
