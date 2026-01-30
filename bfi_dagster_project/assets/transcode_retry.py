@@ -257,6 +257,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
             f"Invalid={len(validated_files['invalid'])}"
         )
+        context.log.info(results)
 
         # Write data to log / db
         for data in results:
@@ -290,8 +291,9 @@ def ffv1_validate(spath):
     """
     log_data = []
     error_message = []
-
     log_data.append(f"Received: {spath}")
+    fname = os.path.basename(spath)
+    seq = fname.split(".")[0]
 
     if not os.path.exists(spath):
         log_data.append(f"WARNING: Failed to find path {spath}. Exiting.")
@@ -301,15 +303,13 @@ def ffv1_validate(spath):
             ["status", "RAWcook failed"],
             ["validation_complete", str(datetime.datetime.today())[:19]],
         )
-        return {
-            "sequence": None,
+        return [{
+            "sequence": seq,
             "success": False,
             "db_arguments": arguments,
             "logs": log_data,
-        }
+        }]
 
-    fname = os.path.basename(spath)
-    seq = fname.split(".")[0]
     dpath = os.path.join(str(Path(spath).parents[1]), "processing/", seq)
     log_data.append(f"Paths to work with:\n{dpath}\n{spath}")
     folder_size = utils.get_folder_size(dpath)
@@ -362,12 +362,12 @@ def ffv1_validate(spath):
             ["validation_complete", str(datetime.datetime.today())[:19]],
             ["error_message", error_message],
         )
-        return {
+        return [{
             "sequence": seq,
             "success": validation,
             "db_arguments": arguments,
             "logs": log_data,
-        }
+        }]
 
     # Run RAWcook check pass
     success = utils.check_file(spath)
@@ -400,12 +400,12 @@ def ffv1_validate(spath):
             ["validation_complete", str(datetime.datetime.today())[:19]],
             ["error_message", error_message],
         )
-        return {
+        return [{
             "sequence": seq,
             "success": validation,
             "db_arguments": arguments,
             "logs": log_data,
-        }
+        }]
 
     else:
         # Move image sequence and delete
@@ -442,12 +442,12 @@ def ffv1_validate(spath):
             ["moved_to_autoingest", auto_move],
         )
 
-        return {
+        return [{
             "sequence": seq,
             "success": validation,
             "db_arguments": arguments,
             "logs": log_data,
-        }
+        }]
 
 
 # Import note
