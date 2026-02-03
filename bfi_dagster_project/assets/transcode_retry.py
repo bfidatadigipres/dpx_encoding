@@ -250,8 +250,8 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         # Validate in function
         results = ffv1_validate(ffv1_path)
         validated_files = {
-            "valid": [results.get("sequence") if results.get("success") is True else []],
-            "invalid": [results.get("sequence") if results.get("success") is False else []],
+            "valid": [results.get("sequence") if results.get("success") is True else ""],
+            "invalid": [results.get("sequence") if results.get("success") is False else ""],
         }
         context.log.info(
             f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "
@@ -260,16 +260,15 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.info(results)
 
         # Write data to log / db
-        for data in results:
-            seq = data["sequence"]
-            args = data["db_arguments"]
-            entry = context.resources.database.append_to_database(context, seq, args)
-            context.log.info(f"{log_prefix}Written to Database: {entry}")
-            for log in data["logs"]:
-                if "WARNING" in log:
-                    context.log.warning(f"{log_prefix} {log}")
-                else:
-                    context.log.info(f"{log_prefix} {log}")
+        seq = results["sequence"]
+        args = results["db_arguments"]
+        entry = context.resources.database.append_to_database(context, seq, args)
+        context.log.info(f"{log_prefix}Written to Database: {entry}")
+        for log in results["logs"]:
+            if "WARNING" in log:
+                context.log.warning(f"{log_prefix} {log}")
+            else:
+                context.log.info(f"{log_prefix} {log}")
 
         return dg.Output(
             value={
