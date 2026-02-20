@@ -232,7 +232,10 @@ class SQLiteResource(dg.ConfigurableResource):
 
     @with_retries()
     def append_to_database(
-        self, context: dg.AssetExecutionContext, seq_id: str, arguments: tuple[list[str], ...]
+        self,
+        context: dg.AssetExecutionContext,
+        seq_id: str,
+        arguments: tuple[list[str], ...],
     ):
         """
         Using seq_id field, indentify row and update with supplied argument string

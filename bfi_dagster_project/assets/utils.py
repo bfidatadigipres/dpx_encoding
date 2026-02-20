@@ -728,11 +728,7 @@ def check_file(mpath: str) -> bool:
     with open(log, "a") as log_file:
         try:
             result = subprocess.run(
-                cmd,
-                shell=False,
-                check=True,
-                stdout=log_file,
-                stderr=log_file
+                cmd, shell=False, check=True, stdout=log_file, stderr=log_file
             )
             print(f"RAWcooked --check completed with return code: {result.returncode}")
         except subprocess.CalledProcessError as err:
