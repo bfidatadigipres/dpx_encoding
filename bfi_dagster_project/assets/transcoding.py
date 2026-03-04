@@ -55,7 +55,7 @@ def build_transcode_ffv1_asset(key_prefix: Optional[str] = None):
                 instructions = result[0][29]
             except IndexError:
                 instructions = None
-        
+
             if "Accept gaps" in str(result):
                 for_rawcooking.append(os.path.join(root, f"GAPS_{seq}"))
             elif instructions and "FPS" in instructions:
@@ -229,13 +229,11 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     with open(log_path, "a") as log_file:
         try:
             result = subprocess.run(
-                cmd,
-                shell=False,
-                check=True,
-                stdout=log_file,
-                stderr=log_file
+                cmd, shell=False, check=True, stdout=log_file, stderr=log_file
             )
-            log_data.append(f"RAWcooked completed with return code: {result.returncode}")
+            log_data.append(
+                f"RAWcooked completed with return code: {result.returncode}"
+            )
         except subprocess.CalledProcessError as err:
             log_data.append("RAWcooked failed in subprocess call")
 

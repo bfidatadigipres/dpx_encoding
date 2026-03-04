@@ -75,7 +75,11 @@ def build_target_sequences_asset(key_prefix: Optional[str] = None):
                         result,
                     )
                     current_files.append(f"GAPS_{dpath}")
-            elif len(result) > 0 and "Triggered assessment" in str(result) and " FPS" in str(result):
+            elif (
+                len(result) > 0
+                and "Triggered assessment" in str(result)
+                and " FPS" in str(result)
+            ):
                 context.log.info(
                     f"{log_prefix}FPS adjustment sequence found. Passing for processing: %s",
                     result,

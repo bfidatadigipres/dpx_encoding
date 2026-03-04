@@ -49,11 +49,11 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         log_prefix = f"[{key_prefix}] " if key_prefix else ""
         fullpath = context.op_config.get("sequence")
         seq = os.path.split(fullpath)[-1]
-        failures = os.path.join(
-            str(Path(fullpath).parents[1]), "failures/"
-        )
+        failures = os.path.join(str(Path(fullpath).parents[1]), "failures/")
         failpath = os.path.join(failures, seq)
-        context.log.info(f"{log_prefix}Received new encoding path data:\n{fullpath}\n{failpath}")
+        context.log.info(
+            f"{log_prefix}Received new encoding path data:\n{fullpath}\n{failpath}"
+        )
 
         search = "SELECT * FROM encoding_status WHERE seq_id=?"
         data = context.resources.database.retrieve_seq_id_row(
@@ -90,19 +90,26 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
             )
             return dg.Output(value={})
         context.log.info("{log_prefix}Encoding choice is RAWcooked")
-        
+
         # Manage move of pth from failures/ to processing/
         if not os.path.exists(failpath):
-            context.log.info(f"{log_prefix}Failed to find path {failpath}. Checking processing/.")
+            context.log.info(
+                f"{log_prefix}Failed to find path {failpath}. Checking processing/."
+            )
             if not os.path.exists(fullpath):
-                context.log.error(f"{log_prefix}Failed to find path {fullpath}. Exiting.")
+                context.log.error(
+                    f"{log_prefix}Failed to find path {fullpath}. Exiting."
+                )
                 return dg.Output(value={})
             else:
-                context.log.info(f"{log_prefix}Fullpath identified and useable {fullpath}")
+                context.log.info(
+                    f"{log_prefix}Fullpath identified and useable {fullpath}"
+                )
         else:
-            context.log.info(f"{log_prefix}File path identified and moving to processing: {failpath}")
+            context.log.info(
+                f"{log_prefix}File path identified and moving to processing: {failpath}"
+            )
             shutil.move(failpath, fullpath)
-
 
         # Check for accepted gaps / forced framerates
         gaps = fps16 = fps18 = fps24 = fps25 = fps30 = fps48 = fps50 = fps60 = False
@@ -187,21 +194,17 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         context.log.warning(
             f"{log_prefix}RAWcooked encoding starting. Updating database:\n{arguments}"
         )
-        entry = context.resources.database.append_to_database(
-            context, seq, arguments
-        )
+        entry = context.resources.database.append_to_database(context, seq, arguments)
         tic = time.perf_counter()
         # Alternative method for stderr stdout capture for RAWcooked/FFmpeg command
         with open(log_path, "a") as log_file:
             try:
                 result = subprocess.run(
-                    cmd,
-                    shell=False,
-                    check=True,
-                    stdout=log_file,
-                    stderr=log_file
+                    cmd, shell=False, check=True, stdout=log_file, stderr=log_file
                 )
-                context.log.info(f"RAWcooked completed with return code: {result.returncode}")
+                context.log.info(
+                    f"RAWcooked completed with return code: {result.returncode}"
+                )
             except subprocess.CalledProcessError as err:
                 context.log.error(f"RAWcooked failed:\n{err.stderr}\n{err.stdout}")
         toc = time.perf_counter()
@@ -250,8 +253,12 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         # Validate in function
         results = ffv1_validate(ffv1_path)
         validated_files = {
-            "valid": [results.get("sequence") if results.get("success") is True else ""],
-            "invalid": [results.get("sequence") if results.get("success") is False else ""],
+            "valid": [
+                results.get("sequence") if results.get("success") is True else ""
+            ],
+            "invalid": [
+                results.get("sequence") if results.get("success") is False else ""
+            ],
         }
         context.log.info(
             f"{log_prefix}Validation results: Valid={len(validated_files['valid'])}, "

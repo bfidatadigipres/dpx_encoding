@@ -3,7 +3,8 @@ from typing import Callable, List, Optional
 
 import dagster as dg
 
-from ..assets.transcode_retry import build_transcode_retry_asset, reencode_failed_asset
+from ..assets.transcode_retry import (build_transcode_retry_asset,
+                                      reencode_failed_asset)
 
 
 def build_failed_encoding_retry_sensor(key_prefix: Optional[str] = None):
