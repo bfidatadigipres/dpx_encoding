@@ -42,12 +42,12 @@ jobs:
               echo "${{ secrets.BFI_BOT_TOKEN }}" | gh auth login --with-token
 
       - name: Run Black (format instead of check)
-        uses: psf/black@stable
+        uses: psf/black@6305bf1ae645ab7541be4f5028a86239316178eb
         with:
           options: "."
 
       - name: Run isort (apply changes)
-        uses: isort/isort-action@v1
+        uses: isort/isort-action@24d8a7a51d33ca7f36c3f23598dafa33f7071326
         with:
           requirements-files: ""
           sort-paths: "."
@@ -192,7 +192,7 @@ jobs:
 
         - name: Comment on PR with Full Pylint Report
           if: steps.check-pr.outputs.exists == 'true'
-          uses: peter-evans/create-or-update-comment@v4
+          uses: peter-evans/create-or-update-comment@f5b41f6a455733f2c5f73ca67a62631e75861578
           with:
             issue-number: ${{ steps.check-pr.outputs.number }}
             edit-mode: replace

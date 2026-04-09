@@ -12,7 +12,7 @@ def get_data(database):
     Fetch file size data from encoding_database
     """
     conn = sqlite3.connect(database)
-    query = "SELECT seq_id, seq_size, derivative_size FROM encoding_status WHERE status = 'MKV validation complete'"
+    query = "SELECT seq_id, seq_size, derivative_size FROM encoding_status WHERE status LIKE '%MKV validation complete'"
     df = pd.read_sql(query, conn)
     conn.close()
     return df
