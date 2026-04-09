@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
 
-RESOLUTION_ORDER = ["2K and under", "4K and under", "5K+", "Unknown"]
+RESOLUTION_ORDER = ["2K and under", "4K and under", "Over 4K", "Unknown"]
 
 def get_data(database):
     """
@@ -74,7 +74,7 @@ def categorize_resolution(width):
         return "2K and under"
     elif width <= 4096:
         return "4K and under"
-    return "5K+"
+    return "Over 4K"
 
 
 def categorize_bitdepth_colourspace(row):
@@ -324,7 +324,7 @@ def build_time_vs_size_scatter(df, cat_col):
         x="seq_size_gb",
         y="encoding_minutes",
         color=cat_col,
-        hover_data=["seq_id", "width", "height", "bitdepth"],
+        hover_data=["seq_id", "image_width", "image_height", "bitdepth"],
         title="Encoding Time vs Source File Size",
         labels={
             "seq_size_gb": "Source Size (GB)",
@@ -364,7 +364,7 @@ def render_category_detail(df, summary, cat_col, time_summary=None, sort_order=N
         cats = [c for c in sort_order if c in cats] + [
             c for c in cats if c not in sort_order
         ]
-    for cat in cats:
+    for idx, cat in enumerate(cats):
         with st.expander(f"🔍  {cat}"):
             sub = df[df[cat_col] == cat]
             row = summary[summary[cat_col] == cat].iloc[0]
@@ -398,7 +398,12 @@ def render_category_detail(df, summary, cat_col, time_summary=None, sort_order=N
                         format_duration(tr["max_minutes"]),
                     )
 
-            st.plotly_chart(build_detail_bar(sub), use_container_width=True)
+            st.plotly_chart(
+                build_detail_bar(sub),
+                use_container_width=True,
+                key=f"detail_bar_{cat_col}_{idx}",
+            )
+
 
 def main():
     st.set_page_config(
@@ -711,7 +716,7 @@ def main():
         display_df = filtered[
             [
                 "seq_id", "colourspace", "bitdepth",
-                "width", "height",
+                "image_width", "image_height",
                 "resolution_group", "bitdepth_cs",
                 "seq_size", "derivative_size",
                 "savings", "savings_pct",
