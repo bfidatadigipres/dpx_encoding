@@ -5,8 +5,40 @@ import sqlite3
 import time
 from contextlib import contextmanager
 from multiprocessing import Pool
-
 import dagster as dg
+
+ACCEPTED_COLS = [
+    "process_id",
+    "seq_id",
+    "status",
+    "folder_path",
+    "first_image",
+    "last_image",
+    "gaps_in_sequence",
+    "assessment_pass",
+    "assessment_complete",
+    "colourspace",
+    "seq_size",
+    "bitdepth",
+    "image_width",
+    "image_height",
+    "process_start",
+    "encoding_choice",
+    "encoding_log",
+    "encoding_retry",
+    "encoding_complete",
+    "derivative_path",
+    "derivative_size",
+    "derivative_md5",
+    "validation_complete",
+    "validation_success",
+    "error_message",
+    "last_updated",
+    "sequence_deleted",
+    "moved_to_autoingest",
+    "project",
+    "Instruction"
+]
 
 
 class ProcessPoolResource:
@@ -242,7 +274,9 @@ class SQLiteResource(dg.ConfigurableResource):
         """
         # Prepare column names and placeholders
         column_names = [arg_pair[0] for arg_pair in arguments] + ["last_updated"]
-        # placeholders = ", ".join(["?" for _ in range(len(column_names))])
+        for col in column_names:
+            if col not in ACCEPTED_COLS:
+                raise ValueError(f"Invalid column found in supplied columns: {col}"
         set_clause = ", ".join([f"{col} = ?" for col in column_names])
 
         # Prepare values
