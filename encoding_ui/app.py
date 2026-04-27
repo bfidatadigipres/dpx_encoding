@@ -23,8 +23,7 @@ def index():
 
 DBASE = os.environ.get("DATABASE")
 CONNECT = sqlite3.connect(DBASE)
-CONNECT.execute(
-    """
+CONNECT.execute("""
                 CREATE TABLE IF NOT EXISTS encoding_status (
                     process_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     seq_id TEXT NOT NULL,
@@ -57,8 +56,7 @@ CONNECT.execute(
                     project TEXT
                     Instruction TEXT
                 )
-            """
-)
+            """)
 
 
 @app.route("/reset_request", methods=["GET", "POST"])

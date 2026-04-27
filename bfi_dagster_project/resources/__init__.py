@@ -191,8 +191,7 @@ class SQLiteResource(dg.ConfigurableResource):
             cursor = conn.cursor()
 
             # Enable WAL mode for better concurrent access / busy time out / create table
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS encoding_status (
                     process_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     seq_id TEXT NOT NULL,
@@ -225,8 +224,7 @@ class SQLiteResource(dg.ConfigurableResource):
                     project TEXT,
                     Instruction TEXT
                 )
-            """
-            )
+            """)
             context.log.info("Database initialized at: %s", self.filepath)
 
     @with_retries()
