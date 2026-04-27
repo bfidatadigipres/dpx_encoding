@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
 
-RESOLUTION_ORDER = ["2K and under", "4K and under", "Over 4K", "Unknown"]
+RESOLUTION_ORDER = ["Up to 2K (2048)", "Over 2K / Up to 4K (4096)", "Over 4K (4097+)", "Unknown"]
 
 def get_data(database):
     """
@@ -71,10 +71,10 @@ def categorize_resolution(width):
         return "Unknown"
     width = int(width)
     if width <= 2048:
-        return "2K and under"
+        return "Up to 2K (2048)"
     elif width <= 4096:
-        return "4K and under"
-    return "Over 4K"
+        return "Over 2K / Up to 4K (4096)"
+    return "Over 4K (4097+)"
 
 
 def categorize_bitdepth_colourspace(row):
@@ -400,7 +400,7 @@ def render_category_detail(df, summary, cat_col, time_summary=None, sort_order=N
 
             st.plotly_chart(
                 build_detail_bar(sub),
-                use_container_width=True,
+                width='stretch',
                 key=f"detail_bar_{cat_col}_{idx}",
             )
 
@@ -511,7 +511,7 @@ def main():
             xaxis_title="Sequence", yaxis_title="Size (bytes)",
             barmode="group", hovermode="x unified", showlegend=True,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         pie = go.Figure(data=[go.Pie(
             labels=["Before (TB)", "After (TB)", "Savings (TB)"],
@@ -525,7 +525,7 @@ def main():
             textinfo="label+percent",
         )])
         pie.update_layout(title_text="Aggregate (TB)", showlegend=True)
-        st.plotly_chart(pie, use_container_width=True)
+        st.plotly_chart(pie, width='stretch')
         st.markdown(f"**Total sequences RAWcooked:** {total_files}")
 
     # ── TAB 2: Bit Depth & Colourspace ────────────────
@@ -542,7 +542,7 @@ def main():
                     summary_bd, "bitdepth_cs",
                     "Total Sizes by Bit Depth & Colourspace",
                 ),
-                use_container_width=True,
+                width='stretch',
             )
         with col_b:
             st.plotly_chart(
@@ -550,7 +550,7 @@ def main():
                     summary_bd, "bitdepth_cs",
                     "Average % Savings by Bit Depth & Colourspace",
                 ),
-                use_container_width=True,
+                width='stretch',
             )
 
         # Encoding time charts within this tab
@@ -563,7 +563,7 @@ def main():
                         time_summary_bd, "bitdepth_cs",
                         "Avg / Median Encoding Time",
                     ),
-                    use_container_width=True,
+                    width='stretch',
                 )
             with col_d:
                 st.plotly_chart(
@@ -571,7 +571,7 @@ def main():
                         time_summary_bd, "bitdepth_cs",
                         "Min / Avg / Max Encoding Time",
                     ),
-                    use_container_width=True,
+                    width='stretch',
                 )
 
         st.plotly_chart(
@@ -579,7 +579,7 @@ def main():
                 summary_bd, "bitdepth_cs",
                 "Sequence Count by Bit Depth & Colourspace",
             ),
-            use_container_width=True,
+            width='stretch',
         )
 
         st.subheader("Category Detail")
@@ -608,7 +608,7 @@ def main():
                     summary_res, "resolution_group",
                     "Total Sizes by Resolution Group",
                 ),
-                use_container_width=True,
+                width='stretch',
             )
         with col_b:
             st.plotly_chart(
@@ -616,7 +616,7 @@ def main():
                     summary_res, "resolution_group",
                     "Average % Savings by Resolution Group",
                 ),
-                use_container_width=True,
+                width='stretch',
             )
 
         if not time_summary_res.empty:
@@ -628,7 +628,7 @@ def main():
                         time_summary_res, "resolution_group",
                         "Avg / Median Encoding Time",
                     ),
-                    use_container_width=True,
+                    width='stretch',
                 )
             with col_d:
                 st.plotly_chart(
@@ -636,7 +636,7 @@ def main():
                         time_summary_res, "resolution_group",
                         "Min / Avg / Max Encoding Time",
                     ),
-                    use_container_width=True,
+                    width='stretch',
                 )
 
         st.plotly_chart(
@@ -644,7 +644,7 @@ def main():
                 summary_res, "resolution_group",
                 "Sequence Count by Resolution Group",
             ),
-            use_container_width=True,
+            width='stretch',
         )
 
         st.subheader("Category Detail")
@@ -677,7 +677,7 @@ def main():
                 "Encoding Time Distribution by Bit Depth & Colourspace",
             )
             if box_fig:
-                st.plotly_chart(box_fig, use_container_width=True)
+                st.plotly_chart(box_fig, width='stretch')
 
             # Box plot by resolution
             box_fig_res = build_time_box(
@@ -685,12 +685,12 @@ def main():
                 "Encoding Time Distribution by Resolution Group",
             )
             if box_fig_res:
-                st.plotly_chart(box_fig_res, use_container_width=True)
+                st.plotly_chart(box_fig_res, width='stretch')
 
             # Scatter: size vs time coloured by bitdepth/cs
             scatter_fig = build_time_vs_size_scatter(filtered, "bitdepth_cs")
             if scatter_fig:
-                st.plotly_chart(scatter_fig, use_container_width=True)
+                st.plotly_chart(scatter_fig, width='stretch')
 
             # Per-sequence encoding time bar
             st.subheader("Per-Sequence Encoding Duration")
@@ -708,7 +708,7 @@ def main():
                 yaxis_title="Duration (minutes)",
                 showlegend=False,
             )
-            st.plotly_chart(time_bar, use_container_width=True)
+            st.plotly_chart(time_bar, width='stretch')
 
     # ── TAB 5: Data Table ─────────────────────────────
     with tab5:
@@ -733,7 +733,7 @@ def main():
             "Encoding Start", "Encoding End",
             "Encoding (min)",
         ]
-        st.dataframe(display_df, use_container_width=True, height=600)
+        st.dataframe(display_df, width='stretch', height=600)
 
 
 if __name__ == "__main__":
