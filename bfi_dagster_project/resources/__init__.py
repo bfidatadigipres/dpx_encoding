@@ -5,6 +5,7 @@ import sqlite3
 import time
 from contextlib import contextmanager
 from multiprocessing import Pool
+
 import dagster as dg
 
 ACCEPTED_COLS = [
@@ -37,7 +38,7 @@ ACCEPTED_COLS = [
     "sequence_deleted",
     "moved_to_autoingest",
     "project",
-    "Instruction"
+    "Instruction",
 ]
 
 
@@ -274,7 +275,9 @@ class SQLiteResource(dg.ConfigurableResource):
         column_names = [arg_pair[0] for arg_pair in arguments] + ["last_updated"]
         for col in column_names:
             if col not in ACCEPTED_COLS:
-                raise ValueError(f"Invalid column name found in supplied columns: {col}")
+                raise ValueError(
+                    f"Invalid column name found in supplied columns: {col}"
+                )
         set_clause = ", ".join([f"{col} = ?" for col in column_names])
 
         # Prepare values
