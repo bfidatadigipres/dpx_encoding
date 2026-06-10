@@ -104,10 +104,10 @@ def recursive_chmod(tpath):
     os.chmod(tpath, 0o777)
     for root, dirs, files in os.walk(tpath):
         for dir in dirs:
-            dpath = os.path.join(tpath, dir)
+            dpath = os.path.join(root, dir)
             os.chmod(dpath, 0o777)
         for file in files:
-            fpath = os.path.join(tpath, file)
+            fpath = os.path.join(root, file)
             os.chmod(fpath, 0o777)
 
 
@@ -258,10 +258,23 @@ def main():
                 log_list.append(
                     f"{str(datetime.datetime.now())[:10]}\tMD5 manifest extracted from TAR file for comparison"
                 )
-
                 for k, v in manifest_contents.items():
                     if local_manifest.get(k) == v:
                         print(f"MD5 match: {k}")
+                    elif "ASSETMAP.xml" in k:
+                        for key, value in local_manifest.items():
+                            if key.endswith("ASSETMAP.xml"):
+                                if value == v:
+                                    print(f"MD5 match: {k} - {key}")
+                                else:
+                                    match = False
+                    elif "VOLINDEX.xml" in k:
+                        for key, value in local_manifest.items():
+                            if key.endswith("VOLINDEX.xml"):
+                                if value == v:
+                                    print(f"MD5 match: {k} - {key}")
+                                else:
+                                    match = False
                     else:
                         print(f"MD5 does not match: {k}")
                         match = False
