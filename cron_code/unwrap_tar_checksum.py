@@ -144,25 +144,38 @@ def main():
         log_list.append(
             f"{str(datetime.datetime.now())[:10]}\tAttempting extraction using Linux TAR programme..."
         )
-        tic = time.perf_counter()
-        untar_fpath = linux_untar_file(fpath)
-        toc = time.perf_counter()
-        minutes_taken = (toc - tic) // 60
+        
+        manifest_name = f"{fname}_tar_manifest.md5"
+        data = tarfile.open(fpath)
+        if manifest_name in data.getnames():
+            LOGGER.info("Python TAR file needs tarfile extraction - manifest %s matched in TAR", manifest_name)
+            extraction_method = "tarfile"
+        else:
+            LOGGER.info("Linux TAR extraction selected - no manifest found in TAR file")
+            extraction_method = "linux"
 
-        if not untar_fpath:
-            LOGGER.warning(
-                "Unwrapping failed with Linux TAR. Adding to Python tarfile retry list."
+        extraction_failed = False        
+        if extraction_method == "linux":
+            log_list.append(
+                f"{str(datetime.datetime.now())[:10]}\tLinux TAR selected for extraction and starting"
             )
+            tic = time.perf_counter()
+            untar_fpath = linux_untar_file(fpath)
+            toc = time.perf_counter()
+            minutes_taken = (toc - tic) // 60
+            if not untar_fpath:
+                extraction_failed = True
+                LOGGER.warning(
+                    "Unwrapping failed with Linux TAR."
+                )
+
+        elif extraction_method == "tarfile":
             untar_file = fname.split(".tar")[0]
             untar_fpath = os.path.join(UNTAR_PATH, untar_file)
             if not os.path.exists(untar_fpath):
                 os.makedirs(untar_fpath, mode=0o777, exist_ok=True)
             log_list.append(
-                f"{str(datetime.datetime.now())[:10]}\tLinux TAR extraction failed... trying with Python tarfile"
-            )
-            LOGGER.warning(
-                "Unwrapped folder/file not found. Adding to Python tarfile retry list: %s",
-                untar_file,
+                f"{str(datetime.datetime.now())[:10]}\tPython tarfile selected and starting"
             )
             LOGGER.info("Attemping Python tarfile unwrap now...")
 
@@ -172,52 +185,58 @@ def main():
             toc = time.perf_counter()
             minutes_taken = (toc - tic) // 60
             if not py_success:
+                extraction_failed = True
                 LOGGER.warning(
                     "Python tarfile has failed to extract content of TAR. Script exiting, TAR needs manual assistance."
                 )
-                shutil.move(fpath, FAILED)
-                error_mssg1 = f"Linux TAR and Python tarfile cannot extract data. Please try alternative software. File location: {fpath}"
-                error_mssg2 = None
-                error_log(
-                    os.path.join(FAILED, f"{fname_log}_errors.log"),
-                    error_mssg1,
-                    error_mssg2,
-                )
-                if os.path.exists(untar_fpath) and not os.listdir(untar_fpath):
-                    LOGGER.info(
-                        "Moved TAR to failed/ folder. Deleted empty folder: %s",
-                        untar_file,
-                    )
-                    log_list.append(
-                        f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Deleted empty extraction folder: {untar_file}"
-                    )
-                    os.rmdir(untar_fpath)
-                elif os.path.exist(untar_fpath) and os.listdir(untar_fpath):
-                    LOGGER.info(
-                        "Moved TAR to failed/ folder. Folder %s has contents, moving to failed/ folder for review",
-                        untar_file,
-                    )
-                    log_list.append(
-                        f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Folder {untar_file} has contents. Moving to failed/ folder for review"
-                    )
-                    shutil.move(untar_fpath, FAILED)
-                log_list.append(
-                    f"{str(datetime.datetime.now())[:10]}\tSkipping further actions for {fname}. Manual assistance needed"
+
+        if extraction_failed is True:
+            shutil.move(fpath, FAILED)
+            error_mssg1 = f"Linux TAR / Python tarfile cannot extract data. Please contact KLC Developers for review. File location: {fpath}"
+            error_mssg2 = None
+            error_log(
+                os.path.join(FAILED, f"{fname_log}_errors.log"),
+                error_mssg1,
+                error_mssg2,
+            )
+            if os.path.exists(untar_fpath) and not os.listdir(untar_fpath):
+                LOGGER.info(
+                    "Moved TAR to failed/ folder. Deleted empty folder: %s",
+                    untar_file,
                 )
                 log_list.append(
-                    f"{str(datetime.datetime.now())[:10]}\t-------------------------------------------------------------------"
+                    f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Deleted empty extraction folder: {untar_file}"
                 )
-                LOGGER.warning(
-                    "Skipping futher actions for %s, TAR needs manual assistance.",
-                    fname,
+                os.rmdir(untar_fpath)
+            elif os.path.exist(untar_fpath) and os.listdir(untar_fpath):
+                LOGGER.info(
+                    "Moved TAR to failed/ folder. Folder %s has contents, moving to failed/ folder for review",
+                    untar_file,
                 )
-                build_log(log_list)
-                continue
+                log_list.append(
+                    f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Folder {untar_file} has contents. Moving to failed/ folder for review"
+                )
+                shutil.move(untar_fpath, FAILED)
+            log_list.append(
+                f"{str(datetime.datetime.now())[:10]}\tSkipping further actions for {fname}. Manual assistance needed"
+            )
+            log_list.append(
+                f"{str(datetime.datetime.now())[:10]}\t-------------------------------------------------------------------"
+            )
+            LOGGER.warning(
+                "Skipping futher actions for %s, TAR needs manual assistance.",
+                fname,
+            )
+            build_log(log_list)
+            continue
+
+        # Success actions
+        os.chmod(untar_fpath, 0o777)
+
+        if extraction_method == "tarfile":
             LOGGER.info("Python tarfile extracted file to path: %s", untar_fpath)
         else:
             LOGGER.info("Linux TAR programme extracted file to path: %s", untar_fpath)
-
-        os.chmod(untar_fpath, 0o777)
         log_list.append(
             f"{str(datetime.datetime.now())[:10]}\tExtracted TAR file successful: {untar_fpath}"
         )
@@ -226,52 +245,54 @@ def main():
         )
         LOGGER.info("It took %s minutes to perform this extraction.", minutes_taken)
 
-        # Build checksum manifest of un_tarred file
-        local_manifest = get_checksum(untar_fpath)
-        local_manifest_path = dump_to_file(untar_fpath, local_manifest)
-        log_list.append(
-            f"{str(datetime.datetime.now())[:10]}\tGenerating local MD5 manifest for extracted data: {local_manifest_path}"
-        )
-
-        # Fetch enclosed MD5 manifest if present
-        md5_manifest = os.path.join(untar_fpath, f"{fname}_manifest.md5")
-        if os.path.exists(md5_manifest):
-            match = True
-            LOGGER.info("MD5 manifest for untar item exists: %s", md5_manifest)
-            manifest_contents = fetch_checksum_dict(md5_manifest)
+        # Do manifest assessment
+        if extraction_method == "tarfile":
+            # Build checksum manifest of un_tarred file
+            local_manifest = get_checksum(untar_fpath)
+            local_manifest_path = dump_to_file(untar_fpath, local_manifest)
             log_list.append(
-                f"{str(datetime.datetime.now())[:10]}\tMD5 manifest extracted from TAR file for comparison"
+                f"{str(datetime.datetime.now())[:10]}\tGenerating local MD5 manifest for extracted data: {local_manifest_path}"
             )
 
-            for k, v in manifest_contents.items():
-                if local_manifest.get(k) == v:
-                    print(f"MD5 match: {k}")
-                else:
-                    print(f"MD5 does not match: {k}")
-                    match = False
+            # Fetch enclosed MD5 manifest if present
+            md5_manifest = os.path.join(untar_fpath, f"{fname}_manifest.md5")
+            if os.path.exists(md5_manifest):
+                match = True
+                LOGGER.info("MD5 manifest for untar item exists: %s", md5_manifest)
+                manifest_contents = fetch_checksum_dict(md5_manifest)
+                log_list.append(
+                    f"{str(datetime.datetime.now())[:10]}\tMD5 manifest extracted from TAR file for comparison"
+                )
 
-            if match:
-                log_list.append(
-                    f"{str(datetime.datetime.now())[:10]}\tLocal manifest matches extracted MD5 manifest. File identical to preservation original."
-                )
-                LOGGER.info(
-                    "MD5 manifest matches local MD5 manifest. Bit perfect restoration of TARRED file."
-                )
-            else:
-                LOGGER.info(
-                    "MD5 manifest does not match all items. See manifest for details: %s",
-                    local_manifest_path,
-                )
-                log_list.append(
-                    f"{str(datetime.datetime.now())[:10]}\tMD5 manifest cannot be fully matched to extracted MD5 manifest."
-                )
-                error_mssg1 = f"MD5 manifests do not match from TAR file, and unwrapped TAR folder contents: {local_manifest_path}"
-                error_mssg2 = None
-                error_log(
-                    os.path.join(FAILED, f"{fname_log}_errors.log"),
-                    error_mssg1,
-                    error_mssg2,
-                )
+                for k, v in manifest_contents.items():
+                    if local_manifest.get(k) == v:
+                        print(f"MD5 match: {k}")
+                    else:
+                        print(f"MD5 does not match: {k}")
+                        match = False
+
+                if match:
+                    log_list.append(
+                        f"{str(datetime.datetime.now())[:10]}\tLocal manifest matches extracted MD5 manifest. File identical to preservation original."
+                    )
+                    LOGGER.info(
+                        "MD5 manifest matches local MD5 manifest. Bit perfect restoration of TARRED file."
+                    )
+                else:
+                    LOGGER.info(
+                        "MD5 manifest does not match all items. See manifest for details: %s",
+                        local_manifest_path,
+                    )
+                    log_list.append(
+                        f"{str(datetime.datetime.now())[:10]}\tMD5 manifest cannot be fully matched to extracted MD5 manifest."
+                    )
+                    error_mssg1 = f"MD5 manifests do not match from TAR file, and unwrapped TAR folder contents: {local_manifest_path}"
+                    error_mssg2 = None
+                    error_log(
+                        os.path.join(FAILED, f"{fname_log}_errors.log"),
+                        error_mssg1,
+                        error_mssg2,
+                    )
         else:
             LOGGER.info(
                 "MD5 manifest was not extracted from TAR file. No comparison possible."
