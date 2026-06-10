@@ -113,10 +113,20 @@
           <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
         </policy>
       </policy>
+      <policy type="or" name="16-bit RGBA Big endian">
+        <policy type="and" name="Image tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Image" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="=">RGBA</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Image" occurrence="*" operator="=">Big</rule>
+        </policy>
+        <policy type="and" name="Video tracktype">
+          <rule name="BitDepth is 16" value="BitDepth" tracktype="Video" occurrence="*" operator="=">16</rule>
+          <rule name="Colorspace is RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="=">RGBA</rule>
+          <rule name="Endianness is big" value="Format_Settings_Endianness" tracktype="Video" occurrence="*" operator="=">Big</rule>
+        </policy>
+      </policy>
     </policy>
-    <policy type="or" name="Ensure no Alpha present with RGB">
-      <rule name="Colorspace is not RGBA" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGBA</rule>
-      <rule name="Colorspace is not RGBA" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGBA</rule>
+    <policy type="or" name="Ensure no unsupported Alpha present with RGB">
       <rule name="Colorspace is not RGB / A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB / A</rule>
       <rule name="Colorspace is not RGB / A" value="ColorSpace" tracktype="Video" occurrence="*" operator="!=">RGB / A</rule>
       <rule name="Colorspace is not RGB/A" value="ColorSpace" tracktype="Image" occurrence="*" operator="!=">RGB/A</rule>

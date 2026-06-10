@@ -434,7 +434,7 @@ def tar_validate(fullpath):
             os.makedirs(cpath, exist_ok=True, mode=0o777)
         shutil.move(dpath, os.path.join(cpath, seq))
         log_data.append(f"Image sequence moved to {cpath}")
-        success = utils.delete_sequence(dpath)
+        success = utils.delete_sequence(os.path.join(cpath, seq))
         seq_del = "No"
         if success:
             seq_del = "Yes"

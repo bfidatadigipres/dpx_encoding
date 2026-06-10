@@ -473,7 +473,7 @@ def delete_sequence(sequence_path: str) -> bool:
     """
     Delete an image sequence and any associated files.
     """
-    if not os.path.exists(sequence_path):
+    if not os.path.isdir(sequence_path):
         return None
     try:
         shutil.rmtree(sequence_path)
