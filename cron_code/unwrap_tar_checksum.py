@@ -96,6 +96,21 @@ def python_tarfile(fpath, untar_fpath):
         return True
 
 
+def recursive_chmod(tpath):
+    """
+    For untarred item contents
+    to make them accessible to all
+    """
+    os.chmod(tpath, 0o777)
+    for root, dirs, files in os.walk(tpath):
+        for dir in dirs:
+            dpath = os.path.join(tpath, dir)
+            os.chmod(dpath, 0o777)
+        for file in files:
+            fpath = os.path.join(tpath, file)
+            os.chmod(fpath, 0o777)
+
+
 def main():
     """
     Check unwrap_tar path and iterate contents unwrapping/checksum
@@ -107,46 +122,26 @@ def main():
 
     log_list = []
     tar_files = [
-        x for x in os.listdir(UNTAR_PATH) if os.path.isfile(os.path.join(UNTAR_PATH, x))
+        x for x in os.listdir(UNTAR_PATH) if x.endswith((".tar", ".TAR"))
     ]
     if len(tar_files) == 0:
         sys.exit(f"{UNTAR_PATH} EMPTY. SCRIPT EXITING.")
 
-    LOGGER.info(f"========= UNWRAP TAR SCRIPT {TARGET} START =====================")
+    LOGGER.info("========= UNWRAP TAR SCRIPT %s START =====================", TARGET)
 
     for fname in tar_files:
         fname_log = fname.split(".")[0]
-        if "unwrapped_tar_checksum.log" in str(fname):
-            continue
-        if fname.endswith(".md5"):
-            continue
-        if not fname.endswith((".tar", ".TAR")):
-            log_list.append(
-                f"{str(datetime.datetime.now())[:10]}\tSKIPPING - File is not a TAR file: {fname}."
-            )
-            log_list.append(
-                f"{str(datetime.datetime.now())[:10]}\tPlease remove non TAR files from 'unwrap_tar' folder."
-            )
-            LOGGER.info("Skipping file, not a TAR: %s", fname)
-            error_mssg1 = "File/folder placed in unwrap_tar/ folder is not a TAR file. Please remove this item from this path"
-            error_mssg2 = None
-            error_log(
-                os.path.join(FAILED, f"{fname_log}_errors.log"),
-                error_mssg1,
-                error_mssg2,
-            )
-            build_log(log_list)
-            continue
-
         fpath = os.path.join(UNTAR_PATH, fname)
         log_list.append(f"{str(datetime.datetime.now())[:10]}\tNew file found: {fpath}")
         LOGGER.info("File found to process: %s", fname)
         log_list.append(
             f"{str(datetime.datetime.now())[:10]}\tAttempting extraction using Linux TAR programme..."
         )
-        
-        manifest_name = f"{fname}_tar_manifest.md5"
+
+        manifest_name = f"{fname}_manifest.md5"
+        print(manifest_name, fname)
         data = tarfile.open(fpath)
+        print(data.getnames())
         if manifest_name in data.getnames():
             LOGGER.info("Python TAR file needs tarfile extraction - manifest %s matched in TAR", manifest_name)
             extraction_method = "tarfile"
@@ -154,7 +149,7 @@ def main():
             LOGGER.info("Linux TAR extraction selected - no manifest found in TAR file")
             extraction_method = "linux"
 
-        extraction_failed = False        
+        extraction_failed = False
         if extraction_method == "linux":
             log_list.append(
                 f"{str(datetime.datetime.now())[:10]}\tLinux TAR selected for extraction and starting"
@@ -169,7 +164,7 @@ def main():
                     "Unwrapping failed with Linux TAR."
                 )
 
-        elif extraction_method == "tarfile":
+        else:
             untar_file = fname.split(".tar")[0]
             untar_fpath = os.path.join(UNTAR_PATH, untar_file)
             if not os.path.exists(untar_fpath):
@@ -208,7 +203,7 @@ def main():
                     f"{str(datetime.datetime.now())[:10]}\tMoved TAR to failed/ folder. Deleted empty extraction folder: {untar_file}"
                 )
                 os.rmdir(untar_fpath)
-            elif os.path.exist(untar_fpath) and os.listdir(untar_fpath):
+            elif os.path.exists(untar_fpath) and os.listdir(untar_fpath):
                 LOGGER.info(
                     "Moved TAR to failed/ folder. Folder %s has contents, moving to failed/ folder for review",
                     untar_file,
@@ -231,7 +226,7 @@ def main():
             continue
 
         # Success actions
-        os.chmod(untar_fpath, 0o777)
+        recursive_chmod(untar_fpath)
 
         if extraction_method == "tarfile":
             LOGGER.info("Python tarfile extracted file to path: %s", untar_fpath)
