@@ -121,9 +121,7 @@ def main():
         sys.exit(f"Exiting: Error with supplied path: {UNTAR_PATH}")
 
     log_list = []
-    tar_files = [
-        x for x in os.listdir(UNTAR_PATH) if x.endswith((".tar", ".TAR"))
-    ]
+    tar_files = [x for x in os.listdir(UNTAR_PATH) if x.endswith((".tar", ".TAR"))]
     if len(tar_files) == 0:
         sys.exit(f"{UNTAR_PATH} EMPTY. SCRIPT EXITING.")
 
@@ -143,7 +141,10 @@ def main():
         data = tarfile.open(fpath)
         print(data.getnames())
         if manifest_name in data.getnames():
-            LOGGER.info("Python TAR file needs tarfile extraction - manifest %s matched in TAR", manifest_name)
+            LOGGER.info(
+                "Python TAR file needs tarfile extraction - manifest %s matched in TAR",
+                manifest_name,
+            )
             extraction_method = "tarfile"
         else:
             LOGGER.info("Linux TAR extraction selected - no manifest found in TAR file")
@@ -160,9 +161,7 @@ def main():
             minutes_taken = (toc - tic) // 60
             if not untar_fpath:
                 extraction_failed = True
-                LOGGER.warning(
-                    "Unwrapping failed with Linux TAR."
-                )
+                LOGGER.warning("Unwrapping failed with Linux TAR.")
 
         else:
             untar_file = fname.split(".tar")[0]

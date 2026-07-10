@@ -3,11 +3,17 @@ import sqlite3
 import sys
 
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
-RESOLUTION_ORDER = ["Up to 2K (2048)", "Over 2K / Up to 4K (4096)", "Over 4K (4097+)", "Unknown"]
+RESOLUTION_ORDER = [
+    "Up to 2K (2048)",
+    "Over 2K / Up to 4K (4096)",
+    "Over 4K (4097+)",
+    "Unknown",
+]
+
 
 def get_data(database):
     """
@@ -38,9 +44,7 @@ def get_data(database):
 def calculate_savings(df):
     """Absolute and percentage savings."""
     df["savings"] = df["seq_size"] - df["derivative_size"]
-    df["savings_pct"] = (
-        (df["savings"] / df["seq_size"]) * 100
-    ).round(2)
+    df["savings_pct"] = ((df["savings"] / df["seq_size"]) * 100).round(2)
     return df
 
 
@@ -56,12 +60,8 @@ def calculate_encoding_times(df):
         df["encoding_complete"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
     )
     df["encoding_duration"] = df["encoding_end"] - df["encoding_start"]
-    df["encoding_minutes"] = (
-        df["encoding_duration"].dt.total_seconds() / 60
-    ).round(2)
-    df["encoding_hours"] = (
-        df["encoding_duration"].dt.total_seconds() / 3600
-    ).round(4)
+    df["encoding_minutes"] = (df["encoding_duration"].dt.total_seconds() / 60).round(2)
+    df["encoding_hours"] = (df["encoding_duration"].dt.total_seconds() / 3600).round(4)
     return df
 
 
@@ -175,29 +175,48 @@ def make_time_summary(df, cat_col):
 def build_category_bar(summary, cat_col, title):
     """Grouped bar: before / after / savings in TB per category."""
     s = summary.copy()
-    s["before_tb"]  = s["total_before"]  / (1024 ** 4)
-    s["after_tb"]   = s["total_after"]   / (1024 ** 4)
-    s["savings_tb"] = s["total_savings"] / (1024 ** 4)
+    s["before_tb"] = s["total_before"] / (1024**4)
+    s["after_tb"] = s["total_after"] / (1024**4)
+    s["savings_tb"] = s["total_savings"] / (1024**4)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=s[cat_col], y=s["before_tb"],
-        name="Before (TB)", marker_color="#3b82f6",
-        text=s["before_tb"].round(2), textposition="outside",
-    ))
-    fig.add_trace(go.Bar(
-        x=s[cat_col], y=s["after_tb"],
-        name="After (TB)", marker_color="#eab308",
-        text=s["after_tb"].round(2), textposition="outside",
-    ))
-    fig.add_trace(go.Bar(
-        x=s[cat_col], y=s["savings_tb"],
-        name="Savings (TB)", marker_color="#ef4444",
-        text=s["savings_tb"].round(2), textposition="outside",
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=s[cat_col],
+            y=s["before_tb"],
+            name="Before (TB)",
+            marker_color="#3b82f6",
+            text=s["before_tb"].round(2),
+            textposition="outside",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=s[cat_col],
+            y=s["after_tb"],
+            name="After (TB)",
+            marker_color="#eab308",
+            text=s["after_tb"].round(2),
+            textposition="outside",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=s[cat_col],
+            y=s["savings_tb"],
+            name="Savings (TB)",
+            marker_color="#ef4444",
+            text=s["savings_tb"].round(2),
+            textposition="outside",
+        )
+    )
     fig.update_layout(
-        title=title, xaxis_title="Category", yaxis_title="Size (TB)",
-        barmode="group", hovermode="x unified", showlegend=True,
+        title=title,
+        xaxis_title="Category",
+        yaxis_title="Size (TB)",
+        barmode="group",
+        hovermode="x unified",
+        showlegend=True,
     )
     return fig
 
@@ -205,15 +224,20 @@ def build_category_bar(summary, cat_col, title):
 def build_pct_bar(summary, cat_col, title):
     """Bar chart of average percentage savings per category."""
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=summary[cat_col], y=summary["avg_savings_pct"],
-        marker_color="#22c55e",
-        text=summary["avg_savings_pct"].round(1).astype(str) + " %",
-        textposition="outside",
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=summary[cat_col],
+            y=summary["avg_savings_pct"],
+            marker_color="#22c55e",
+            text=summary["avg_savings_pct"].round(1).astype(str) + " %",
+            textposition="outside",
+        )
+    )
     fig.update_layout(
-        title=title, xaxis_title="Category",
-        yaxis_title="Average Savings (%)", showlegend=False,
+        title=title,
+        xaxis_title="Category",
+        yaxis_title="Average Savings (%)",
+        showlegend=False,
         yaxis_range=[0, max(100, summary["avg_savings_pct"].max() + 10)],
     )
     return fig
@@ -221,10 +245,16 @@ def build_pct_bar(summary, cat_col, title):
 
 def build_count_pie(summary, cat_col, title):
     """Donut chart showing sequence count per category."""
-    fig = go.Figure(data=[go.Pie(
-        labels=summary[cat_col], values=summary["count"],
-        hole=0.4, textinfo="label+value+percent",
-    )])
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=summary[cat_col],
+                values=summary["count"],
+                hole=0.4,
+                textinfo="label+value+percent",
+            )
+        ]
+    )
     fig.update_layout(title_text=title, showlegend=True)
     return fig
 
@@ -232,21 +262,36 @@ def build_count_pie(summary, cat_col, title):
 def build_detail_bar(sub_df):
     """Per-sequence bar chart for a filtered subset."""
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=sub_df["seq_id"], y=sub_df["seq_size"],
-        name="Before", marker_color="#3b82f6",
-    ))
-    fig.add_trace(go.Bar(
-        x=sub_df["seq_id"], y=sub_df["derivative_size"],
-        name="After", marker_color="#eab308",
-    ))
-    fig.add_trace(go.Bar(
-        x=sub_df["seq_id"], y=sub_df["savings"],
-        name="Savings", marker_color="#ef4444",
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=sub_df["seq_id"],
+            y=sub_df["seq_size"],
+            name="Before",
+            marker_color="#3b82f6",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=sub_df["seq_id"],
+            y=sub_df["derivative_size"],
+            name="After",
+            marker_color="#eab308",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=sub_df["seq_id"],
+            y=sub_df["savings"],
+            name="Savings",
+            marker_color="#ef4444",
+        )
+    )
     fig.update_layout(
-        barmode="group", hovermode="x unified", height=360,
-        xaxis_title="Sequence", yaxis_title="Size (bytes)",
+        barmode="group",
+        hovermode="x unified",
+        height=360,
+        xaxis_title="Sequence",
+        yaxis_title="Size (bytes)",
     )
     return fig
 
@@ -254,26 +299,33 @@ def build_detail_bar(sub_df):
 def build_avg_time_bar(time_summary, cat_col, title):
     """Grouped bar: average and median encoding time per category."""
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=time_summary[cat_col],
-        y=time_summary["avg_minutes"],
-        name="Average (min)",
-        marker_color="#8b5cf6",
-        text=time_summary["avg_minutes"].round(1),
-        textposition="outside",
-    ))
-    fig.add_trace(go.Bar(
-        x=time_summary[cat_col],
-        y=time_summary["median_minutes"],
-        name="Median (min)",
-        marker_color="#06b6d4",
-        text=time_summary["median_minutes"].round(1),
-        textposition="outside",
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=time_summary[cat_col],
+            y=time_summary["avg_minutes"],
+            name="Average (min)",
+            marker_color="#8b5cf6",
+            text=time_summary["avg_minutes"].round(1),
+            textposition="outside",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=time_summary[cat_col],
+            y=time_summary["median_minutes"],
+            name="Median (min)",
+            marker_color="#06b6d4",
+            text=time_summary["median_minutes"].round(1),
+            textposition="outside",
+        )
+    )
     fig.update_layout(
-        title=title, xaxis_title="Category",
+        title=title,
+        xaxis_title="Category",
         yaxis_title="Encoding Time (minutes)",
-        barmode="group", hovermode="x unified", showlegend=True,
+        barmode="group",
+        hovermode="x unified",
+        showlegend=True,
     )
     return fig
 
@@ -281,34 +333,43 @@ def build_avg_time_bar(time_summary, cat_col, title):
 def build_time_range_bar(time_summary, cat_col, title):
     """Bar with min/max range and average marker per category."""
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=time_summary[cat_col],
-        y=time_summary["max_minutes"],
-        name="Max (min)",
-        marker_color="rgba(239, 68, 68, 0.4)",
-        text=time_summary["max_minutes"].round(1),
-        textposition="outside",
-    ))
-    fig.add_trace(go.Bar(
-        x=time_summary[cat_col],
-        y=time_summary["avg_minutes"],
-        name="Average (min)",
-        marker_color="#8b5cf6",
-        text=time_summary["avg_minutes"].round(1),
-        textposition="outside",
-    ))
-    fig.add_trace(go.Bar(
-        x=time_summary[cat_col],
-        y=time_summary["min_minutes"],
-        name="Min (min)",
-        marker_color="rgba(34, 197, 94, 0.6)",
-        text=time_summary["min_minutes"].round(1),
-        textposition="outside",
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=time_summary[cat_col],
+            y=time_summary["max_minutes"],
+            name="Max (min)",
+            marker_color="rgba(239, 68, 68, 0.4)",
+            text=time_summary["max_minutes"].round(1),
+            textposition="outside",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=time_summary[cat_col],
+            y=time_summary["avg_minutes"],
+            name="Average (min)",
+            marker_color="#8b5cf6",
+            text=time_summary["avg_minutes"].round(1),
+            textposition="outside",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=time_summary[cat_col],
+            y=time_summary["min_minutes"],
+            name="Min (min)",
+            marker_color="rgba(34, 197, 94, 0.6)",
+            text=time_summary["min_minutes"].round(1),
+            textposition="outside",
+        )
+    )
     fig.update_layout(
-        title=title, xaxis_title="Category",
+        title=title,
+        xaxis_title="Category",
         yaxis_title="Encoding Time (minutes)",
-        barmode="group", hovermode="x unified", showlegend=True,
+        barmode="group",
+        hovermode="x unified",
+        showlegend=True,
     )
     return fig
 
@@ -318,7 +379,7 @@ def build_time_vs_size_scatter(df, cat_col):
     valid = df.dropna(subset=["encoding_minutes"]).copy()
     if valid.empty:
         return None
-    valid["seq_size_gb"] = valid["seq_size"] / (1024 ** 3)
+    valid["seq_size_gb"] = valid["seq_size"] / (1024**3)
     fig = px.scatter(
         valid,
         x="seq_size_gb",
@@ -400,7 +461,7 @@ def render_category_detail(df, summary, cat_col, time_summary=None, sort_order=N
 
             st.plotly_chart(
                 build_detail_bar(sub),
-                width='stretch',
+                width="stretch",
                 key=f"detail_bar_{cat_col}_{idx}",
             )
 
@@ -423,9 +484,7 @@ def main():
             df = calculate_savings(df)
             df = calculate_encoding_times(df)
             df["resolution_group"] = df["image_width"].apply(categorize_resolution)
-            df["bitdepth_cs"] = df.apply(
-                categorize_bitdepth_colourspace, axis=1
-            )
+            df["bitdepth_cs"] = df.apply(categorize_bitdepth_colourspace, axis=1)
             st.session_state["df"] = df
         except Exception as err:
             st.error(f"Error loading data: {err}")
@@ -442,18 +501,12 @@ def main():
         st.header("Filters")
 
         all_bd = sorted(df["bitdepth_cs"].unique())
-        sel_bd = st.multiselect(
-            "Bit Depth / Colourspace", all_bd, default=all_bd
-        )
+        sel_bd = st.multiselect("Bit Depth / Colourspace", all_bd, default=all_bd)
 
         all_res = [r for r in RESOLUTION_ORDER if r in df["resolution_group"].unique()]
-        sel_res = st.multiselect(
-            "Resolution Group", all_res, default=all_res
-        )
+        sel_res = st.multiselect("Resolution Group", all_res, default=all_res)
 
-    filtered = df[
-        df["bitdepth_cs"].isin(sel_bd) & df["resolution_group"].isin(sel_res)
-    ]
+    filtered = df[df["bitdepth_cs"].isin(sel_bd) & df["resolution_group"].isin(sel_res)]
 
     if filtered.empty:
         st.warning("No data matches the current filter selection.")
@@ -461,11 +514,11 @@ def main():
 
     # ── Top-level metrics ─────────────────────────────
     total_before = filtered["seq_size"].sum()
-    total_after  = filtered["derivative_size"].sum()
-    total_saved  = filtered["savings"].sum()
-    avg_pct      = filtered["savings_pct"].mean()
-    total_files  = filtered["seq_id"].nunique()
-    valid_times  = filtered["encoding_minutes"].dropna()
+    total_after = filtered["derivative_size"].sum()
+    total_saved = filtered["savings"].sum()
+    avg_pct = filtered["savings_pct"].mean()
+    total_files = filtered["seq_id"].nunique()
+    valid_times = filtered["encoding_minutes"].dropna()
     avg_enc_time = valid_times.mean() if not valid_times.empty else None
 
     m1, m2, m3, m4, m5, m6 = st.columns(6)
@@ -480,52 +533,76 @@ def main():
     )
 
     # ── Tabs ──────────────────────────────────────────
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 Overall Savings",
-        "🎨 Bit Depth & Colourspace",
-        "📐 Resolution Group",
-        "⏱️ Encoding Times",
-        "📋 Data Table",
-    ])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        [
+            "📊 Overall Savings",
+            "🎨 Bit Depth & Colourspace",
+            "📐 Resolution Group",
+            "⏱️ Encoding Times",
+            "📋 Data Table",
+        ]
+    )
 
     # ── TAB 1: Overall ────────────────────────────────
     with tab1:
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=filtered["seq_id"], y=filtered["seq_size"],
-            name="Before (bytes)", marker_color="#3b82f6",
-            text=filtered["seq_size"], textposition="outside",
-        ))
-        fig.add_trace(go.Bar(
-            x=filtered["seq_id"], y=filtered["derivative_size"],
-            name="After (bytes)", marker_color="#eab308",
-            text=filtered["derivative_size"], textposition="outside",
-        ))
-        fig.add_trace(go.Bar(
-            x=filtered["seq_id"], y=filtered["savings"],
-            name="Savings (bytes)", marker_color="#ef4444",
-            text=filtered["savings"], textposition="outside",
-        ))
+        fig.add_trace(
+            go.Bar(
+                x=filtered["seq_id"],
+                y=filtered["seq_size"],
+                name="Before (bytes)",
+                marker_color="#3b82f6",
+                text=filtered["seq_size"],
+                textposition="outside",
+            )
+        )
+        fig.add_trace(
+            go.Bar(
+                x=filtered["seq_id"],
+                y=filtered["derivative_size"],
+                name="After (bytes)",
+                marker_color="#eab308",
+                text=filtered["derivative_size"],
+                textposition="outside",
+            )
+        )
+        fig.add_trace(
+            go.Bar(
+                x=filtered["seq_id"],
+                y=filtered["savings"],
+                name="Savings (bytes)",
+                marker_color="#ef4444",
+                text=filtered["savings"],
+                textposition="outside",
+            )
+        )
         fig.update_layout(
             title="Per-sequence File Sizes and Savings",
-            xaxis_title="Sequence", yaxis_title="Size (bytes)",
-            barmode="group", hovermode="x unified", showlegend=True,
+            xaxis_title="Sequence",
+            yaxis_title="Size (bytes)",
+            barmode="group",
+            hovermode="x unified",
+            showlegend=True,
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, width="stretch")
 
-        pie = go.Figure(data=[go.Pie(
-            labels=["Before (TB)", "After (TB)", "Savings (TB)"],
-            values=[
-                total_before / 1024 ** 4,
-                total_after  / 1024 ** 4,
-                total_saved  / 1024 ** 4,
-            ],
-            hole=0.4,
-            marker=dict(colors=["#3b82f6", "#eab308", "#ef4444"]),
-            textinfo="label+percent",
-        )])
+        pie = go.Figure(
+            data=[
+                go.Pie(
+                    labels=["Before (TB)", "After (TB)", "Savings (TB)"],
+                    values=[
+                        total_before / 1024**4,
+                        total_after / 1024**4,
+                        total_saved / 1024**4,
+                    ],
+                    hole=0.4,
+                    marker=dict(colors=["#3b82f6", "#eab308", "#ef4444"]),
+                    textinfo="label+percent",
+                )
+            ]
+        )
         pie.update_layout(title_text="Aggregate (TB)", showlegend=True)
-        st.plotly_chart(pie, width='stretch')
+        st.plotly_chart(pie, width="stretch")
         st.markdown(f"**Total sequences RAWcooked:** {total_files}")
 
     # ── TAB 2: Bit Depth & Colourspace ────────────────
@@ -539,18 +616,20 @@ def main():
         with col_a:
             st.plotly_chart(
                 build_category_bar(
-                    summary_bd, "bitdepth_cs",
+                    summary_bd,
+                    "bitdepth_cs",
                     "Total Sizes by Bit Depth & Colourspace",
                 ),
-                width='stretch',
+                width="stretch",
             )
         with col_b:
             st.plotly_chart(
                 build_pct_bar(
-                    summary_bd, "bitdepth_cs",
+                    summary_bd,
+                    "bitdepth_cs",
                     "Average % Savings by Bit Depth & Colourspace",
                 ),
-                width='stretch',
+                width="stretch",
             )
 
         # Encoding time charts within this tab
@@ -560,31 +639,36 @@ def main():
             with col_c:
                 st.plotly_chart(
                     build_avg_time_bar(
-                        time_summary_bd, "bitdepth_cs",
+                        time_summary_bd,
+                        "bitdepth_cs",
                         "Avg / Median Encoding Time",
                     ),
-                    width='stretch',
+                    width="stretch",
                 )
             with col_d:
                 st.plotly_chart(
                     build_time_range_bar(
-                        time_summary_bd, "bitdepth_cs",
+                        time_summary_bd,
+                        "bitdepth_cs",
                         "Min / Avg / Max Encoding Time",
                     ),
-                    width='stretch',
+                    width="stretch",
                 )
 
         st.plotly_chart(
             build_count_pie(
-                summary_bd, "bitdepth_cs",
+                summary_bd,
+                "bitdepth_cs",
                 "Sequence Count by Bit Depth & Colourspace",
             ),
-            width='stretch',
+            width="stretch",
         )
 
         st.subheader("Category Detail")
         render_category_detail(
-            filtered, summary_bd, "bitdepth_cs",
+            filtered,
+            summary_bd,
+            "bitdepth_cs",
             time_summary=time_summary_bd,
         )
 
@@ -605,18 +689,20 @@ def main():
         with col_a:
             st.plotly_chart(
                 build_category_bar(
-                    summary_res, "resolution_group",
+                    summary_res,
+                    "resolution_group",
                     "Total Sizes by Resolution Group",
                 ),
-                width='stretch',
+                width="stretch",
             )
         with col_b:
             st.plotly_chart(
                 build_pct_bar(
-                    summary_res, "resolution_group",
+                    summary_res,
+                    "resolution_group",
                     "Average % Savings by Resolution Group",
                 ),
-                width='stretch',
+                width="stretch",
             )
 
         if not time_summary_res.empty:
@@ -625,31 +711,36 @@ def main():
             with col_c:
                 st.plotly_chart(
                     build_avg_time_bar(
-                        time_summary_res, "resolution_group",
+                        time_summary_res,
+                        "resolution_group",
                         "Avg / Median Encoding Time",
                     ),
-                    width='stretch',
+                    width="stretch",
                 )
             with col_d:
                 st.plotly_chart(
                     build_time_range_bar(
-                        time_summary_res, "resolution_group",
+                        time_summary_res,
+                        "resolution_group",
                         "Min / Avg / Max Encoding Time",
                     ),
-                    width='stretch',
+                    width="stretch",
                 )
 
         st.plotly_chart(
             build_count_pie(
-                summary_res, "resolution_group",
+                summary_res,
+                "resolution_group",
                 "Sequence Count by Resolution Group",
             ),
-            width='stretch',
+            width="stretch",
         )
 
         st.subheader("Category Detail")
         render_category_detail(
-            filtered, summary_res, "resolution_group",
+            filtered,
+            summary_res,
+            "resolution_group",
             time_summary=time_summary_res,
             sort_order=RESOLUTION_ORDER,
         )
@@ -660,80 +751,101 @@ def main():
 
         valid_df = filtered.dropna(subset=["encoding_minutes"])
         if valid_df.empty:
-            st.warning(
-                "No valid encoding timestamps found in the current selection."
-            )
+            st.warning("No valid encoding timestamps found in the current selection.")
         else:
             # Top-level time metrics
             et1, et2, et3, et4 = st.columns(4)
-            et1.metric("Avg Encoding", format_duration(valid_df["encoding_minutes"].mean()))
-            et2.metric("Median Encoding", format_duration(valid_df["encoding_minutes"].median()))
+            et1.metric(
+                "Avg Encoding", format_duration(valid_df["encoding_minutes"].mean())
+            )
+            et2.metric(
+                "Median Encoding",
+                format_duration(valid_df["encoding_minutes"].median()),
+            )
             et3.metric("Fastest", format_duration(valid_df["encoding_minutes"].min()))
             et4.metric("Slowest", format_duration(valid_df["encoding_minutes"].max()))
 
             # Box plot by bitdepth/colourspace
             box_fig = build_time_box(
-                filtered, "bitdepth_cs",
+                filtered,
+                "bitdepth_cs",
                 "Encoding Time Distribution by Bit Depth & Colourspace",
             )
             if box_fig:
-                st.plotly_chart(box_fig, width='stretch')
+                st.plotly_chart(box_fig, width="stretch")
 
             # Box plot by resolution
             box_fig_res = build_time_box(
-                filtered, "resolution_group",
+                filtered,
+                "resolution_group",
                 "Encoding Time Distribution by Resolution Group",
             )
             if box_fig_res:
-                st.plotly_chart(box_fig_res, width='stretch')
+                st.plotly_chart(box_fig_res, width="stretch")
 
             # Scatter: size vs time coloured by bitdepth/cs
             scatter_fig = build_time_vs_size_scatter(filtered, "bitdepth_cs")
             if scatter_fig:
-                st.plotly_chart(scatter_fig, width='stretch')
+                st.plotly_chart(scatter_fig, width="stretch")
 
             # Per-sequence encoding time bar
             st.subheader("Per-Sequence Encoding Duration")
             time_bar = go.Figure()
-            time_bar.add_trace(go.Bar(
-                x=valid_df["seq_id"],
-                y=valid_df["encoding_minutes"],
-                marker_color="#8b5cf6",
-                text=valid_df["encoding_minutes"].round(1),
-                textposition="outside",
-            ))
+            time_bar.add_trace(
+                go.Bar(
+                    x=valid_df["seq_id"],
+                    y=valid_df["encoding_minutes"],
+                    marker_color="#8b5cf6",
+                    text=valid_df["encoding_minutes"].round(1),
+                    textposition="outside",
+                )
+            )
             time_bar.update_layout(
                 title="Encoding Duration per Sequence",
                 xaxis_title="Sequence",
                 yaxis_title="Duration (minutes)",
                 showlegend=False,
             )
-            st.plotly_chart(time_bar, width='stretch')
+            st.plotly_chart(time_bar, width="stretch")
 
     # ── TAB 5: Data Table ─────────────────────────────
     with tab5:
         st.subheader("Raw Data")
         display_df = filtered[
             [
-                "seq_id", "colourspace", "bitdepth",
-                "image_width", "image_height",
-                "resolution_group", "bitdepth_cs",
-                "seq_size", "derivative_size",
-                "savings", "savings_pct",
-                "assessment_complete", "encoding_complete",
+                "seq_id",
+                "colourspace",
+                "bitdepth",
+                "image_width",
+                "image_height",
+                "resolution_group",
+                "bitdepth_cs",
+                "seq_size",
+                "derivative_size",
+                "savings",
+                "savings_pct",
+                "assessment_complete",
+                "encoding_complete",
                 "encoding_minutes",
             ]
         ].copy()
         display_df.columns = [
-            "Sequence", "Colourspace", "Bit Depth",
-            "Width", "Height",
-            "Resolution Group", "Bit Depth / CS",
-            "Before (bytes)", "After (bytes)",
-            "Savings (bytes)", "Savings %",
-            "Encoding Start", "Encoding End",
+            "Sequence",
+            "Colourspace",
+            "Bit Depth",
+            "Width",
+            "Height",
+            "Resolution Group",
+            "Bit Depth / CS",
+            "Before (bytes)",
+            "After (bytes)",
+            "Savings (bytes)",
+            "Savings %",
+            "Encoding Start",
+            "Encoding End",
             "Encoding (min)",
         ]
-        st.dataframe(display_df, width='stretch', height=600)
+        st.dataframe(display_df, width="stretch", height=600)
 
 
 if __name__ == "__main__":
