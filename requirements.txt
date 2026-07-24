@@ -7,4 +7,4 @@ ffmpeg-python==0.2.0
 tenacity==9.1.2
 dicttoxml==1.7.16
 lxml==5.3.2
-requests==2.32.4
+requests==2.34.0
