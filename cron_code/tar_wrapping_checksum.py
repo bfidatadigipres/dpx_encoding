@@ -138,7 +138,7 @@ def get_tar_checksums(tar_path, folder):
             continue
 
         pth, fname = os.path.split(item_name)
-        if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml"]:
+        if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml", "README.txt"]:
             folder_prefix = os.path.basename(pth)
             fname = f"{folder_prefix}_{fname}"
         print(item_name, fname, item)
