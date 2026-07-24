@@ -38,6 +38,7 @@ import tarfile
 
 sys.path.append(os.environ["CODE"])
 import adlib_v3 as adlib
+import utils
 
 if not len(sys.argv) >= 2:
     sys.exit("Exiting. Supplied path argument is missing.")
@@ -56,8 +57,8 @@ if "/mnt/bp_nas" in LOCAL_PATH:
 else:
     parent_path = LOCAL_PATH.split("/automation")[0]
     AUTOINGEST = os.path.join(parent_path, os.environ["AUTOINGEST_STORE"])
-LOG = os.path.join(AUTO_TAR, "tar_wrapping_checksum.log")
-CID_API = os.environ["CID_API4"]
+LOG = os.path.join(os.environ.get("LOG_PATH"), f"tar_wrapping_checksum_{LOCAL_PATH.replace('/', '_')}.log")
+CID_API = utils.get_current_api()
 
 # Logging config
 LOGGER = logging.getLogger(f"tar_wrapping_checksum_{LOCAL_PATH.replace('/', '_')}")
@@ -470,9 +471,22 @@ def main():
                 error_mssg2,
             )
     else:
+        set1 = set(local_md5.items())
+        set2 = set(tar_content_md5.items())
+        set_data = set1 ^ set2
+        print(set_data)
+        list_data = list(set_data)
+        list_data.sort()
+        print(list_data)
+
         LOGGER.warning(
-            "Manifests do not match.\nLocal:\n%s\nTAR:\n%s", local_md5, tar_content_md5
+            "Manifests do not match.\nMismatched items:",
         )
+        log.append("Mismatched checksums:")
+        for data in list_data:
+            LOGGER.warning(data)
+            log.append(data)
+
         LOGGER.warning("Moving TAR file to failures, leaving file/folder for retry.")
         log.append(
             "MD5 manifests do not match. Moving TAR file to failures folder for retry"
@@ -484,7 +498,7 @@ def main():
             os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
         )
 
-    log.append(f"==== Log actions complete: {fullpath} ====")
+    log.append(f"==== Log actions complete: {fullpath} ====\n")
     # Write all log items in block
     for item in log:
         local_logs(AUTO_TAR, item)
