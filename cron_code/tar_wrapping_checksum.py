@@ -240,7 +240,7 @@ def main():
         error_log(
             os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
         )
-        sys.exit("Filename  not formed correctly, script exiting.")
+        sys.exit("Filename not formed correctly, script exiting.")
 
     priref, file_type = get_cid_data(tar_source)
     if not priref:
@@ -553,6 +553,8 @@ def error_log(fpath, message, kandc):
                     f"- Please contact the Knowledge and Collections Developer {kandc}.\n\n"
                 )
             log.close()
+
+    os.chmod(fpath, 0o777)
 
 
 def write_to_cid(priref, fname):
