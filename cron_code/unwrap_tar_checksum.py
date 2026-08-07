@@ -89,7 +89,7 @@ def python_tarfile(fpath, untar_fpath):
 
     if "automation/unwrap_tar" in fpath:
         tar_file = tarfile.open(fpath)
-        tar_file.extractall(untar_fpath, filter='data')
+        tar_file.extractall(untar_fpath, filter="data")
         tar_file.close()
 
     if os.listdir(untar_fpath):

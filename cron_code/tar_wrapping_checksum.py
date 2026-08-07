@@ -57,7 +57,10 @@ if "/mnt/bp_nas" in LOCAL_PATH:
 else:
     parent_path = LOCAL_PATH.split("/automation")[0]
     AUTOINGEST = os.path.join(parent_path, os.environ["AUTOINGEST_STORE"])
-LOG = os.path.join(os.environ.get("LOG_PATH"), f"tar_wrapping_checksum_{LOCAL_PATH.replace('/', '_')}.log")
+LOG = os.path.join(
+    os.environ.get("LOG_PATH"),
+    f"tar_wrapping_checksum_{LOCAL_PATH.replace('/', '_')}.log",
+)
 CID_API = utils.get_current_api()
 
 # Logging config
@@ -124,6 +127,7 @@ def tar_item(fpath):
         tarring.close()
         return None
 
+
 def get_tar_checksums(tar_path):
     """
     Open tar file and read/generate MD5 sums
@@ -138,7 +142,9 @@ def get_tar_checksums(tar_path):
         try:
             f = tar.extractfile(item)
         except Exception as exc:
-            LOGGER.warning("get_tar_checksums(): Unable to extract from tar file\n%s", exc)
+            LOGGER.warning(
+                "get_tar_checksums(): Unable to extract from tar file\n%s", exc
+            )
             continue
         hash_md5 = hashlib.md5()
         for chunk in iter(lambda: f.read(65536), b""):
@@ -495,6 +501,7 @@ def md5_hash(tar_file):
     except Exception as err:
         print(err)
         return None
+
 
 def local_logs(fullpath, data):
     """
