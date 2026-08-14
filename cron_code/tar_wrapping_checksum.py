@@ -124,63 +124,43 @@ def tar_item(fpath):
         tarring.close()
         return None
 
-
-def get_tar_checksums(tar_path, folder):
+def get_tar_checksums(tar_path):
     """
     Open tar file and read/generate MD5 sums
-    and return dct {filename: hex}
+    and return dct {full_path_key: hex}
     """
     data = {}
     tar = tarfile.open(tar_path, "r|")
-
     for item in tar:
-        item_name = item.name
         if item.isdir():
             continue
-
-        pth, fname = os.path.split(item_name)
-        if fname in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml", "README.txt"]:
-            folder_prefix = os.path.basename(pth)
-            fname = f"{folder_prefix}_{fname}"
-        print(item_name, fname, item)
-
+        key = item.name.replace("/", "-")
         try:
             f = tar.extractfile(item)
         except Exception as exc:
-            LOGGER.warning(
-                "get_tar_checksums(): Unable to extract from tar file\n%s", exc
-            )
+            LOGGER.warning("get_tar_checksums(): Unable to extract from tar file\n%s", exc)
             continue
-
         hash_md5 = hashlib.md5()
         for chunk in iter(lambda: f.read(65536), b""):
             hash_md5.update(chunk)
-
-        if not folder:
-            file = os.path.basename(fname)
-            data[file] = hash_md5.hexdigest()
-        else:
-            data[fname] = hash_md5.hexdigest()
-
+        data[key] = hash_md5.hexdigest()
+    print(data)
     return data
 
 
-def get_checksum(fpath):
+def get_checksum(fpath, base_dir):
     """
     Using file path, generate file checksum
-    return as list with filename
+    return as dict with full_path_key: hex
     """
     data = {}
-    pth, file = os.path.split(fpath)
-    if file in ["ASSETMAP", "VOLINDEX", "ASSETMAP.xml", "VOLINDEX.xml", "README.txt"]:
-        folder_prefix = os.path.basename(pth)
-        file = f"{folder_prefix}_{file}"
+    key = os.path.relpath(fpath, base_dir).replace("/", "-")
     hash_md5 = hashlib.md5()
     with open(fpath, "rb") as f:
         for chunk in iter(lambda: f.read(65536), b""):
             hash_md5.update(chunk)
-        data[file] = hash_md5.hexdigest()
-        f.close()
+    data[key] = hash_md5.hexdigest()
+    print(data)
     return data
 
 
@@ -220,8 +200,8 @@ def main():
     if not os.path.exists(fullpath):
         sys.exit("Supplied path does not exists. Please try again.")
 
-    if fullpath.endswith((".md5", ".txt")):
-        sys.exit("Supplied path is MD5/TXT. Skipping.")
+    if fullpath.lower().endswith((".md5", ".txt", ".tar")):
+        sys.exit("Supplied path is MD5/TXT/TAR. Skipping TAR wrap for this file.")
 
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
@@ -284,11 +264,11 @@ def main():
     if directory:
         for root, _, files in os.walk(fullpath):
             for file in files:
-                dct = get_checksum(os.path.join(root, file))
+                dct = get_checksum(os.path.join(root, file), os.path.dirname(fullpath))
                 local_md5.update(dct)
 
     else:
-        local_md5 = get_checksum(fullpath)
+        local_md5 = get_checksum(fullpath, os.path.dirname(fullpath))
         log.append("Path is not a directory and will be wrapped alone")
 
     LOGGER.info("Checksums for local files (excluding DPX, TIF):")
@@ -311,6 +291,7 @@ def main():
                 ".jpc",
                 ".jpx",
                 ".mj2",
+                ".jpg",
             )
         ):
             data = f"{val} -- {key}"
@@ -336,10 +317,7 @@ def main():
         sys.exit(f"EXIT: TAR wrap failed for {fullpath}")
 
     # Calculate checksum manifest for TAR folder
-    if directory:
-        tar_content_md5 = get_tar_checksums(tar_path, tar_source)
-    else:
-        tar_content_md5 = get_tar_checksums(tar_path, "")
+    tar_content_md5 = get_tar_checksums(tar_path)
 
     log.append("Checksums from TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
     LOGGER.info("Checksums for TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
@@ -361,6 +339,7 @@ def main():
                 ".jpc",
                 ".jpx",
                 ".mj2",
+                ".jpg",
             )
         ):
             data = f"{val} -- {key}"
@@ -528,6 +507,7 @@ def local_logs(fullpath, data):
     to monitor TAR wrap process
     """
     local_log = os.path.join(fullpath, "tar_wrapping_checksum.log")
+    print(f"LOCAL LOG: {local_log}")
     timestamp = str(datetime.datetime.now())
 
     if not os.path.isfile(local_log):
