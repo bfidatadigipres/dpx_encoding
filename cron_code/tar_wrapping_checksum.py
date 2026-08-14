@@ -355,7 +355,8 @@ def main():
         log.append("Supplied path for TAR wrap is directory")
         LOGGER.info("Supplied path for TAR wrap is directory")
         directory = True
-    log.append("Generating checksum manifest ...")
+
+    LOGGER.info("Generating checksum manifest ...")
     if directory:
         for root, _, files in os.walk(fullpath):
             for file in files:
