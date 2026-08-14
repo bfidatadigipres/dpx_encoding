@@ -143,6 +143,7 @@ def tar_item(fpath):
             pass
         return None
 
+
 def get_tar_checksums(tar_path):
     """
     Open tar file and read/generate MD5 sums
@@ -374,6 +375,7 @@ def main():
 
     # Tar folder
     log.append("Beginning TAR wrap now...")
+    LOGGER.info("Beginning TAR wrap now ...")
     tar_path = tar_item(fullpath)
     tar_file = os.path.split(tar_path)[1]
     if not tar_path:
@@ -428,7 +430,7 @@ def main():
             expected_files[os.path.basename(fullpath)] = source_size
         # Structural verification
         verify_success, verify_msg = verify_tar_structure(tar_path, expected_files)
-        log.append(f"Structural verification result: {veriy_msg}")
+        log.append(f"Structural verification result: {verify_msg}")
         LOGGER.info("Structural verification result: %s", verify_msg)
 
         if verify_success:
@@ -457,10 +459,7 @@ def main():
         )
 
         # Full checksum verification for smaller archives
-        if directory:
-            tar_content_md5 = get_tar_checksums(tar_path, tar_source)
-        else:
-            tar_content_md5 = get_tar_checksums(tar_path, "")
+        tar_content_md5 = get_tar_checksums(tar_path)
 
     # Log checksums (excluding image formats)
     log.append("Checksums from TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
