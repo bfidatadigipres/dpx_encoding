@@ -214,7 +214,7 @@ def transcode(fullpath: tuple[str]) -> Dict[str, Any]:
     cmd.extend(
         [
             "-s",
-            "5281680",
+            "8450688",
             f"{fullpath}",
             "-o",
             f"{ffv1_path}",
