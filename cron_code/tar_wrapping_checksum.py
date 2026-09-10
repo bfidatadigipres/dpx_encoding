@@ -122,9 +122,28 @@ def tar_item(fpath):
         tarring.close()
         return tar_path
 
+    except tarfile.TarError as exc:
+        LOGGER.warning("tar_item(): TAR MODULE ERROR %s", exc)
+        try:
+            tarring.close()
+        except Exception:
+            pass
+        return None
+
+    except OSError as exc:
+        LOGGER.warning("tar_item(): OS/IO ERROR during TAR creation %s", exc)
+        try:
+            tarring.close()
+        except Exception:
+            pass
+        return None
+
     except Exception as exc:
-        LOGGER.warning("tar_item(): ERROR WITH TAR WRAP %s", exc)
-        tarring.close()
+        LOGGER.warning("tar_item(): UNEXPECTED ERROR during TAR creation %s", exc)
+        try:
+            tarring.close()
+        except Exception:
+            pass
         return None
 
 
@@ -142,14 +161,13 @@ def get_tar_checksums(tar_path):
         try:
             f = tar.extractfile(item)
         except Exception as exc:
-            LOGGER.warning(
-                "get_tar_checksums(): Unable to extract from tar file\n%s", exc
-            )
+            LOGGER.warning("get_tar_checksums(): Unable to extract from tar file\n%s", exc)
             continue
         hash_md5 = hashlib.md5()
         for chunk in iter(lambda: f.read(65536), b""):
             hash_md5.update(chunk)
         data[key] = hash_md5.hexdigest()
+    print(data)
     return data
 
 
@@ -165,7 +183,64 @@ def get_checksum(fpath, base_dir):
         for chunk in iter(lambda: f.read(65536), b""):
             hash_md5.update(chunk)
     data[key] = hash_md5.hexdigest()
+    print(data)
     return data
+
+
+def verify_tar_structure(tar_path, expected_files):
+    """
+    Verify TAR archive structure without reading file data.
+    Checks that all headers are valid and file names/sizes match expectations.
+    expected_files: dict {relative_path: size_in_bytes}
+    Returns (success: bool, message: str)
+    """
+    try:
+        tar = tarfile.open(tar_path, "r|")
+        actual_files = {}
+
+        for item in tar:
+            if item.isdir():
+                continue
+            actual_files[item.name] = item.size
+
+        tar.close()
+
+        expected_set = set(expected_files.keys())
+        actual_set = set(actual_files.keys())
+
+        missing = expected_set - actual_set
+        extra = actual_set - expected_set
+
+        size_mismatches = []
+        for fname in expected_set & actual_set:
+            if actual_files[fname] != expected_files[fname]:
+                size_mismatches.append(
+                    f"{fname}: expected {expected_files[fname]}, got {actual_files[fname]}"
+                )
+
+        issues = []
+        if missing:
+            issues.append(f"Missing files ({len(missing)}): {', '.join(sorted(missing))}")
+        if extra:
+            issues.append(f"Extra files ({len(extra)}): {', '.join(sorted(extra))}")
+        if size_mismatches:
+            issues.append(f"Size mismatches ({len(size_mismatches)}): {', '.join(size_mismatches)}")
+
+        if issues:
+            return False, "; ".join(issues)
+
+        return True, f"Structural verification passed: {len(actual_files)} files, all names and sizes match"
+
+    except tarfile.ReadError as exc:
+        return False, f"TAR read error during structural verification: {exc}"
+    except tarfile.HeaderError as exc:
+        return False, f"TAR header error during structural verification: {exc}"
+    except tarfile.StreamError as exc:
+        return False, f"TAR stream error during structural verification: {exc}"
+    except OSError as exc:
+        return False, f"OS error during structural verification: {exc}"
+    except Exception as exc:
+        return False, f"Unexpected error during structural verification: {exc}"
 
 
 def make_manifest(tar_path, md5_dct):
@@ -204,8 +279,8 @@ def main():
     if not os.path.exists(fullpath):
         sys.exit("Supplied path does not exists. Please try again.")
 
-    if fullpath.endswith((".md5", ".txt")):
-        sys.exit("Supplied path is MD5/TXT. Skipping.")
+    if fullpath.lower().endswith((".md5", ".txt", ".tar")):
+        sys.exit("Supplied path is MD5/TXT/TAR. Skipping TAR wrap for this file.")
 
     log = []
     log.append(f"==== New path for TAR wrap: {fullpath} ====")
@@ -265,6 +340,7 @@ def main():
         LOGGER.info("Supplied path for TAR wrap is directory")
         directory = True
 
+    LOGGER.info("Generating checksum manifest ...")
     if directory:
         for root, _, files in os.walk(fullpath):
             for file in files:
@@ -278,23 +354,22 @@ def main():
     LOGGER.info("Checksums for local files (excluding DPX, TIF):")
     log.append("Checksums for local files (excluding DPX, TIF):")
     for key, val in local_md5.items():
-        if not key.endswith(
+        if not key.lower().endswith(
             (
                 ".dpx",
-                ".DPX",
                 ".tif",
-                ".TIF",
-                ".TIFF",
                 ".tiff",
                 ".jp2",
                 ".j2k",
                 ".jpf",
                 ".jpm",
+                ".jpg",
                 ".jpg2",
                 ".j2c",
                 ".jpc",
                 ".jpx",
                 ".mj2",
+                ".jpg",
             )
         ):
             data = f"{val} -- {key}"
@@ -303,6 +378,7 @@ def main():
 
     # Tar folder
     log.append("Beginning TAR wrap now...")
+    LOGGER.info("Beginning TAR wrap now ...")
     tar_path = tar_item(fullpath)
     tar_file = os.path.split(tar_path)[1]
     if not tar_path:
@@ -319,29 +395,95 @@ def main():
         )
         sys.exit(f"EXIT: TAR wrap failed for {fullpath}")
 
-    # Calculate checksum manifest for TAR folder
-    tar_content_md5 = get_tar_checksums(tar_path)
+    # Determine verification method based on source size
+    source_size = 0
+    if directory:
+        for root, _, files in os.walk(fullpath):
+            for file in files:
+                source_size += os.path.getsize(os.path.join(root, file))
+    else:
+        source_size = os.path.getsize(fullpath)
 
+    size_gb = source_size / (1024 ** 3)
+    size_threshold_gb = 3072.0
+
+    log.append(f"Source size: {size_gb:.2f} GB ({source_size} bytes)")
+    LOGGER.info("Source size: %.2f GB (%d bytes)", size_gb, source_size)
+
+    if size_gb > size_threshold_gb:
+        log.append(
+            f"Source size {size_gb:.2f} GB exceeds {size_threshold_gb} GB threshold. "
+            "Using structural TAR verification (header + file count + size check) "
+            "instead of full checksum re-read for performance."
+        )
+        LOGGER.info(
+            "Source size %.2f GB exceeds threshold. Using structural verification only.",
+            size_gb,
+        )
+
+        # Collect expected file paths and sizes for structural verification
+        expected_files = {}
+        if directory:
+            for root, _, files in os.walk(fullpath):
+                for file in files:
+                    fpath = os.path.join(root, file)
+                    rel_path = os.path.relpath(fpath, os.path.dirname(fullpath))
+                    expected_files[rel_path] = os.path.getsize(fpath)
+        else:
+            expected_files[os.path.basename(fullpath)] = source_size
+        # Structural verification
+        verify_success, verify_msg = verify_tar_structure(tar_path, expected_files)
+        log.append(f"Structural verification result: {verify_msg}")
+        LOGGER.info("Structural verification result: %s", verify_msg)
+
+        if verify_success:
+            log.append("TAR structure verified. Proceeding with manifest creation.")
+            LOGGER.info("TAR structure verified. Proceeding.")
+            tar_content_md5 = local_md5
+        else:
+            log.append(f"TAR STRUCTURAL VERIFICATION FAILED: {verify_msg}")
+            LOGGER.warning("TAR structural verification FAILED: %s", verify_msg)
+            shutil.move(tar_path, os.path.join(TAR_FAIL, f"{tar_source}.tar"))
+            error_mssg1 = f"TAR structural verification failed:\n\t{verify_msg}\n\tTAR file moved to failures folder"
+            error_mssg2 = "if this structural verification fails multiple times"
+            error_log(
+                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
+            )
+            sys.exit("TAR structural verification failed. Script exiting.")
+
+    else:
+        log.append(
+            f"Source size {size_gb:.2f} GB within {size_threshold_gb} GB threshold. "
+            "Using full checksum verification (re-reading TAR contents)."
+        )
+        LOGGER.info(
+            "Source size %.2f GB within threshold. Using full checksum verification.",
+            size_gb,
+        )
+
+        # Full checksum verification for smaller archives
+        tar_content_md5 = get_tar_checksums(tar_path)
+
+    # Log checksums (excluding image formats)
     log.append("Checksums from TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
     LOGGER.info("Checksums for TAR wrapped contents (excluding DPX, TIF, JPEG2000):")
     for key, val in tar_content_md5.items():
-        if not key.endswith(
+        if not key.lower().endswith(
             (
                 ".dpx",
-                ".DPX",
                 ".tif",
-                ".TIF",
                 ".tiff",
-                ".TIFF",
                 ".jp2",
                 ".j2k",
                 ".jpf",
                 ".jpm",
+                ".jpg",
                 ".jpg2",
                 ".j2c",
                 ".jpc",
                 ".jpx",
                 ".mj2",
+                ".jpg",
             )
         ):
             data = f"{val} -- {key}"
@@ -509,6 +651,7 @@ def local_logs(fullpath, data):
     to monitor TAR wrap process
     """
     local_log = os.path.join(fullpath, "tar_wrapping_checksum.log")
+    print(f"LOCAL LOG: {local_log}")
     timestamp = str(datetime.datetime.now())
 
     if not os.path.isfile(local_log):

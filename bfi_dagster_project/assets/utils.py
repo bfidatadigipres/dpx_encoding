@@ -170,13 +170,19 @@ def mediaconch(ipath: str, arg: str) -> List:
     cmd = ["mediaconch", "--Force", "-p", policy, ipath]
 
     try:
-        result = subprocess.check_output(cmd, shell=False).decode()
-        if len(result) == 0:
-            raise Exception("No response received, attempt mediaconch retry!")
-        elif str(result).startswith(f"pass! {ipath}"):
-            return ["Pass", str(result)]
+        result = subprocess.run(
+            cmd, shell=False, capture_output=True, text=True, timeout=1800, check=True
+        )
+        output = result.stdout
+        if len(output) == 0:
+            raise Exception("No response received, attempt Mediaconch retry!")
+        elif str(output).startswith(f"pass! {ipath}"):
+            return ["Pass", str(output)]
         else:
-            return ["Fail", str(result)]
+            return ["Fail", str(output)]
+    except subprocess.TimeoutExpired:
+        print(f"Mediaconch timed out after 30 minutes on {ipath}, retrying...")
+        raise
     except subprocess.CalledProcessError as err:
         print(err.returncode, err.stderr, err.stdout)
         raise err
@@ -190,14 +196,21 @@ def mediaconch_mkv(dpath: str) -> List:
     policy = os.environ.get("POLICY_RAWCOOK")
     cmd = ["mediaconch", "--Force", "-p", policy, dpath]
 
+
     try:
-        result = subprocess.check_output(cmd, shell=False).decode()
-        if len(result) == 0:
-            raise Exception("No response received, attempt mediaconch retry!")
-        elif str(result).startswith(f"pass! {dpath}"):
-            return ["Pass", result]
+        result = subprocess.run(
+            cmd, shell=False, capture_output=True, text=True, timeout=3600, check=True
+        )
+        output = result.stdout
+        if len(output) == 0:
+            raise Exception("No response received, attempt Mediaconch retry!")
+        elif str(output).startswith(f"pass! {dpath}"):
+            return ["Pass", output]
         else:
-            return ["Fail", result]
+            return ["Fail", output]
+    except subprocess.TimeoutExpired:
+        print(f"Mediaconch timed out after 60 minutes on {dpath}, retrying...")
+        raise
     except subprocess.CalledProcessError as err:
         print(err.returncode, err.stderr, err.stdout)
         raise err
