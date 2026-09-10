@@ -196,7 +196,6 @@ def mediaconch_mkv(dpath: str) -> List:
     policy = os.environ.get("POLICY_RAWCOOK")
     cmd = ["mediaconch", "--Force", "-p", policy, dpath]
 
-
     try:
         result = subprocess.run(
             cmd, shell=False, capture_output=True, text=True, timeout=3600, check=True

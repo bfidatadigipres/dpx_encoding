@@ -161,7 +161,9 @@ def get_tar_checksums(tar_path):
         try:
             f = tar.extractfile(item)
         except Exception as exc:
-            LOGGER.warning("get_tar_checksums(): Unable to extract from tar file\n%s", exc)
+            LOGGER.warning(
+                "get_tar_checksums(): Unable to extract from tar file\n%s", exc
+            )
             continue
         hash_md5 = hashlib.md5()
         for chunk in iter(lambda: f.read(65536), b""):
@@ -220,16 +222,23 @@ def verify_tar_structure(tar_path, expected_files):
 
         issues = []
         if missing:
-            issues.append(f"Missing files ({len(missing)}): {', '.join(sorted(missing))}")
+            issues.append(
+                f"Missing files ({len(missing)}): {', '.join(sorted(missing))}"
+            )
         if extra:
             issues.append(f"Extra files ({len(extra)}): {', '.join(sorted(extra))}")
         if size_mismatches:
-            issues.append(f"Size mismatches ({len(size_mismatches)}): {', '.join(size_mismatches)}")
+            issues.append(
+                f"Size mismatches ({len(size_mismatches)}): {', '.join(size_mismatches)}"
+            )
 
         if issues:
             return False, "; ".join(issues)
 
-        return True, f"Structural verification passed: {len(actual_files)} files, all names and sizes match"
+        return (
+            True,
+            f"Structural verification passed: {len(actual_files)} files, all names and sizes match",
+        )
 
     except tarfile.ReadError as exc:
         return False, f"TAR read error during structural verification: {exc}"
@@ -404,7 +413,7 @@ def main():
     else:
         source_size = os.path.getsize(fullpath)
 
-    size_gb = source_size / (1024 ** 3)
+    size_gb = source_size / (1024**3)
     size_threshold_gb = 3072.0
 
     log.append(f"Source size: {size_gb:.2f} GB ({source_size} bytes)")
@@ -447,7 +456,9 @@ def main():
             error_mssg1 = f"TAR structural verification failed:\n\t{verify_msg}\n\tTAR file moved to failures folder"
             error_mssg2 = "if this structural verification fails multiple times"
             error_log(
-                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"), error_mssg1, error_mssg2
+                os.path.join(TAR_FAIL, f"{tar_source}_errors.log"),
+                error_mssg1,
+                error_mssg2,
             )
             sys.exit("TAR structural verification failed. Script exiting.")
 
