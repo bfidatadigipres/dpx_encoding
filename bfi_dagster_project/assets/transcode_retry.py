@@ -175,7 +175,7 @@ def build_transcode_retry_asset(key_prefix: Optional[str] = None):
         cmd.extend(
             [
                 "-s",
-                "5281680",
+                "8450688",
                 f"{fullpath}",
                 "-o",
                 f"{ffv1_path}",
