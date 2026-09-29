@@ -120,6 +120,7 @@ def tar_item(fpath):
         tarring = tarfile.open(tar_path, "w:")
         tarring.add(fpath, arcname=f"{split_path[1]}")
         tarring.close()
+        os.chmod(tar_path, 0o777)
         return tar_path
 
     except tarfile.TarError as exc:
@@ -262,6 +263,7 @@ def make_manifest(tar_path, md5_dct):
         with open(md5_path, "w+") as json_file:
             json_file.write(json.dumps(md5_dct, indent=4))
             json_file.close()
+        os.chmod(md5_path, 0o777)
     except Exception as exc:
         LOGGER.warning("make_manifest(): FAILED to create JSON %s", exc)
 
@@ -562,6 +564,8 @@ def main():
         log.append(f"File size is {file_size} bytes")
         LOGGER.info("File size is %s bytes.", file_size)
 
+        print(f"tar_path: {tar_path}")
+        print(f"AUTOINGEST: {AUTOINGEST}")
         try:
             LOGGER.info("Moving %s to %s", tar_path, AUTOINGEST)
             shutil.move(tar_path, AUTOINGEST)
