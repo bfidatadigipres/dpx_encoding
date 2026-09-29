@@ -8,3 +8,5 @@ tenacity==9.1.2
 dicttoxml==1.7.16
 lxml==6.1.0
 requests==2.34.0
+
+multidict==6.9.1
